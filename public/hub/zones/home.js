@@ -1,6 +1,7 @@
-// Home zone: Shop TV (a big screen for the shop room) and Customize (each kid's own dashboard layout).
-// Meetings, the agenda, prints, shoutouts and check-ins are sample data. The clock and countdowns are real.
-import { $, $$, esc, clamp, icon, tag, SAMPLE, strip, av, sw, seg, wireSeg, codePattern, GLOSSARY, KIDS } from './common.js';
+// Home zone: Shop TV (a big screen for the shop room) and Customize (each person's own dashboard layout).
+// The TV reads the team's real calendar, plan, prints, shoutouts and check-ins. Layouts save to each person's account.
+import { $, $$, esc, clamp, icon, tag, strip, av, sw, seg, wireSeg, GLOSSARY } from './common.js';
+import { api, session } from '../api.js';
 
 // Styles for this zone live in zones-home.css, next to index.html. Load it once.
 (function loadCss() {
@@ -22,27 +23,8 @@ const KICKOFF = new Date(2026, 8, 12);
 const weekOf = (ctx, d) => (ctx && ctx.seasonWeek ? ctx.seasonWeek(d) : Math.max(0, Math.floor(Math.round((dayStart(d) - KICKOFF) / DAY) / 7) + 1));
 const up = `<svg class="i sm" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg>`;
 const down = `<svg class="i sm" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>`;
-
-// ---------------------------------------------------------------- Sample content shared by both pages
-const SHOUTS = [
-  ['Pixel', 'Pixel got the intake to grab 7 of 10 balls with the gecko wheels 4 mm closer.', 'Coach'],
-  ['Byte', 'Byte helped Gizmo find the missing telemetry.update() in two minutes flat.', 'Gizmo'],
-  ['Rivet', 'Rivet stiffened the launcher mount, and it stopped wobbling at full speed.', 'Sparky'],
-  ['Echo', 'Echo wrote the first page of our engineering portfolio. It reads really well.', 'Coach'],
-  ['Nova', 'Nova booked the library robot demo for December. Outreach for the win.', 'Pixel'],
-  ['Gizmo', 'Gizmo tracked down the servo gate double-feed and filmed the test.', 'Byte'],
-  ['Sparky', 'Sparky measured the flywheel and wrote the numbers on the board for everyone.', 'Rivet'],
-];
-const WORDS = ['BOLT', 'GEAR', 'AXLE', 'SPIN', 'VOLT', 'COGS', 'HEXA', 'LIFT', 'GRIP', 'ZOOM'];
-const PRINT = { what: '4 intake roller hubs', pct: 62, printer: 'Printer 1', left: '48 min left' };
-const LEAGUE1 = new Date(2027, 0, 16);
 const DOORS = new Date(2026, 11, 1);
-const BREAK = [new Date(2026, 11, 21), new Date(2027, 0, 2)];
-
-const toDate = (base, t) => {
-  const [h, m] = t.split(':').map(Number);
-  return new Date(base.getFullYear(), base.getMonth(), base.getDate(), h < 8 ? h + 12 : h, m);
-};
+const HD = (ctx) => ctx.homeData;
 
 function cdHtml(ms, short) {
   const s = Math.max(0, Math.ceil(ms / 1000));
@@ -52,38 +34,39 @@ function cdHtml(ms, short) {
   return [short ? `${m}<small>m</small>` : `${m}:${pad(sec)}`, `${m} minutes ${sec} seconds`];
 }
 
-// Where are we right now? Works off the real clock and the sample Tue/Thu schedule.
+// Where are we right now? The next event from the calendar, and today's plan blocks.
 function meetingNow(ctx, now) {
-  const m = ctx.nextMeeting(now);
-  if (!m) return { m: null, on: false };
+  const hd = HD(ctx);
+  const m = hd.nextEvent(now);
+  if (!m) return { m: null, on: false, blocks: [] };
   const on = now >= m.start && now < m.end;
-  const starts = [...new Set(ctx.AGENDA.map((a) => a.t))].map((t) => ({ t, at: toDate(m.start, t) })).sort((a, b) => a.at - b.at);
+  const plan = hd.planFor(now);
+  const blocks = plan && plan.today ? hd.planItems(plan).filter((a) => a.at) : [];
+  const starts = [...new Map(blocks.map((a) => [a.at.getTime(), a.at])).values()].sort((a, b) => a - b);
   let cur = null, next = null;
-  if (on) {
-    for (const s of starts) { if (s.at <= now) cur = s; else if (!next) next = s; }
-  }
-  return { m, on, cur, next };
+  if (on) for (const at of starts) { if (at <= now) cur = at; else if (!next) next = at; }
+  return { m, on, cur, next, blocks };
 }
 
 // ================================================================= Shop TV
 function shopTv(view, ctx) {
-  const st = ctx.state.tv || (ctx.state.tv = { here: ['Pixel', 'Byte', 'Nova'], total: 15 * 60e3, left: 15 * 60e3, endAt: 0, running: false, done: false });
-  const now0 = new Date();
-  const code = WORDS[dayIndex(now0) % WORDS.length];
-  let shoutI = dayIndex(now0) % SHOUTS.length;
+  const hd = HD(ctx);
+  const st = ctx.state.tv || (ctx.state.tv = { total: 15 * 60e3, left: 15 * 60e3, endAt: 0, running: false, done: false });
+  let shoutI = 0;
+  let info = null;
   const timers = [];
   const offs = [];
   const on = (t, ev, fn, opt) => { t.addEventListener(ev, fn, opt); offs.push(() => t.removeEventListener(ev, fn, opt)); };
+  const R = 2 * Math.PI * 18;
 
   view.innerHTML = `<div class="zv">
-    ${strip('A big screen for the shop room: the clock, a countdown, the plan, print status, a sprint timer and the check-in code. Kids check in with their own phones.', [tag('Phase 2 · Dec 7–18'), SAMPLE])}
+    ${strip('A big screen for the shop room: the clock, a countdown, the plan, print status, a sprint timer and the check-in code. Kids check in with their own phones.')}
     <div class="tv-wrap">
       <section class="tv" id="tv" aria-label="Shop TV" tabindex="-1">
         <div class="top">
           <span class="bm">${icon('zap', 'i')}</span>
-          <b>Kilowattchaos · Shop TV</b>
+          <b>${esc(session.team.name || 'Kilowattchaos')} · Shop TV</b>
           <span id="tvWeek"></span>
-          <span class="tv-sample">Sample data</span>
           <span class="tv-date" id="tvDate"></span>
           <span class="clock" id="tvClock" aria-live="off"></span>
         </div>
@@ -99,11 +82,11 @@ function shopTv(view, ctx) {
         </div>
         <div class="pane checkin">
           <span class="lbl">Check in</span>
-          ${codePattern(dayIndex(now0) % 97 + 3)}
+          <div id="tvQr" class="lh-qr"><svg viewBox="0 0 25 25" class="qr" aria-hidden="true"><rect width="25" height="25" rx="2" fill="#fff"/></svg></div>
           <div class="tv-ci">
-            <div class="codeword" aria-label="Code word ${code.split('').join(' ')}">${code}</div>
+            <div class="codeword" id="tvCode" aria-label="Loading today's code">…</div>
             <div class="sub">Scan with your phone to check in</div>
-            <div class="tv-meta">Sample code. The real one comes from the Hub and changes every meeting.</div>
+            <div class="tv-meta" id="tvCodeHow">The code changes every day.</div>
             <div class="here" id="tvHere"></div>
             <div class="tv-meta" id="tvHereN"></div>
           </div>
@@ -116,10 +99,7 @@ function shopTv(view, ctx) {
           </div>
           <div class="pane">
             <span class="lbl">Printing</span>
-            <div class="prt">
-              <span class="r"><svg viewBox="0 0 44 44" aria-hidden="true"><circle cx="22" cy="22" r="18" fill="none" stroke="rgba(237,238,232,.16)" stroke-width="5"/><circle cx="22" cy="22" r="18" fill="none" stroke="#E8F542" stroke-width="5" stroke-linecap="round" stroke-dasharray="${(2 * Math.PI * 18).toFixed(2)}" stroke-dashoffset="${(2 * Math.PI * 18 * (1 - PRINT.pct / 100)).toFixed(2)}"/></svg></span>
-              <div><b>${PRINT.what}</b><br>${PRINT.pct}% on ${PRINT.printer} · ${PRINT.left}</div>
-            </div>
+            <div class="prt" id="tvPrint"></div>
           </div>
           <div class="pane">
             <span class="lbl">Shoutout</span>
@@ -132,7 +112,7 @@ function shopTv(view, ctx) {
       <div class="card-head"><span class="oc2">${icon('sliders', 'i sm')}</span><h3 class="card-title">TV controls</h3></div>
       <div class="tv-ctrls">
         <button class="btn primary pill" type="button" id="tvFull" aria-pressed="false">${icon('max', 'i sm')}<span>Fullscreen</span></button>
-        <button class="btn soft pill" type="button" id="tvCheck">${icon('users', 'i sm')}Check in a sample kid</button>
+        <button class="btn soft pill" type="button" id="tvShoutBtn">${icon('sparkle', 'i sm')}Give a shoutout</button>
       </div>
       <h4 class="sub">Build sprint</h4>
       <div class="tv-ctrls">
@@ -140,16 +120,16 @@ function shopTv(view, ctx) {
         <button class="btn primary pill" type="button" id="tvGo" aria-pressed="false"></button>
         <button class="btn ghost pill" type="button" id="tvReset">${icon('reset', 'i sm')}Reset</button>
       </div>
-      <p class="cap" style="font-weight:400">In fullscreen, press Space to start or pause the sprint and R to reset it. Escape leaves fullscreen.</p>
+      <p class="cap" style="font-weight:400">In fullscreen, press Space to start or pause the sprint and R to reset it. Escape leaves fullscreen. The sprint timer runs on this screen only.</p>
     </article>
     <article class="card c5">
       <div class="card-head"><span class="oc2 volt">${icon('play', 'i sm')}</span><h3 class="card-title">How to run it</h3></div>
       <ol class="tv-how">
-        <li>Plug any laptop into the shop TV.</li>
+        <li>Plug any laptop into the shop TV and sign in as a mentor.</li>
         <li>Open the Hub, go to Home, then Shop TV.</li>
-        <li>Press Fullscreen. It needs no clicks after that: the clock, countdown and plan move on by themselves.</li>
+        <li>Press Fullscreen. It needs no clicks after that: the clock, countdown, plan, prints and check-ins update by themselves.</li>
       </ol>
-      <p class="cap" style="font-weight:400">The Mechanism Lab cards join the TV the week of November 16. Kids never sign in on the TV; they scan the code with their own phones.</p>
+      <p class="cap" style="font-weight:400">Kids never sign in on the TV. They scan the code with their own phones, or type the code word on the check-in page.</p>
     </article>
   </div>`;
 
@@ -165,34 +145,38 @@ function shopTv(view, ctx) {
     const s = meetingNow(ctx, now);
     let lbl, target, what, meta;
     if (!s.m) {
-      lbl = 'Next meeting'; target = null; what = 'Nothing on the calendar yet.'; meta = '';
+      lbl = 'Next meeting'; target = null; what = hd.H.loaded ? 'Nothing on the calendar yet.' : 'Loading the calendar…'; meta = hd.H.loaded ? 'A mentor adds meetings in Logbook.' : '';
     } else if (s.on && s.next) {
-      lbl = 'Next block in'; target = s.next.at;
-      what = ctx.AGENDA.filter((a) => a.t === s.next.t).map((a) => a.what).join(' · ');
-      meta = `Starts at ${fmtTime(s.next.at)} · Shop room`;
+      lbl = 'Next block in'; target = s.next;
+      what = s.blocks.filter((a) => a.at.getTime() === s.next.getTime()).map((a) => a.what).join(' · ');
+      meta = `Starts at ${fmtTime(s.next)}${s.m.where ? ` · ${s.m.where}` : ''}`;
     } else if (s.on) {
-      lbl = 'Meeting ends in'; target = s.m.end; what = 'Clean up and write one line about today.'; meta = `Ends at ${fmtTime(s.m.end)}`;
+      lbl = `${s.m.title} ends in`; target = s.m.end; what = 'Clean up and write one line about today.'; meta = `Ends at ${fmtTime(s.m.end)}`;
     } else {
       const today = dayStart(now).getTime() === dayStart(s.m.start).getTime();
-      lbl = today ? 'Meeting starts in' : 'Next meeting in'; target = s.m.start;
-      what = `${today ? 'Today' : fmtLong.format(s.m.start)}, ${fmtTime(s.m.start)} to ${fmtTime(s.m.end)}`;
-      meta = 'Build session · Shop room · Sample schedule';
+      lbl = today ? 'Starts in' : 'Next up in'; target = s.m.start;
+      what = `${s.m.title}: ${today ? 'today' : fmtLong.format(s.m.start)}${s.m.allDay ? '' : `, ${fmtTime(s.m.start)} to ${fmtTime(s.m.end)}`}`;
+      meta = s.m.where || '';
     }
     const cd = $('#tvCd', view);
     if (target) {
       const [h, a] = cdHtml(target - now, false);
       if (cd.innerHTML !== h) cd.innerHTML = h;
       cd.setAttribute('aria-label', a);
-    } else cd.textContent = '--';
+    } else { cd.textContent = '--'; cd.removeAttribute('aria-label'); }
     $('#tvCdLbl', view).textContent = lbl;
     $('#tvCdWhat', view).textContent = what;
     $('#tvCdMeta', view).textContent = meta;
-    const agLbl = s.on ? "Today's plan" : s.m ? `Plan for ${dayStart(now).getTime() === dayStart(s.m.start).getTime() ? 'today' : s.m.start.toLocaleDateString('en-US', { weekday: 'long' })}` : 'Plan';
-    const agKey = `${agLbl}|${s.cur ? s.cur.t : ''}`;
+    const plan = hd.planFor(now);
+    const items = hd.planItems(plan);
+    const agLbl = !plan ? 'Plan' : plan.today ? "Today's plan" : `Plan for ${new Date(plan.date + 'T12:00').toLocaleDateString('en-US', { weekday: 'long' })}`;
+    const agKey = `${agLbl}|${s.cur ? s.cur.getTime() : ''}|${JSON.stringify(items.map((a) => [a.t, a.what, a.who]))}|${hd.H.loaded}`;
     if (agKey !== lastAg) {
       lastAg = agKey;
       $('#tvAgLbl', view).textContent = agLbl;
-      $('#tvAg', view).innerHTML = ctx.AGENDA.map((a) => `<div class="ag${s.cur && a.t === s.cur.t ? ' now' : ''}"><time>${esc(a.t)}</time><div>${esc(a.what)}</div>${a.who.length ? `<span class="who">${a.who.map((n) => av(n, 18)).join('')}</span>` : '<span></span>'}</div>`).join('');
+      $('#tvAg', view).innerHTML = items.length
+        ? items.map((a) => `<div class="ag${s.cur && a.at && a.at.getTime() === s.cur.getTime() ? ' now' : ''}"><time>${esc(a.t)}</time><div>${esc(a.what)}</div>${a.who.length ? `<span class="who">${a.who.map((n) => av(n, 18)).join('')}</span>` : '<span></span>'}</div>`).join('')
+        : `<div class="tv-meta">${hd.H.loaded ? 'No plan posted yet. A mentor adds it on Home.' : 'Loading…'}</div>`;
     }
     sprintTick(now);
   };
@@ -231,28 +215,51 @@ function shopTv(view, ctx) {
   wireSeg(view, 'sprint', (v) => { st.total = +v * 60e3; resetSprint(); });
   $('#tvGo', view).addEventListener('click', toggleSprint);
   $('#tvReset', view).addEventListener('click', resetSprint);
+  $('#tvShoutBtn', view).addEventListener('click', () => hd.shoutout());
 
-  // ---- Check-ins (sample)
-  const renderHere = () => {
-    $('#tvHere', view).innerHTML = st.here.map((n) => av(n, 28)).join('');
-    $('#tvHereN', view).textContent = `${st.here.length} of ${KIDS.length} here`;
-    $('#tvCheck', view).disabled = false;
+  // ---- Check-in: today's real code, its QR and who is here (refreshed every 30 seconds)
+  const renderCheckin = () => {
+    if (!info) return;
+    const qr = $('#tvQr', view);
+    const svg = String(info.svg || '').replace('<svg ', '<svg class="qr" role="img" aria-label="QR code for today\'s check-in" ');
+    if (qr.dataset.code !== info.code) { qr.innerHTML = svg; qr.dataset.code = info.code; }
+    const codeEl = $('#tvCode', view);
+    codeEl.textContent = info.code;
+    codeEl.setAttribute('aria-label', `Code word ${String(info.code).split('').join(' ')}`);
+    let host = '';
+    try { host = new URL(info.url).host; } catch (e) { /* no url */ }
+    $('#tvCodeHow', view).textContent = host ? `No camera? Go to ${host}/checkin and type the code.` : 'The code changes every day.';
+    const here = Array.isArray(info.here) ? info.here : [];
+    $('#tvHere', view).innerHTML = here.map((p) => av(p.name, 28)).join('');
+    $('#tvHereN', view).textContent = here.length ? `${here.length} of ${info.total || here.length} here` : 'Nobody has checked in yet today.';
   };
-  $('#tvCheck', view).addEventListener('click', () => {
-    const next = KIDS.find((k) => !st.here.includes(k.n));
-    if (!next) { st.here = []; renderHere(); ctx.toast('Everyone was here, so the sample list starts over.'); return; }
-    st.here.push(next.n);
-    renderHere();
-    ctx.toast(`${next.n} checked in. On the real TV this happens when they scan the code.`);
-  });
+  const loadCheckin = async () => {
+    try { info = await api.checkinInfo(); renderCheckin(); }
+    catch (err) { if (!info) { $('#tvCode', view).textContent = '--'; $('#tvHereN', view).textContent = "Couldn't load today's code. Trying again soon."; } }
+  };
 
-  // ---- Shoutouts (every 8 seconds; no fade when motion is reduced)
+  // ---- Printing: what's on the printer right now
+  const renderPrint = () => {
+    const el = $('#tvPrint', view);
+    if (!hd.H.loaded) { el.innerHTML = '<div>Loading…</div>'; return; }
+    const q = hd.printQueue();
+    const p = q.printing[0];
+    if (p) {
+      const pc = clamp(Math.round(Number(p.data.progress) || 0), 0, 100);
+      el.innerHTML = `<span class="r"><svg viewBox="0 0 44 44" aria-hidden="true"><circle cx="22" cy="22" r="18" fill="none" stroke="rgba(237,238,232,.16)" stroke-width="5"/><circle cx="22" cy="22" r="18" fill="none" stroke="#E8F542" stroke-width="5" stroke-linecap="round" stroke-dasharray="${R.toFixed(2)}" stroke-dashoffset="${(R * (1 - pc / 100)).toFixed(2)}"/></svg></span><div><b>${esc(hd.printName(p))}</b><br>${pc}%${p.data.printer ? ` on ${esc(p.data.printer)}` : ''} · for ${esc(hd.printWho(p))}${q.queued.length ? ` · ${q.queued.length} waiting` : ''}</div>`;
+    } else if (q.queued.length) {
+      el.innerHTML = `<div><b>${q.queued.length} waiting</b><br>Next up: ${esc(hd.printName(q.queued[0]))} for ${esc(hd.printWho(q.queued[0]))}</div>`;
+    } else el.innerHTML = '<div><b>Printer is free</b><br>Send a print request from Build.</div>';
+  };
+
+  // ---- Shoutouts (the newest ten, a new one every 8 seconds; no fade when motion is reduced)
   const shoutEl = $('#tvShout', view);
   const paintShout = () => {
-    const [who, text, from] = SHOUTS[shoutI % SHOUTS.length];
-    shoutEl.innerHTML = `${esc(text)}<small>${av(who, 18)} From ${esc(from)} · sample</small>`;
+    const list = hd.H.shoutouts.filter((r) => r.data && r.data.text).slice(0, 10);
+    if (!list.length) { shoutEl.innerHTML = hd.H.loaded ? 'No shoutouts yet. Give the first one with the + button on Home.' : 'Loading…'; return; }
+    const r = list[shoutI % list.length];
+    shoutEl.innerHTML = `${r.data.to ? `<b>${esc(r.data.to)}:</b> ` : ''}${esc(r.data.text)}<small>${av(r.data.to || r.author, 18)} From ${esc(r.author)}</small>`;
   };
-  paintShout();
   if (ctx.reduced) shoutEl.style.transition = 'none';
   timers.push(setInterval(() => {
     shoutI++;
@@ -286,8 +293,16 @@ function shopTv(view, ctx) {
     else if (e.key === 'r' || e.key === 'R') resetSprint();
   });
 
-  renderHere();
-  tick();
+  // ---- Live data: the TV reloads the team's records every 30 seconds
+  const refresh = () => { renderPrint(); paintShout(); lastAg = ''; tick(); };
+  offs.push(hd.onChange(refresh));
+  timers.push(setInterval(() => {
+    if (document.hidden) return;
+    loadCheckin();
+    hd.load(['event', 'agenda', 'print', 'shoutout']).then(() => hd.changed());
+  }, 30000));
+  loadCheckin();
+  refresh();
   timers.push(setInterval(tick, 1000));
 
   return () => {
@@ -307,9 +322,9 @@ const BUILTIN = [
   { id: 'print', cls: 'w-print', name: 'Print queue', ic: 'printer', sizes: [['small', 'Small'], ['default', 'Half'], ['full', 'Full']] },
 ];
 const EXTRAS = [
-  { id: 'league', name: 'Countdown to League meet 1', short: 'League meet 1 (sample Jan 16)', ic: 'trophy' },
-  { id: 'shout', name: 'Shoutout of the day', short: 'Shoutout of the day', ic: 'sparkle' },
-  { id: 'printer', name: 'Printer 1 right now', short: 'Printer 1 right now', ic: 'printer' },
+  { id: 'league', name: 'Countdown to the next meet', short: 'Next meet countdown', ic: 'trophy' },
+  { id: 'shout', name: 'Latest shoutout', short: 'Latest shoutout', ic: 'sparkle' },
+  { id: 'printer', name: 'Printer right now', short: 'Printer right now', ic: 'printer' },
   { id: 'word', name: 'Word of the day', short: 'Word of the day', ic: 'book' },
   { id: 'arena', name: 'My best Arena time', short: 'My best Arena time', ic: 'gamepad' },
   { id: 'week', name: 'Season week', short: 'Season week', ic: 'calendar' },
@@ -322,9 +337,41 @@ const SIZE_CLS = { small: 'w-small', wide: 'w-wide', full: 'w-full' };
 const defaultLayout = () => BUILTIN.map((w) => ({ id: w.id, hidden: false, size: 'default' }));
 const meta = (id) => (id.startsWith('x:') ? { ...X[id.slice(2)], sizes: XSIZES, extra: true } : B[id]);
 
-function readLayout(ctx) {
-  let raw = null;
-  try { raw = JSON.parse(ctx.local.get('kwc-layout') || 'null'); } catch (e) { raw = null; }
+// Each person's layout is one `layout` record on their account, updated in place.
+let layoutRec = null;    // the saved record, once loaded
+let layoutRaw = null;    // { v, items } as last saved or loaded
+let layoutReady = null;  // promise for the first load
+let saveTimer = 0, saveChain = Promise.resolve();
+function loadLayoutRec(ctx) {
+  if (!layoutReady) {
+    layoutReady = api.list('layout').then((items) => {
+      const me = session.user && session.user.id;
+      layoutRec = (items || []).find((r) => r.user_id === me) || null;
+      if (layoutRec) layoutRaw = layoutRec.data;
+      else {
+        // Moving from the preview: a layout kept on this device becomes the account's layout.
+        let old = null;
+        try { old = JSON.parse(ctx.local.get('kwc-layout') || 'null'); } catch (e) { old = null; }
+        if (old && Array.isArray(old.items)) { layoutRaw = old; persistLayout(ctx); }
+      }
+    }).catch((err) => { console.error(err); });
+  }
+  return layoutReady;
+}
+function persistLayout(ctx, onErr) {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    const data = { v: 1, items: (layoutRaw && layoutRaw.items) || [] };
+    saveChain = saveChain.then(async () => {
+      try {
+        if (layoutRec) layoutRec = { ...layoutRec, ...(await api.update('layout', layoutRec.id, data)) };
+        else layoutRec = await api.create('layout', data);
+      } catch (err) { if (onErr) onErr(err); else console.error(err); }
+    });
+  }, 400);
+}
+function readLayout() {
+  const raw = layoutRaw;
   const items = [];
   const seen = new Set();
   if (raw && Array.isArray(raw.items)) {
@@ -345,35 +392,40 @@ function readLayout(ctx) {
   }
   return items;
 }
-const saveLayout = (ctx, items) => ctx.local.set('kwc-layout', JSON.stringify({ v: 1, items }));
+const saveLayout = (ctx, items) => { layoutRaw = { v: 1, items }; persistLayout(ctx, (err) => ctx.toast(err.message)); };
 const isDefault = (items) => JSON.stringify(items) === JSON.stringify(defaultLayout());
 
-function countMeetings(from, to) {
-  let n = 0;
-  for (let d = dayStart(from); d < to; d = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1)) {
-    const wd = d.getDay();
-    if ((wd === 2 || wd === 4) && !(d >= BREAK[0] && d <= BREAK[1])) {
-      const end = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 17, 30);
-      if (end > from) n++;
-    }
-  }
-  return n;
+// How many calendar events fall between now and a day.
+function countEvents(ctx, from, to) {
+  return HD(ctx).allEvents().filter((e) => e.end > from && e.start < to && !/meet|competition|tournament|scrimmage/i.test(`${e.kind} ${e.title}`)).length;
 }
 
 function extraHtml(id, ctx) {
   const now = new Date();
   const m = X[id];
   const head = (t) => `<div class="card-head"><span class="oc2">${icon(m.ic, 'i sm')}</span><h3 class="card-title" id="xw-${id}">${m.name}</h3>${t || ''}</div>`;
+  const hd = HD(ctx);
   if (id === 'league') {
-    const days = Math.max(0, Math.ceil((dayStart(LEAGUE1) - dayStart(now)) / DAY));
-    return `${head(tag('Sample date'))}<div><div class="big">${days} <span class="unit">days</span></div><p class="cap" style="font-weight:400">Saturday, January 16. About ${countMeetings(now, LEAGUE1)} meetings left before it, not counting winter break.</p></div>`;
+    const m = hd.meets().find((x) => x.at >= dayStart(now));
+    if (!m) return `${head('')}<div><div class="big">Not set</div><p class="cap" style="font-weight:400">${hd.H.loaded ? 'No meet on the calendar yet. Once a mentor adds one in Logbook, the countdown starts here.' : 'Loading…'}</p></div>`;
+    const days = Math.max(0, Math.round((m.at - dayStart(now)) / DAY));
+    const n = countEvents(ctx, now, m.at);
+    return `${head('')}<div><div class="big">${days === 0 ? 'Today!' : `${days} <span class="unit">day${days === 1 ? '' : 's'}</span>`}</div><p class="cap" style="font-weight:400">${esc(m.title)}, ${m.at.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}.${n ? ` ${n} meeting${n === 1 ? '' : 's'} on the calendar before it.` : ''}</p></div>`;
   }
   if (id === 'shout') {
-    const [who, text, from] = SHOUTS[dayIndex(now) % SHOUTS.length];
-    return `${head(SAMPLE)}<div class="xw-shout">${av(who, 40)}<p>${esc(text)}</p></div><p class="cap">From ${esc(from)}. A new one every day.</p>`;
+    const r = hd.H.shoutouts.find((x) => x.data && x.data.text);
+    if (!r) return `${head('')}<p class="cap" style="font-weight:400">${hd.H.loaded ? 'No shoutouts yet. Who helped you this week?' : 'Loading…'}</p><div class="card-foot"><span></span><button class="btn soft pill" type="button" data-xshout="1">${icon('sparkle', 'i sm')}Give one</button></div>`;
+    const to = r.data.to || r.author;
+    return `${head('')}<div class="xw-shout">${av(to, 40)}<p>${r.data.to ? `<b>${esc(r.data.to)}:</b> ` : ''}${esc(r.data.text)}</p></div><div class="card-foot"><span class="cap">From ${esc(r.author)}</span><button class="btn soft pill" type="button" data-xshout="1">${icon('sparkle', 'i sm')}Give one</button></div>`;
   }
   if (id === 'printer') {
-    return `${head(SAMPLE)}<div class="row">${ringSm(PRINT.pct)}<div><div class="t">${PRINT.what}</div><div class="cap">${PRINT.pct}% done on ${PRINT.printer} · ${PRINT.left}</div></div></div><p class="cap" style="font-weight:400">Next in line: the ball ramp guide, about 2 hours.</p>`;
+    const q = hd.printQueue();
+    const p = q.printing[0];
+    const nextQ = q.queued[0];
+    const after = nextQ ? `Next in line: ${esc(hd.printName(nextQ))} for ${esc(hd.printWho(nextQ))}.` : 'Nothing else waiting.';
+    if (!p) return `${head('')}<div><div class="big">${hd.H.loaded ? 'Free' : '…'}</div><p class="cap" style="font-weight:400">${hd.H.loaded ? `Nothing is printing right now. ${after}` : 'Loading…'}</p></div>`;
+    const pc = clamp(Math.round(Number(p.data.progress) || 0), 0, 100);
+    return `${head('')}<div class="row">${ringSm(pc)}<div><div class="t">${esc(hd.printName(p))}</div><div class="cap">${pc}% done${p.data.printer ? ` on ${esc(p.data.printer)}` : ''} · for ${esc(hd.printWho(p))}</div></div></div><p class="cap" style="font-weight:400">${after}</p>`;
   }
   if (id === 'word') {
     const [t, cat, d] = GLOSSARY[dayIndex(now) % GLOSSARY.length];
@@ -396,6 +448,15 @@ function ringSm(pct) {
   return `<span class="xw-ring"><svg viewBox="0 0 44 44" aria-hidden="true"><circle class="track" cx="22" cy="22" r="${r}"/><circle class="val" cx="22" cy="22" r="${r}" style="stroke-dasharray:${C.toFixed(2)};stroke-dashoffset:${(C * (1 - clamp(pct, 0, 100) / 100)).toFixed(2)}"/></svg><span>${pct}%</span></span>`;
 }
 
+// Load this person's saved layout once, then lay out the dashboard.
+export async function initLayout(bento, ctx) {
+  await loadLayoutRec(ctx);
+  applyLayout(bento, ctx);
+  if (bento && !bento.dataset.shoutWired) {
+    bento.dataset.shoutWired = '1';
+    bento.addEventListener('click', (e) => { if (e.target.closest('[data-xshout]')) HD(ctx).shoutout(); });
+  }
+}
 export function applyLayout(bento, ctx) {
   if (!bento) return;
   const items = readLayout(ctx);
@@ -426,10 +487,12 @@ function customize(view, ctx) {
   const bento = ctx.bento;
   bento.classList.add('editing');
   let items = readLayout(ctx);
+  let alive = true;
+  loadLayoutRec(ctx).then(() => { if (!alive) return; items = readLayout(ctx); applyLayout(bento, ctx); render(); });
   const visible = () => items.filter((i) => !i.hidden).length;
 
   view.innerHTML = `<div class="zv">
-    ${strip("Make Home yours: move, resize, hide and add widgets. Changes show up on the dashboard below right away. Your layout lives on this device only, so nobody else's Home changes.", [tag('Phase 1 · doors open Dec 1')])}
+    ${strip("Make Home yours: move, resize, hide and add widgets. Changes show up on the dashboard below right away and save to your account, so nobody else's Home changes.")}
     <article class="card c8">
       <div class="card-head"><span class="oc2">${icon('layers', 'i sm')}</span><h3 class="card-title">Your widgets</h3><span class="tag" id="cuCount"></span></div>
       <div class="cust" id="cuList"></div>
@@ -438,8 +501,8 @@ function customize(view, ctx) {
       <div class="card-head"><span class="oc2 volt">${icon('plus', 'i sm')}</span><h3 class="card-title">Add a widget</h3></div>
       <p class="cap" style="font-weight:400">Pick any you like. Home shows up to ${MAX_VISIBLE} widgets at once.</p>
       <div class="extras" id="cuExtras"></div>
-      <div class="recap">Coach can set the team's starting layout in Coach tools. Each kid's own layout lives on their own device, so a new phone or laptop starts from the team layout.</div>
-      <div class="card-foot"><span></span><button class="btn ghost pill" type="button" id="cuReset">${icon('reset', 'i sm')}Reset to team layout</button></div>
+      <div class="recap">Your layout follows you: sign in on any phone or laptop and your Home looks the same.</div>
+      <div class="card-foot"><span class="cap" id="cuSaved" aria-live="polite"></span><button class="btn ghost pill" type="button" id="cuReset">${icon('reset', 'i sm')}Reset to the standard layout</button></div>
     </article>
   </div>`;
 
@@ -479,6 +542,8 @@ function customize(view, ctx) {
   };
   const commit = (focusKey) => {
     saveLayout(ctx, items);
+    const sv = $('#cuSaved', view);
+    if (sv) sv.textContent = 'Saved to your account';
     applyLayout(bento, ctx);
     items = readLayout(ctx);
     render(focusKey);
@@ -522,15 +587,15 @@ function customize(view, ctx) {
   });
   $('#cuReset', view).addEventListener('click', () => {
     items = defaultLayout();
-    ctx.local.set('kwc-layout', '');
+    saveLayout(ctx, items);
     applyLayout(bento, ctx);
     render();
     $('#cuReset', view).focus({ preventScroll: true });
-    ctx.toast('Back to the team layout.');
+    ctx.toast('Back to the standard layout.');
   });
 
   render();
-  return () => { bento.classList.remove('editing'); };
+  return () => { alive = false; bento.classList.remove('editing'); };
 }
 const slugId = (id) => id.replace(/[^a-z0-9]/gi, '-');
 

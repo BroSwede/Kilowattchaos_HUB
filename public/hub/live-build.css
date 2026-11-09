@@ -1,1 +1,25 @@
-/* Live-site styles for the build agent's zones. */
+/* Live-site styles for the build agent's zones (Robot and Build). */
+.lb-go { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.lb-go .btn { white-space: nowrap; }
+.lb-hot { color: var(--negative); }
+.lb-issue.fixed { opacity: .62; }
+.lb-issue .meta .avt { vertical-align: -3px; }
+.lb-stage { display: flex; flex-direction: row; align-items: center; justify-content: flex-start; gap: 10px; text-align: left; }
+.lb-stage .inp { width: auto; min-width: 180px; height: 36px; }
+.lb-tags { gap: 4px; }
+.lb-facts { margin: 0; }
+.job.lb-mine { box-shadow: inset 3px 0 0 var(--volt); }
+.lb-rqst { width: auto; height: 32px; font-size: 13px; padding: 0 8px; }
+.tr.lb-inv { grid-template-columns: 48px minmax(0, 1.8fr) minmax(0, 1.2fr) 64px 70px 84px; }
+.tr.lb-inv .lb-st { height: 22px; font-size: 11px; margin-left: 4px; }
+.tr.lb-inv .go { text-align: right; }
+@media (max-width: 759px) {
+  .tr.lb-inv { grid-template-columns: 40px minmax(0, 1fr) auto; gap: 2px 10px; }
+  .tr.lb-inv.th { display: none; }
+  .tr.lb-inv .lb-bin { grid-row: 1 / span 2; }
+  .tr.lb-inv .sku { grid-column: 2; grid-row: 2; }
+  .tr.lb-inv .q:not(.lb-rb) { grid-column: 3; grid-row: 1; }
+  .tr.lb-inv .lb-rb { display: none; }
+  .tr.lb-inv .go { grid-column: 3; grid-row: 2; }
+  .lb-go { flex-direction: row; flex-wrap: wrap; justify-content: flex-end; }
+}

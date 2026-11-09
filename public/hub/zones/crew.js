@@ -1,247 +1,231 @@
-// Crew zone: Chat, Inspiration, People, Feedback.
-// Everything here is sample data. Kids appear by display name and robot avatar only. Chat stays off until a
-// second YPP-screened adult is in place, mentors can read every channel, and there are no private messages.
-import { $, $$, esc, icon, tag, SAMPLE, strip, av, dot, pill, seg, wireSeg, drawer, closeDrawer, codeBlock, KIDS, KID, MENTOR } from './common.js';
-import { SUBSYS } from './robot.js';
+// Crew zone: Chat, Inspiration, People, Feedback. Everything here comes from the team database.
+// Kids appear by display name and robot avatar only. Chat posts only when a mentor has switched chat on
+// (after naming a second youth-protection-trained adult), mentors can read and remove anything, and there
+// are no private messages, ever.
+import { $, $$, esc, icon, tag, strip, av, dot, pill, seg, wireSeg, drawer, closeDrawer } from './common.js';
+import { api, session, isMentor, me } from '../api.js';
 
 const EMOJI = ['👍', '🎉', '💡', '❤️', '😂', '👀'];
-const ME = 'Sparky';
+const EMAIL = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i;
+const PHONE = /(?:\+?\d[\s.-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}\b/;
+const myId = () => session.user?.id || '';
+const isMine = (r) => r.user_id === myId();
+const canRemove = (r) => isMine(r) || isMentor();
+const roleOf = (name) => (session.roster.find((p) => p.name === name) || {}).role;
+const roleTag = (who) => (roleOf(who) === 'mentor' ? '<span class="tag dark role">Mentor</span>' : '');
+const youTag = (who) => (who === me() ? ' <span class="cap">(you)</span>' : '');
+const errMsg = (err) => (err && err.message) || 'That did not save. Try again.';
+const loading = (t = 'Loading…') => `<div class="live-empty" role="status">${t}</div>`;
+const empty = (t) => `<div class="live-empty">${t}</div>`;
+
+const fmtTime = new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit' });
+const fmtDay = new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+const fmtMD = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' });
+const dayKey = (d) => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+function dayLabel(d) {
+  const now = new Date(), y = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+  if (dayKey(d) === dayKey(now)) return 'Today';
+  if (dayKey(d) === dayKey(y)) return 'Yesterday';
+  return fmtDay.format(d);
+}
+const byOld = (a, b) => new Date(a.created_at) - new Date(b.created_at);
+
+// Votes are shared by several pages (ideas, feedback, chat reactions, inspiration likes); each says what it is for.
+const votesFor = (votes, field, id) => votes.filter((v) => v.data && v.data[field] === id);
 
 // ================================================================= Chat
 const CHANS = [
-  { id: 'announcements', name: 'announcements', topic: 'Mentors post here, and everyone can react.', un: 1, ro: true },
-  { id: 'general', name: 'general', topic: 'Anything about the team. Kind and on topic.', un: 3 },
-  { id: 'build', name: 'build', topic: 'Building, prototyping and testing the robot.', un: 2 },
-  { id: 'build-gecko', name: 'Intake: gecko spacing', parent: 'build', topic: 'A thread in #build about how far apart the gecko wheels go.', un: 0 },
-  { id: 'build-hood', name: 'Launcher hood', parent: 'build', topic: 'A thread in #build about the adjustable hood over the flywheel.', un: 1 },
-  { id: 'help', name: 'help', topic: 'Stuck? Ask here. No question is too small, and a mentor answers too.', un: 1 },
-  { id: 'shoutouts', name: 'shoutouts', topic: 'Thank a teammate. Shoutouts show on the shop TV.', un: 0 },
+  { id: 'announcements', name: 'announcements', topic: 'Mentors post here, and everyone can react.', ro: true },
+  { id: 'general', name: 'general', topic: 'Anything about the team. Kind and on topic.' },
+  { id: 'build', name: 'build', topic: 'Building, prototyping and testing the robot.' },
+  { id: 'code', name: 'code', topic: 'Java, OpModes and the BioBuzz Arena.' },
+  { id: 'help', name: 'help', topic: 'Stuck? Ask here. No question is too small, and a mentor answers too.' },
+  { id: 'shoutouts', name: 'shoutouts', topic: 'Thank a teammate for something they did.' },
 ];
 const CH = Object.fromEntries(CHANS.map((c) => [c.id, c]));
-const chLabel = (c) => (c.parent ? `#${CH[c.parent].name} › ${c.name}` : `#${c.name}`);
-
-// Live cards: [icon, title, detail, action]. Actions: 'goto:zone|Sub' or 'issue'.
-const CARD = {
-  intake: ['bulb', 'Intake test: 7 of 10 balls', 'Gecko wheels 4 mm closer · Nov 5', 'goto:build|Ideas'],
-  print: ['printer', '4 roller hubs printing', '62% done on Printer 1', 'goto:build|Print Shop'],
-  issue: ['pin', 'Pinned issue', 'The bearing next to the flywheel keeps popping out', 'issue'],
-  event: ['calendar', 'League meet 1', 'Sat Jan 16 (sample)', 'goto:logbook|Competitions'],
-};
-const POLL = { q: 'What should we call the robot? Vote once, and you can change it.', opts: ['Chaos Engine', 'Sir Spins-a-Lot', 'Volt Runner', 'The Bumblebot'], base: [3, 1, 2, 1], mine: null };
-
-// [who, time, body html, extra, reactions]. Day separators come from strings in the list.
-const R = (o) => Object.fromEntries(Object.entries(o).map(([e, n]) => [e, { n, me: false }]));
-const MSGS = {
-  announcements: [
-    'Thursday, Nov 5',
-    ['Coach', '5:40 PM', 'No meeting on Thursday, Nov 26. Happy Thanksgiving, everyone! We meet again on Tuesday, Dec 1.', null, R({ '👍': 5, '🎉': 2 })],
-    'Friday, Nov 6',
-    ['Coach', '4:05 PM', 'The first league meet is on the calendar. Start thinking about what the robot needs to do <b>every single time</b> by then.', { card: 'event' }, R({ '👀': 4, '🎉': 1 })],
-    ['Coach', '4:07 PM', 'The Hub opens for the whole team on Dec 1. Chat stays off until a second screened adult joins me, so keep asking questions at meetings for now.', null, R({ '👍': 6 })],
-  ],
-  general: [
-    'Thursday, Nov 5',
-    ['Nova', '3:58 PM', 'Who wants to help plan the library robot demo in December?', null, R({ '👍': 3, '🎉': 1 })],
-    ['Pixel', '4:20 PM', 'We need a robot name before the league meet. Vote!', { poll: true }, R({ '💡': 2 })],
-    ['Rivet', '4:22 PM', 'Chaos Engine has my vote 😂', null, R({ '😂': 4 })],
-    'Friday, Nov 6',
-    ['Gizmo', '3:31 PM', 'Has anyone seen the 2.5 mm hex key? It keeps walking away.', null, R({ '👀': 2 })],
-    ['Coach', '3:40 PM', 'It lives on the tool wall now, with a label under it. Please put it back there when you finish.', null, R({ '👍': 4, '💡': 1 })],
-  ],
-  build: [
-    'Thursday, Nov 5',
-    ['Pixel', '4:48 PM', 'Moved the gecko wheels 4 mm closer and ran the pile test again:', { card: 'intake' }, R({ '🎉': 4, '👍': 2 })],
-    ['Gizmo', '5:02 PM', 'Pinned this so we don\'t forget it next time:', { card: 'issue' }, R({ '👀': 3 })],
-    ['Sparky', '5:15 PM', 'Flywheel spin-up is 1.4 s on a fresh battery. I\'ll test a tired one on Tuesday.', null, R({ '💡': 2 })],
-    'Friday, Nov 6',
-    ['Rivet', '3:36 PM', 'New roller hubs for the intake are on the printer:', { card: 'print' }, R({ '👍': 3 })],
-  ],
-  'build-gecko': [
-    'Thursday, Nov 5',
-    ['Pixel', '4:52 PM', 'Next try: 6 mm closer. Any guesses before we test?', null, R({ '💡': 1 })],
-    ['Nova', '4:55 PM', 'I think the balls start getting squished too much. My guess is 8 of 10.', null, R({ '👍': 2 })],
-    ['Coach', '4:58 PM', 'Great question. Write your guesses in the session note before you test, then compare. That\'s the kind of thing judges love to see.', null, R({ '👍': 3 })],
-  ],
-  'build-hood': [
-    'Friday, Nov 6',
-    ['Sparky', '3:45 PM', 'Sketching a hood with three angle settings: near, middle and far. It\'s in Onshape.', null, R({ '🎉': 2 })],
-    ['Rivet', '3:49 PM', 'The launcher mount needs a brace first, or the hood will wobble at full speed.', null, R({ '💡': 2 })],
-  ],
-  help: [
-    'Thursday, Nov 5',
-    ['Echo', '4:10 PM', 'My autonomous drives way too far. It should go 24 inches and it goes off the tape. Here\'s the line:', { code: 'static final double TICKS_PER_INCH = 537.7 / 104;' }, R({ '👀': 2 })],
-    ['Byte', '4:16 PM', 'Found it! 104 is the wheel diameter in millimeters. You need the distance around the wheel (the circumference) in inches:', { code: 'static final double TICKS_PER_INCH = 537.7 / (Math.PI * 104 / 25.4);' }, R({ '💡': 4, '🎉': 2 })],
-    ['Echo', '4:31 PM', 'It stops right on the tape now. Thank you!!', null, R({ '❤️': 3 })],
-    ['Coach', '4:35 PM', 'Lovely teamwork, you two. Byte, that one deserves a shoutout in #shoutouts.', null, R({ '👍': 4 })],
-  ],
-  shoutouts: [
-    'Thursday, Nov 5',
-    ['Echo', '4:40 PM', 'Shoutout to Byte for finding my ticks-per-inch bug! 🎉', null, R({ '❤️': 5, '🎉': 2 })],
-    'Friday, Nov 6',
-    ['Pixel', '5:20 PM', 'Shoutout to Rivet for staying to the end to brace the launcher mount.', null, R({ '🎉': 3 })],
-    ['Coach', '5:28 PM', 'Shoutout to everyone for putting the tools back on the wall this week. The shop looks great.', null, R({ '❤️': 4, '👍': 3 })],
-  ],
-};
-// Give each message an id and a reactions object once.
-for (const [cid, list] of Object.entries(MSGS)) {
-  list.forEach((m, i) => { if (typeof m !== 'string') MSGS[cid][i] = { id: `${cid}-${i}`, who: m[0], t: m[1], body: m[2], x: m[3] || {}, r: m[4] || {} }; });
-}
-const MEMBERS_ON = ['Coach', 'Sparky', 'Pixel', 'Byte'];
 let lastChan = 'general';
-let msgSeq = 0;
-
-// Sample chat hours: Monday to Friday, 3 PM to 8 PM, local time.
-function chatHours(now = new Date()) {
-  const d = now.getDay(), h = now.getHours();
-  const weekday = d >= 1 && d <= 5;
-  if (weekday && h >= 15 && h < 20) return { open: true, text: 'Open now, until 8 PM' };
-  if (weekday && h < 15) return { open: false, text: 'Closed, opens today at 3 PM' };
-  if (d >= 1 && d <= 4) return { open: false, text: 'Closed, opens tomorrow at 3 PM' };
-  return { open: false, text: 'Closed, opens Monday at 3 PM' };
-}
-const timeNow = () => new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-const roleTag = (who) => (who === MENTOR.n ? '<span class="tag dark role">Mentor</span>' : '');
-
-function liveCard(key) {
-  const [ic, t, d, act] = CARD[key];
-  const attr = act === 'issue' ? 'data-issue="1"' : `data-goto="${act.slice(5)}"`;
-  return `<button class="live-card" type="button" ${attr}><span class="oc2${act === 'issue' ? ' volt' : ''}">${icon(ic, 'i sm')}</span><span class="grow"><b>${t}</b><span class="cap">${d}</span></span>${icon('arrow', 'i sm')}</button>`;
-}
-function pollHtml() {
-  const tot = POLL.base.reduce((a, b) => a + b, 0) + (POLL.mine === null ? 0 : 1);
-  return `<div class="poll" role="group" aria-label="${esc(POLL.q)}"><span class="cap">${POLL.q} ${tot} votes (sample)</span>${POLL.opts.map((o, i) => {
-    const n = POLL.base[i] + (POLL.mine === i ? 1 : 0), pct = tot ? Math.round((n / tot) * 100) : 0;
-    return `<button type="button" data-vote="${i}" aria-pressed="${POLL.mine === i}"><i style="width:${pct}%"></i><span>${o}</span><span class="num">${pct}%</span></button>`;
-  }).join('')}</div>`;
-}
-function reactsHtml(m) {
-  const list = Object.entries(m.r).filter(([, v]) => v.n + (v.me ? 1 : 0) > 0);
-  return `<div class="reacts">${list.map(([e, v]) => {
-    const n = v.n + (v.me ? 1 : 0);
-    return `<button class="react" type="button" data-react="${e}" aria-pressed="${v.me}" aria-label="${e} ${n}, ${v.me ? 'remove your reaction' : 'add yours'}">${e} <span class="num">${n}</span></button>`;
-  }).join('')}<button class="react add" type="button" data-addr="1" aria-label="Add a reaction" aria-expanded="false">${icon('plus', 'i sm')}</button><span class="epick" hidden>${EMOJI.map((e) => `<button type="button" data-react="${e}" aria-label="React with ${e}">${e}</button>`).join('')}</span></div>`;
-}
-function msgHtml(m) {
-  const x = m.x;
-  return `<div class="msg${m.local ? ' local' : ''}" data-mid="${m.id}">
-    ${av(m.who, 36)}
-    <div class="mcol">
-      <div class="who">${m.who}${m.who === ME ? ' <span class="cap">(you)</span>' : ''}${roleTag(m.who)}<time>${m.t}</time></div>
-      <div class="body">${m.body}</div>
-      ${x.card ? liveCard(x.card) : ''}${x.poll ? pollHtml() : ''}${x.code ? codeBlock(x.code) : ''}
-      ${m.local ? `<span class="cap local-note">${icon('alert', 'i sm')}Only on this device (preview). Nobody else sees it.</span>` : ''}
-      ${reactsHtml(m)}
-    </div>
-    <div class="msg-acts"><button type="button" data-quick="1" aria-label="React with a thumbs up" title="Thumbs up">👍</button><button type="button" data-reply="1" aria-label="Reply to ${m.who}" title="Reply">${icon('chat', 'i sm')}</button>${m.who === ME ? '' : `<button type="button" data-report="1" aria-label="Report this message" title="Report">${icon('flag', 'i sm')}</button>`}</div>
-  </div>`;
-}
-function msgsHtml(list) {
-  return list.map((m) => (typeof m === 'string' ? `<div class="day-sep" role="separator">${m}</div>` : msgHtml(m))).join('');
-}
-const findMsg = (cid, id) => MSGS[cid].find((m) => typeof m !== 'string' && m.id === id);
-
-const EMAIL = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i;
-const PHONE = /(?:\+?\d[\s.-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}\b/;
 
 function chatPage(view, ctx) {
   let cur = ctx.state.chan && CH[ctx.state.chan] ? ctx.state.chan : lastChan;
   delete ctx.state.chan;
   const draft = ctx.state.chatDraft || '';
   delete ctx.state.chatDraft;
-  const hrs = chatHours();
+  const on = !!session.team.chatEnabled;
+  let posts = [], reacts = [], sig = '', loaded = false, alive = true;
+  let seen = {};
+  try { seen = JSON.parse(ctx.local.get('kwc-chat-seen') || '{}') || {}; } catch (e) { seen = {}; }
+  const roster = session.roster || [];
+  const here = roster.filter((p) => p.here), away = roster.filter((p) => !p.here);
+  const offText = isMentor()
+    ? `<b>Chat is off.</b> Turn it on in <a href="/mentor">Mentor tools</a> after you name a second youth-protection-trained adult. Until then, nobody can post.`
+    : '<b>Chat is off for now.</b> It turns on once a mentor sets up a second youth-protection-trained adult. Until then, ask your questions at meetings.';
   view.innerHTML = `<div class="zv">
-    ${strip('Team channels for questions, progress and thank-yous. This page is a preview with sample messages, and nothing you type leaves this device.', [tag('Phase 2 · Dec 7–18'), SAMPLE])}
+    ${strip('Team channels for questions, progress and thank-yous. Everyone on the team can read every channel.', [tag(on ? 'Chat is on' : 'Chat is off')])}
     <div class="safety-bar" role="note">
       <span class="oc2 volt">${icon('alert', 'i sm')}</span>
-      <span class="sb-txt"><b>Chat stays off until a second YPP-screened adult joins Coach.</b> Mentors can read every channel, and there are no private messages, ever.</span>
-      <span id="chatHrs">${pill(hrs.text, hrs.open ? 'var(--ok)' : 'var(--stone)')}</span>
-      <span class="cap">Sample hours: Mon–Fri, 3–8 PM</span>
+      <span class="sb-txt">${on ? '<b>Chat is on.</b>' : offText} Mentors can read every channel, and there are no private messages, ever.</span>
+      ${pill(on ? 'On' : 'Off', on ? 'var(--ok)' : 'var(--stone)')}
     </div>
     <div class="chat">
       <nav class="ch-side" aria-label="Channels">
         <h5>Channels</h5>
-        ${CHANS.map((c) => `<button class="chn${c.parent ? ' thread' : ''}" type="button" data-ch="${c.id}" aria-current="${c.id === cur}">${c.parent ? icon('chat', 'i sm') : '<span class="hash">#</span>'}<span class="cn">${c.name}</span>${c.un ? `<span class="un" aria-label="${c.un} unread">${c.un}</span>` : ''}</button>`).join('')}
-        <p class="cap ch-side-note">Unread counts are sample data.</p>
+        ${CHANS.map((c) => `<button class="chn" type="button" data-ch="${c.id}" aria-current="${c.id === cur}"><span class="hash">#</span><span class="cn">${c.name}</span></button>`).join('')}
       </nav>
       <section class="ch-main" aria-label="Messages">
-        <div class="ch-pick"><select class="inp" id="chatPick" aria-label="Channel">${CHANS.map((c) => `<option value="${c.id}"${c.id === cur ? ' selected' : ''}>${esc(chLabel(c))}${c.un ? ` (${c.un} new)` : ''}</option>`).join('')}</select></div>
+        <div class="ch-pick"><select class="inp" id="chatPick" aria-label="Channel">${CHANS.map((c) => `<option value="${c.id}"${c.id === cur ? ' selected' : ''}>#${esc(c.name)}</option>`).join('')}</select></div>
         <div class="ch-head" id="chatHead"></div>
-        <div class="msgs" id="chatMsgs" aria-live="polite"></div>
+        <div class="msgs" id="chatMsgs" aria-live="polite">${loading('Loading messages…')}</div>
         <div class="typing" id="chatNote" aria-live="polite"></div>
         <div class="composer">
           <label class="sr" for="chatIn">Message</label>
-          <textarea class="inp" id="chatIn" rows="1" placeholder="Message"></textarea>
+          <textarea class="inp" id="chatIn" rows="1" maxlength="1500" placeholder="Message"></textarea>
           <button class="icon-btn solid" type="button" id="chatSend" aria-label="Send">${icon('arrow')}</button>
         </div>
       </section>
-      <aside class="ch-mem" aria-label="Members">
-        <h5>Online (sample)</h5>
-        ${MEMBERS_ON.map((n) => member(n, true)).join('')}
-        <h5>Offline</h5>
-        ${KIDS.map((k) => k.n).filter((n) => !MEMBERS_ON.includes(n)).map((n) => member(n, false)).join('')}
-        <div class="mem-note">${icon('users', 'i sm')}<span>A second mentor is needed before chat turns on. Coach is the only screened adult right now.</span></div>
+      <aside class="ch-mem" aria-label="Team">
+        <h5>Here today</h5>
+        ${here.length ? here.map((p) => member(p.name, true)).join('') : '<p class="cap kc-mem-empty">Nobody has checked in yet today.</p>'}
+        <h5>Team</h5>
+        ${away.map((p) => member(p.name, false)).join('')}
+        ${on ? '' : `<div class="mem-note">${icon('users', 'i sm')}<span>Chat needs two trained adults before it turns on.</span></div>`}
       </aside>
     </div>
   </div>`;
-  const msgsEl = $('#chatMsgs', view), inp = $('#chatIn', view), note = $('#chatNote', view);
+  const msgsEl = $('#chatMsgs', view), inp = $('#chatIn', view), note = $('#chatNote', view), sendBtn = $('#chatSend', view);
+  const canPost = () => on && (!CH[cur].ro || isMentor());
   const hint = () => {
-    const h = chatHours();
-    if (CH[cur].ro) return 'Only mentors post in #announcements. You can still react to posts.';
-    return h.open ? 'Enter sends. Shift+Enter starts a new line.' : 'Chat is closed right now, but in this preview you can still try the composer.';
+    if (!on) return 'Chat is off, so the message box is turned off too.';
+    if (CH[cur].ro && !isMentor()) return 'Only mentors post in #announcements. You can still react to posts.';
+    return 'Enter sends. Shift+Enter starts a new line.';
   };
   const setNote = (t, warn = false) => { note.textContent = t; note.classList.toggle('warn', warn); };
+  const chanPosts = (c) => posts.filter((p) => (p.data.channel || 'general') === c).sort(byOld);
+  const unread = (c) => chanPosts(c).filter((p) => !isMine(p) && new Date(p.created_at) > new Date(seen[c] || 0)).length;
+  const markSeen = () => {
+    const list = chanPosts(cur);
+    if (!list.length) return;
+    seen[cur] = list[list.length - 1].created_at;
+    ctx.local.set('kwc-chat-seen', JSON.stringify(seen));
+  };
+  const sideCounts = () => {
+    $$('.chn', view).forEach((b) => {
+      const c = b.dataset.ch, n = c === cur ? 0 : unread(c);
+      b.setAttribute('aria-current', String(c === cur));
+      const u = $('.un', b);
+      if (u) u.remove();
+      if (n) b.insertAdjacentHTML('beforeend', `<span class="un" aria-label="${n} new">${n}</span>`);
+    });
+    $$('#chatPick option', view).forEach((o) => { const n = o.value === cur ? 0 : unread(o.value); o.textContent = `#${CH[o.value].name}${n ? ` (${n} new)` : ''}`; });
+  };
+  const reactsOf = (m) => {
+    const out = {};
+    for (const v of votesFor(reacts, 'chat', m.id)) {
+      const e = v.data.emoji || '👍';
+      if (!out[e]) out[e] = { n: 0, mine: null };
+      out[e].n++;
+      if (isMine(v)) out[e].mine = v;
+    }
+    return out;
+  };
+  const reactsHtml = (m) => {
+    const r = reactsOf(m);
+    return `<div class="reacts">${Object.entries(r).map(([e, v]) => `<button class="react" type="button" data-react="${e}" aria-pressed="${!!v.mine}" aria-label="${e} ${v.n}, ${v.mine ? 'remove your reaction' : 'add yours'}">${e} <span class="num">${v.n}</span></button>`).join('')}<button class="react add" type="button" data-addr="1" aria-label="Add a reaction" aria-expanded="false">${icon('plus', 'i sm')}</button><span class="epick" hidden>${EMOJI.map((e) => `<button type="button" data-react="${e}" aria-label="React with ${e}">${e}</button>`).join('')}</span></div>`;
+  };
+  const msgHtml = (m) => {
+    const who = m.author;
+    const t = new Date(m.created_at);
+    return `<div class="msg" data-mid="${esc(m.id)}">
+      ${av(who, 36)}
+      <div class="mcol">
+        <div class="who">${esc(who)}${youTag(who)}${roleTag(who)}<time datetime="${esc(m.created_at)}">${fmtTime.format(t)}</time></div>
+        <div class="body">${esc(m.data.text || '').replace(/\n/g, '<br>')}</div>
+        ${reactsHtml(m)}
+      </div>
+      <div class="msg-acts"><button type="button" data-quick="1" aria-label="React with a thumbs up" title="Thumbs up">👍</button>${canPost() ? `<button type="button" data-reply="1" aria-label="Reply to ${esc(who)}" title="Reply">${icon('chat', 'i sm')}</button>` : ''}${canRemove(m) ? `<button type="button" data-del="1" aria-label="Remove this message" title="Remove">${icon('x', 'i sm')}</button>` : ''}</div>
+    </div>`;
+  };
+  const draw = (stick = true) => {
+    const list = chanPosts(cur);
+    const nearBottom = msgsEl.scrollHeight - msgsEl.scrollTop - msgsEl.clientHeight < 80;
+    if (!list.length) {
+      msgsEl.innerHTML = empty(on
+        ? (CH[cur].ro && !isMentor() ? 'No announcements yet. Mentors post news here.' : `Nothing in #${esc(CH[cur].name)} yet. Say hi and start the conversation.`)
+        : `No messages in #${esc(CH[cur].name)}. Posts show up here once chat is on.`);
+    } else {
+      let last = '', h = '';
+      for (const m of list) {
+        const d = new Date(m.created_at), k = dayKey(d);
+        if (k !== last) { h += `<div class="day-sep" role="separator">${dayLabel(d)}</div>`; last = k; }
+        h += msgHtml(m);
+      }
+      msgsEl.innerHTML = h;
+    }
+    if (stick || nearBottom) msgsEl.scrollTop = msgsEl.scrollHeight;
+  };
   const show = () => {
     lastChan = cur;
     const c = CH[cur];
-    c.un = 0;
-    $$('.chn', view).forEach((b) => {
-      b.setAttribute('aria-current', String(b.dataset.ch === cur));
-      if (b.dataset.ch === cur) { const u = $('.un', b); if (u) u.remove(); }
-    });
-    const opt = $(`#chatPick option[value="${cur}"]`, view);
-    if (opt) opt.textContent = chLabel(c);
     $('#chatPick', view).value = cur;
-    $('#chatHead', view).innerHTML = `<span class="hash-lg">${c.parent ? icon('chat', 'i sm') : '#'}</span><b>${esc(c.parent ? c.name : c.name)}</b><span class="topic" title="${esc(c.topic)}">${c.topic}</span>${cur === 'shoutouts' ? `<button class="btn ghost pill sm ch-tv" type="button" data-goto="home|Shop TV">${icon('max', 'i sm')}Shop TV</button>` : ''}`;
-    msgsEl.innerHTML = msgsHtml(MSGS[cur]);
-    msgsEl.scrollTop = msgsEl.scrollHeight;
-    inp.disabled = !!c.ro;
-    $('#chatSend', view).disabled = !!c.ro;
-    inp.placeholder = c.ro ? 'Only mentors post here' : `Message ${chLabel(c)}`;
+    $('#chatHead', view).innerHTML = `<span class="hash-lg">#</span><b>${esc(c.name)}</b><span class="topic" title="${esc(c.topic)}">${esc(c.topic)}</span>`;
+    inp.disabled = !canPost();
+    sendBtn.disabled = !canPost();
+    inp.placeholder = !on ? 'Chat is off for now' : c.ro && !isMentor() ? 'Only mentors post here' : `Message #${c.name}`;
     setNote(hint());
+    if (loaded) { draw(true); markSeen(); sideCounts(); }
+  };
+  const load = async (first = false) => {
+    try {
+      const [p, v] = await Promise.all([api.list('chat'), api.list('vote')]);
+      if (!alive) return;
+      const r = v.filter((x) => x.data && x.data.chat);
+      const s = p.map((x) => `${x.id}:${x.updated_at}`).join() + '|' + r.map((x) => x.id).join();
+      loaded = true;
+      if (!first && s === sig) return;
+      if (!first && view.querySelector('.epick:not([hidden])')) return;
+      sig = s; posts = p; reacts = r;
+      draw(first);
+      markSeen(); sideCounts();
+    } catch (err) {
+      if (first && alive) msgsEl.innerHTML = empty(`Messages did not load. ${esc(errMsg(err))}`);
+    }
   };
   const rerenderMsg = (m) => {
-    const el = $(`.msg[data-mid="${m.id}"]`, msgsEl);
+    const el = $(`.msg[data-mid="${CSS.escape(m.id)}"]`, msgsEl);
     if (el) el.outerHTML = msgHtml(m);
   };
-  const toggleReact = (m, e) => {
-    if (!m.r[e]) m.r[e] = { n: 0, me: false };
-    m.r[e].me = !m.r[e].me;
-    rerenderMsg(m);
-    const again = $(`.msg[data-mid="${m.id}"] .reacts [data-react="${e}"]`, msgsEl);
-    if (again) again.focus({ preventScroll: true });
+  const toggleReact = async (m, e) => {
+    const mine = reacts.find((v) => isMine(v) && v.data.chat === m.id && (v.data.emoji || '👍') === e);
+    try {
+      if (mine) { await api.remove('vote', mine.id); reacts = reacts.filter((v) => v !== mine); }
+      else { const v = await api.create('vote', { chat: m.id, emoji: e }); reacts = [v, ...reacts]; }
+      rerenderMsg(m);
+      const again = $(`.msg[data-mid="${CSS.escape(m.id)}"] .reacts [data-react="${e}"]`, msgsEl);
+      if (again) again.focus({ preventScroll: true });
+    } catch (err) { ctx.toast(errMsg(err)); }
   };
-  const send = () => {
-    if (CH[cur].ro) return;
+  const send = async () => {
+    if (!canPost()) return;
     const text = inp.value.trim();
     if (!text) { setNote('Type a message first.'); return; }
     if (EMAIL.test(text) || PHONE.test(text)) {
-      setNote('That looks like an email address or a phone number. To keep everyone safe, personal info stays out of chat. Ask Coach if you need to share something like that.', true);
+      setNote('That looks like an email address or a phone number. To keep everyone safe, personal info stays out of chat. Ask a mentor if you need to share something like that.', true);
       return;
     }
-    const list = MSGS[cur];
-    const last = [...list].reverse().find((m) => typeof m === 'string');
-    if (last !== 'Today') list.push('Today');
-    list.push({ id: `${cur}-new-${++msgSeq}`, who: ME, t: timeNow(), body: esc(text).replace(/\n/g, '<br>'), x: {}, r: {}, local: true });
-    inp.value = '';
-    msgsEl.innerHTML = msgsHtml(list);
-    msgsEl.scrollTop = msgsEl.scrollHeight;
-    setNote(chatHours().open ? 'Sent, only on this device (preview).' : 'Sent in the preview, even though chat is closed. Only you can see it.');
+    sendBtn.disabled = true;
+    try {
+      const m = await api.create('chat', { channel: cur, text });
+      posts = [m, ...posts];
+      inp.value = ''; inp.style.height = '';
+      draw(true); markSeen();
+      setNote(hint());
+    } catch (err) { setNote(errMsg(err), true); }
+    sendBtn.disabled = !canPost();
   };
-  view.addEventListener('click', (e) => {
+  view.addEventListener('click', async (e) => {
     const chn = e.target.closest('[data-ch]');
     if (chn) { cur = chn.dataset.ch; show(); return; }
     const msgEl = e.target.closest('.msg');
-    const m = msgEl && findMsg(cur, msgEl.dataset.mid);
+    const m = msgEl && posts.find((p) => p.id === msgEl.dataset.mid);
     if (!m) return;
     const r = e.target.closest('[data-react]');
     if (r) { toggleReact(m, r.dataset.react); return; }
@@ -254,23 +238,19 @@ function chatPage(view, ctx) {
     }
     if (e.target.closest('[data-quick]')) { toggleReact(m, '👍'); return; }
     if (e.target.closest('[data-reply]')) {
-      if (CH[cur].ro) { ctx.toast('Only mentors post in #announcements. React instead, or ask in #general.'); return; }
-      inp.value = `@${m.who} ${inp.value.replace(/^@\S+\s/, '')}`;
+      inp.value = `@${m.author} ${inp.value.replace(/^@\S+\s/, '')}`;
       inp.focus();
       inp.setSelectionRange(inp.value.length, inp.value.length);
       return;
     }
-    if (e.target.closest('[data-report]')) { ctx.toast('Reported privately to Coach. Thank you for speaking up.'); return; }
-    if (e.target.closest('[data-issue]')) { ctx.showIssue(); return; }
-    const v = e.target.closest('[data-vote]');
-    if (v) {
-      const i = +v.dataset.vote;
-      POLL.mine = POLL.mine === i ? null : i;
-      const p = $('.poll', msgEl);
-      p.outerHTML = pollHtml();
-      const nb = $(`.msg[data-mid="${m.id}"] [data-vote="${i}"]`, msgsEl);
-      if (nb) nb.focus({ preventScroll: true });
-      ctx.toast(POLL.mine === null ? 'Vote removed.' : `You voted for ${POLL.opts[i]}. You can change it any time.`);
+    if (e.target.closest('[data-del]')) {
+      if (!confirm(isMine(m) ? 'Remove your message?' : `Remove this message from ${m.author}?`)) return;
+      try {
+        await api.remove('chat', m.id);
+        posts = posts.filter((p) => p !== m);
+        draw(false);
+        ctx.toast('Message removed.');
+      } catch (err) { ctx.toast(errMsg(err)); }
     }
   });
   $('#chatPick', view).addEventListener('change', (e) => { cur = e.target.value; show(); });
@@ -282,22 +262,19 @@ function chatPage(view, ctx) {
     inp.style.height = 'auto';
     inp.style.height = `${Math.min(140, inp.scrollHeight)}px`;
   });
-  $('#chatSend', view).addEventListener('click', send);
+  sendBtn.addEventListener('click', send);
   show();
-  if (draft && !CH[cur].ro) {
+  load(true);
+  if (draft && canPost()) {
     inp.value = draft;
     inp.focus({ preventScroll: true });
     inp.setSelectionRange(draft.length, draft.length);
   }
-  const tick = setInterval(() => {
-    const h = chatHours();
-    $('#chatHrs', view).innerHTML = pill(h.text, h.open ? 'var(--ok)' : 'var(--stone)');
-    if (!note.classList.contains('warn') && /^(Enter sends|Chat is closed)/.test(note.textContent)) setNote(hint());
-  }, 30000);
-  return () => clearInterval(tick);
+  const poll = setInterval(() => { if (!document.hidden) load(false); }, 10000);
+  return () => { alive = false; clearInterval(poll); };
 }
-function member(n, on) {
-  return `<div class="mem">${av(n, 26)}<span>${n}${n === ME ? ' <span class="cap">(you)</span>' : ''}</span>${roleTag(n)}<span class="${on ? 'on' : 'off'}" role="img" aria-label="${on ? 'Online' : 'Offline'}"></span></div>`;
+function member(n, here) {
+  return `<div class="mem">${av(n, 26)}<span>${esc(n)}${youTag(n)}</span>${roleTag(n)}<span class="${here ? 'on' : 'off'}" role="img" aria-label="${here ? 'Checked in today' : 'Not checked in today'}"></span></div>`;
 }
 
 // ================================================================= Inspiration
@@ -305,118 +282,136 @@ const COLLS = [
   ['all', 'Everything', 'layers', 'var(--solid)'], ['intake', 'Intakes', 'focus', '#0E8F9E'], ['launcher', 'Launchers', 'zap', '#C2611A'],
   ['ballpath', 'Ball paths', 'sliders', '#7A5BD6'], ['drivetrain', 'Drivetrains', 'gamepad', '#2340A8'], ['prints', 'Clever prints', 'printer', '#4F5049'], ['outreach', 'Outreach', 'sparkle', '#C42D6B'],
 ];
-const SRC = { video: 'YouTube', photo: 'Photo', cad: 'Onshape', link: 'Guide' };
-const SRC_IC = { video: 'play', photo: 'image', cad: 'layers', link: 'book' };
-// [collection, type, title, why, who, likes, ours, thumb height, gradient]
-const POSTS = [
-  ['intake', 'video', "Another team's two-stage intake", 'Soft wheels grab from a pile, then a second roller takes the ball, so it hardly ever jams.', 'Pixel', 6, false, 170, ['#0B6F7A', '#0E8F9E']],
-  ['launcher', 'video', 'A flywheel launcher with an adjustable hood', 'One motor and three shot angles. Very close to what Sparky is sketching for us.', 'Sparky', 5, false, 210, ['#A3480F', '#F07A2A']],
-  ['intake', 'cad', 'Our gecko wheel spacing test rig', 'You can swap the spacers in about 30 seconds, so testing 4 mm against 6 mm is quick.', 'Pixel', 4, true, 150, ['#1B5E66', '#3BA7B2']],
-  ['ballpath', 'photo', 'A servo gate that lets one ball through at a time', 'The arm blocks the second ball while the first one leaves. It might fix our double-feed.', 'Gizmo', 7, false, 190, ['#5B3FA8', '#9F7FF0']],
-  ['drivetrain', 'link', 'Game Manual 0, a free community guide to FTC', 'Written by people in the FTC community. The drivetrain pages explain mecanum wheels really clearly.', 'Byte', 8, false, 130, ['#1E2E78', '#2340A8'], 'https://gm0.org/'],
-  ['prints', 'photo', 'Printed cable clips that snap onto the channel', 'No zip ties to cut, and the wires stay away from the wheels.', 'Echo', 5, true, 160, ['#3A3D38', '#6B6E6C']],
-  ['drivetrain', 'video', 'Checking mecanum wheels before blaming the code', 'Lift the robot and spin each wheel on its own. A wheel on backwards looks exactly like a code bug.', 'Byte', 3, false, 180, ['#24346E', '#4F67C9']],
-  ['launcher', 'cad', 'Our launcher hood, first sketch', 'Three holes for the hood angle. Rivet says the mount needs a brace first.', 'Sparky', 4, true, 140, ['#8A3B12', '#C2611A']],
-  ['outreach', 'photo', 'A robot demo table at a library (photo of the table only)', 'Visitors drive a small robot with a gamepad. Good ideas for our December demo.', 'Nova', 6, false, 200, ['#8E1F4C', '#C42D6B']],
-  ['prints', 'video', 'Heat-set inserts in printed parts', 'Brass threads pressed in with a hot iron, with a mentor, so screws stop stripping the plastic.', 'Rivet', 5, false, 170, ['#2F3737', '#5C5E54']],
-  ['intake', 'photo', "Another team's intake with bendy flaps", 'Flexible flaps push balls in without needing exact spacing. Worth a quick prototype.', 'Nova', 2, false, 150, ['#0E6E77', '#57B9C2']],
-].map(([coll, type, t, why, who, likes, ours, h, g, url], i) => ({ id: `p${i}`, coll, type, t, why, who, likes, ours, h, g, url, liked: false }));
-const FILTERS = [['all', 'All'], ['video', 'Videos'], ['photo', 'Photos'], ['cad', 'CAD'], ['ours', 'Ours']];
+const COLL = Object.fromEntries(COLLS.map((c) => [c[0], c]));
+const SRC_IC = { video: 'play', cad: 'layers', link: 'book' };
+const FILTERS = [['all', 'All'], ['video', 'Videos'], ['cad', 'CAD'], ['link', 'Pages'], ['mine', 'Mine']];
+const tagKey = (t) => String(t || '').toLowerCase().trim().replace(/[^a-z0-9 ]+/g, '').replace(/\s+/g, '-').slice(0, 30) || 'other';
+const tagName = (k) => (COLL[k] ? COLL[k][1] : k.replace(/-/g, ' ').replace(/^./, (c) => c.toUpperCase()));
+const tagColor = (k) => (COLL[k] ? COLL[k][3] : '#5C5E54');
 let inspColl = 'all', inspFilter = 'all';
 
-function postHtml(p) {
-  const n = p.likes + (p.liked ? 1 : 0);
-  const thumbInner = p.type === 'video' ? `<span class="play">${icon('play', 'i lg')}</span>` : icon(SRC_IC[p.type], 'i lg');
-  const thumb = `<span class="ithumb" style="height:${p.h}px;background:linear-gradient(140deg, ${p.g[0]}, ${p.g[1]})">${thumbInner}<span class="src"><span class="st">${p.pending ? 'Waiting for a mentor' : p.src || SRC[p.type]}</span></span>${p.ours ? '<span class="ours"><span class="st volt">Ours</span></span>' : ''}</span>`;
-  const open = p.url && !p.pending
-    ? `<a class="btn ghost pill sm" href="${esc(p.url)}" target="_blank" rel="noopener noreferrer">${icon('arrow', 'i sm')}Open gm0.org</a>`
-    : `<button class="btn ghost pill sm" type="button" data-open="${p.id}">${icon('arrow', 'i sm')}Open</button>`;
-  return `<article class="ipost" data-pid="${p.id}">
-    ${thumb}
-    <div class="t">${esc(p.t)}</div>
-    <p class="why"><b>Why it's cool:</b> ${esc(p.why)}</p>
-    <div class="row wrap"><span class="row grow" style="gap:6px">${av(p.who, 22)}<span class="cap">${p.who}</span></span>
-      <button class="react" type="button" data-like="${p.id}" aria-pressed="${p.liked}" aria-label="Like, ${n} likes">❤️ <span class="num">${n}</span></button>${open}</div>
-  </article>`;
+function linkInfo(v) {
+  let u;
+  try { u = new URL(v); } catch (err) { return null; }
+  if (!/^https?:$/.test(u.protocol)) return null;
+  const h = u.hostname.replace(/^www\.|^m\./, '');
+  if (h === 'youtube.com' || h === 'youtu.be') return { src: 'YouTube', type: 'video' };
+  if (h === 'onshape.com' || h.endsWith('.onshape.com')) return { src: 'Onshape', type: 'cad' };
+  if (/(^|\.)(instagram|tiktok|facebook|snapchat|discord|x|twitter|reddit)\.com$/.test(h)) return { bad: true };
+  return { src: h.length > 22 ? 'Web page' : h, type: 'link' };
 }
+const hashN = (s) => [...String(s)].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7);
 
 function inspiration(view, ctx) {
-  if (ctx.state.inspTag && COLLS.some((c) => c[0] === ctx.state.inspTag)) { inspColl = ctx.state.inspTag; inspFilter = 'all'; }
+  if (ctx.state.inspTag) { inspColl = tagKey(ctx.state.inspTag); inspFilter = 'all'; }
   delete ctx.state.inspTag;
+  let posts = [], likes = [];
   view.innerHTML = `<div class="zv">
-    ${strip('Videos, photos and CAD worth studying, sorted into collections. Every post says why it is cool, so we learn from it instead of just scrolling.', [tag('Phase 2 · Dec 7–18'), SAMPLE])}
+    ${strip('Videos, CAD and pages worth studying, sorted into collections. Every post says why it is cool, so we learn from it instead of just scrolling.', [])}
     <div class="colls" id="inspColls" role="group" aria-label="Collections"></div>
     <article class="card c8">
       <div class="card-head insp-head"><h3 class="card-title" id="inspTitle">Everything</h3><div class="chips" id="inspChips" role="group" aria-label="Filter posts">${FILTERS.map(([v, t]) => `<button class="chip" type="button" data-filt="${v}" aria-pressed="${v === inspFilter}">${t}</button>`).join('')}</div></div>
-      <div class="insp" id="inspGrid"></div>
-      <p class="cap">All posts are sample data. Other teams are described, never named.</p>
+      <div class="insp" id="inspGrid">${loading()}</div>
+      <p class="cap">Describe other teams, but leave out their names and faces.</p>
     </article>
     <article class="card c4">
       <div class="card-head"><h3 class="card-title">Share something</h3></div>
       <form class="stack-v insp-form" id="inspForm" novalidate>
         <label class="fl"><span class="cap">Link</span><input class="inp" id="inspLink" type="url" inputmode="url" placeholder="https://www.youtube.com/…" autocomplete="off"><span class="ferr" id="inspLinkErr" aria-live="polite"></span></label>
         <label class="fl"><span class="cap">Title</span><input class="inp" id="inspT" type="text" maxlength="80" placeholder="A launcher with a really fast spin-up"><span class="ferr" id="inspTErr" aria-live="polite"></span></label>
-        <label class="fl"><span class="cap">Collection</span><select class="inp" id="inspColl">${COLLS.slice(1).map(([id, n]) => `<option value="${id}"${id === inspColl ? ' selected' : ''}>${n}</option>`).join('')}</select></label>
+        <label class="fl"><span class="cap">Collection</span><input class="inp" id="inspColl" list="inspTags" maxlength="30" placeholder="Intakes, Launchers, or a new one"><datalist id="inspTags"></datalist></label>
         <label class="fl"><span class="cap">Why it's cool (required)</span><textarea class="inp" id="inspWhy" maxlength="200" placeholder="What could we learn from it?"></textarea><span class="ferr" id="inspWhyErr" aria-live="polite"></span></label>
-        <button class="btn primary pill" type="submit">${icon('plus', 'i sm')}Share it</button>
+        <button class="btn primary pill" type="submit" id="inspGo">${icon('plus', 'i sm')}Share it</button>
       </form>
-      <div class="callout">${icon('alert')}<div><b>A mentor checks new posts</b> before everyone sees them. Only links from YouTube, Onshape and team websites are allowed, and no photos of faces.</div></div>
+      <div class="callout">${icon('alert')}<div><b>Keep it safe.</b> Links from YouTube, Onshape and team or guide websites only. No social media, and no photos of faces. Mentors can remove any post.</div></div>
     </article>
   </div>`;
-  const draw = () => {
-    $('#inspColls', view).innerHTML = COLLS.map(([id, n, ic, c]) => {
-      const cnt = id === 'all' ? POSTS.length : POSTS.filter((p) => p.coll === id).length;
-      return `<button class="coll" type="button" data-coll="${id}" aria-pressed="${id === inspColl}"><span class="ccov" style="background:${c}${id === 'all' ? ';color:var(--on-solid)' : ''}">${icon(ic, 'i sm')}</span><span><b>${n}</b><span>${cnt} post${cnt === 1 ? '' : 's'}</span></span></button>`;
-    }).join('');
-    $('#inspTitle', view).textContent = COLLS.find((c) => c[0] === inspColl)[1];
-    $$('[data-filt]', view).forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.filt === inspFilter)));
-    const list = POSTS.filter((p) => (inspColl === 'all' || p.coll === inspColl) && (inspFilter === 'all' || (inspFilter === 'ours' ? p.ours : p.type === inspFilter)));
-    $('#inspGrid', view).innerHTML = list.length ? list.map(postHtml).join('') : `<p class="lead insp-empty">Nothing here yet. Be the first to share one.</p>`;
+  const tagsInUse = () => {
+    const keys = new Set(COLLS.slice(1).map((c) => c[0]));
+    for (const p of posts) keys.add(tagKey(p.data.tag));
+    return [...keys];
   };
-  draw();
-  const sel = $('.coll[aria-pressed="true"]', view);
-  if (sel && inspColl !== 'all') sel.scrollIntoView({ block: 'nearest', inline: 'nearest' });
-  view.addEventListener('click', (e) => {
+  const postHtml = (p) => {
+    const d = p.data, k = tagKey(d.tag);
+    const mine = likes.find((l) => isMine(l) && l.data.inspiration === p.id);
+    const n = votesFor(likes, 'inspiration', p.id).length;
+    const h = 130 + (hashN(p.id) % 5) * 18;
+    const c = tagColor(k), c2 = c.startsWith('var') ? '#5C5E54' : c;
+    const thumb = `<span class="ithumb" style="height:${h}px;background:linear-gradient(140deg, #2F3737, ${c2})">${d.type === 'video' ? `<span class="play">${icon('play', 'i lg')}</span>` : icon(SRC_IC[d.type] || 'book', 'i lg')}<span class="src"><span class="st">${esc(d.src || 'Link')}</span></span><span class="ours"><span class="st">${esc(tagName(k))}</span></span></span>`;
+    const safe = d.link && linkInfo(d.link) && !linkInfo(d.link).bad;
+    return `<article class="ipost" data-pid="${esc(p.id)}">
+      ${safe ? `<a href="${esc(d.link)}" target="_blank" rel="noopener noreferrer" class="kc-thumb" aria-label="Open ${esc(d.title || 'link')}">${thumb}</a>` : thumb}
+      <div class="t">${esc(d.title || 'Untitled')}</div>
+      <p class="why"><b>Why it's cool:</b> ${esc(d.note || '')}</p>
+      <div class="row wrap"><span class="row grow" style="gap:6px">${av(p.author, 22)}<span class="cap">${esc(p.author)}${youTag(p.author)}</span></span>
+        <button class="react" type="button" data-like="${esc(p.id)}" aria-pressed="${!!mine}" aria-label="Like, ${n} likes">❤️ <span class="num">${n}</span></button>
+        ${safe ? `<a class="btn ghost pill sm" href="${esc(d.link)}" target="_blank" rel="noopener noreferrer">${icon('arrow', 'i sm')}Open</a>` : ''}
+        ${canRemove(p) ? `<button class="icon-btn sm" type="button" data-pdel="${esc(p.id)}" aria-label="Remove this post" title="Remove">${icon('x', 'i sm')}</button>` : ''}</div>
+    </article>`;
+  };
+  const draw = () => {
+    const keys = ['all', ...tagsInUse()];
+    if (!keys.includes(inspColl)) inspColl = 'all';
+    $('#inspColls', view).innerHTML = keys.map((id) => {
+      const [, n, ic, c] = COLL[id] || [id, tagName(id), 'sparkle', tagColor(id)];
+      const cnt = id === 'all' ? posts.length : posts.filter((p) => tagKey(p.data.tag) === id).length;
+      return `<button class="coll" type="button" data-coll="${esc(id)}" aria-pressed="${id === inspColl}"><span class="ccov" style="background:${c}${id === 'all' ? ';color:var(--on-solid)' : ''}">${icon(ic || 'layers', 'i sm')}</span><span><b>${esc(n)}</b><span>${cnt} post${cnt === 1 ? '' : 's'}</span></span></button>`;
+    }).join('');
+    $('#inspTags', view).innerHTML = tagsInUse().map((k) => `<option value="${esc(tagName(k))}"></option>`).join('');
+    $('#inspTitle', view).textContent = inspColl === 'all' ? 'Everything' : tagName(inspColl);
+    $$('[data-filt]', view).forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.filt === inspFilter)));
+    const list = posts.filter((p) => (inspColl === 'all' || tagKey(p.data.tag) === inspColl) && (inspFilter === 'all' || (inspFilter === 'mine' ? isMine(p) : p.data.type === inspFilter)));
+    $('#inspGrid', view).innerHTML = list.length ? list.map(postHtml).join('') : empty(posts.length ? 'Nothing matches here yet. Try another collection or filter, or share one.' : 'Nothing shared yet. Found a cool intake video or a smart CAD trick? Be the first to share it.');
+  };
+  (async () => {
+    try {
+      const [p, v] = await Promise.all([api.list('inspiration'), api.list('vote')]);
+      posts = p; likes = v.filter((x) => x.data && x.data.inspiration);
+      draw();
+      const sel = $('.coll[aria-pressed="true"]', view);
+      if (sel && inspColl !== 'all') sel.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    } catch (err) { $('#inspGrid', view).innerHTML = empty(`Posts did not load. ${esc(errMsg(err))}`); }
+  })();
+  if (inspColl !== 'all') $('#inspColl', view).value = tagName(inspColl);
+  view.addEventListener('click', async (e) => {
     const c = e.target.closest('[data-coll]');
-    if (c) { inspColl = c.dataset.coll; draw(); $(`[data-coll="${inspColl}"]`, view).focus({ preventScroll: true }); if (inspColl !== 'all') $('#inspColl', view).value = inspColl; return; }
+    if (c) { inspColl = c.dataset.coll; draw(); const b = $(`[data-coll="${CSS.escape(inspColl)}"]`, view); if (b) b.focus({ preventScroll: true }); if (inspColl !== 'all') $('#inspColl', view).value = tagName(inspColl); return; }
     const f = e.target.closest('[data-filt]');
     if (f) { inspFilter = f.dataset.filt; draw(); return; }
     const l = e.target.closest('[data-like]');
     if (l) {
-      const p = POSTS.find((x) => x.id === l.dataset.like);
-      p.liked = !p.liked;
-      const n = p.likes + (p.liked ? 1 : 0);
-      l.setAttribute('aria-pressed', String(p.liked));
-      l.setAttribute('aria-label', `Like, ${n} likes`);
-      $('.num', l).textContent = n;
+      const id = l.dataset.like;
+      const mine = likes.find((x) => isMine(x) && x.data.inspiration === id);
+      l.disabled = true;
+      try {
+        if (mine) { await api.remove('vote', mine.id); likes = likes.filter((x) => x !== mine); }
+        else likes = [await api.create('vote', { inspiration: id }), ...likes];
+        const n = votesFor(likes, 'inspiration', id).length;
+        l.setAttribute('aria-pressed', String(!mine));
+        l.setAttribute('aria-label', `Like, ${n} likes`);
+        $('.num', l).textContent = n;
+      } catch (err) { ctx.toast(errMsg(err)); }
+      l.disabled = false;
       return;
     }
-    const o = e.target.closest('[data-open]');
-    if (o) {
-      const p = POSTS.find((x) => x.id === o.dataset.open);
-      ctx.toast(p.pending ? 'Coach checks this post first. Then it opens for everyone.' : 'This is a sample post. In the Hub it opens the video, photo or CAD.');
+    const d = e.target.closest('[data-pdel]');
+    if (d) {
+      const p = posts.find((x) => x.id === d.dataset.pdel);
+      if (!p || !confirm(isMine(p) ? 'Remove your post?' : `Remove this post from ${p.author}?`)) return;
+      try { await api.remove('inspiration', p.id); posts = posts.filter((x) => x !== p); draw(); ctx.toast('Post removed.'); }
+      catch (err) { ctx.toast(errMsg(err)); }
     }
   });
   const errs = { link: $('#inspLinkErr', view), t: $('#inspTErr', view), why: $('#inspWhyErr', view) };
-  const linkInfo = (v) => {
-    let u;
-    try { u = new URL(v); } catch (err) { return null; }
-    if (!/^https?:$/.test(u.protocol)) return null;
-    const h = u.hostname.replace(/^www\.|^m\./, '');
-    if (h === 'youtube.com' || h === 'youtu.be') return { src: 'YouTube', type: 'video' };
-    if (h === 'onshape.com' || h.endsWith('.onshape.com')) return { src: 'Onshape', type: 'cad' };
-    if (/(instagram|tiktok|facebook|snapchat|discord|x)\.com$|^twitter\.com$/.test(h)) return { bad: true };
-    return { src: 'Team site', type: 'link' };
-  };
   const setErr = (k, msg) => {
     errs[k].textContent = msg;
-    const field = { link: '#inspLink', t: '#inspT', why: '#inspWhy' }[k];
-    $(field, view).setAttribute('aria-invalid', String(!!msg));
+    $({ link: '#inspLink', t: '#inspT', why: '#inspWhy' }[k], view).setAttribute('aria-invalid', String(!!msg));
   };
   ['inspLink', 'inspT', 'inspWhy'].forEach((id, i) => $(`#${id}`, view).addEventListener('input', () => setErr(['link', 't', 'why'][i], '')));
-  $('#inspForm', view).addEventListener('submit', (e) => {
+  $('#inspForm', view).addEventListener('submit', async (e) => {
     e.preventDefault();
     const link = $('#inspLink', view).value.trim(), t = $('#inspT', view).value.trim(), why = $('#inspWhy', view).value.trim();
+    const typed = $('#inspColl', view).value.trim();
     const info = link ? linkInfo(link) : null;
     let ok = true;
     if (!link) { setErr('link', 'Paste a link to the video, CAD or page.'); ok = false; }
@@ -424,15 +419,22 @@ function inspiration(view, ctx) {
     else if (info.bad) { setErr('link', 'Social media links are not allowed. Try YouTube, Onshape or a team website.'); ok = false; }
     if (!t) { setErr('t', 'Give it a short title.'); ok = false; }
     if (why.length < 10) { setErr('why', why ? 'Tell us a little more, so the team knows what to look for.' : "Say why it's cool. That's how we learn from it."); ok = false; }
+    else if (EMAIL.test(why) || PHONE.test(why)) { setErr('why', 'Please leave out email addresses and phone numbers.'); ok = false; }
     if (!ok) { const first = $('[aria-invalid="true"]', view); if (first) first.focus(); return; }
-    const coll = $('#inspColl', view).value;
-    const cc = COLLS.find((c) => c[0] === coll)[3];
-    POSTS.unshift({ id: `p${POSTS.length}`, coll, type: info.type, src: info.src, t, why, who: ME, likes: 0, ours: false, h: 140, g: ['#2F3737', cc.startsWith('var') ? '#5C5E54' : cc], liked: false, pending: true });
-    e.target.reset();
-    $('#inspColl', view).value = coll;
-    inspColl = coll; inspFilter = 'all';
-    draw();
-    ctx.toast('Shared. Coach checks new posts before everyone sees them.');
+    const known = COLLS.find((c) => c[1].toLowerCase() === typed.toLowerCase() || c[0] === typed.toLowerCase());
+    const k = known ? known[0] : tagKey(typed || 'other');
+    const btn = $('#inspGo', view);
+    btn.disabled = true;
+    try {
+      const p = await api.create('inspiration', { link, title: t, note: why, tag: k, type: info.type, src: info.src });
+      posts = [p, ...posts];
+      e.target.reset();
+      inspColl = k; inspFilter = 'all';
+      $('#inspColl', view).value = tagName(k);
+      draw();
+      ctx.toast('Shared with the team. Thank you!');
+    } catch (err) { ctx.toast(errMsg(err)); }
+    btn.disabled = false;
   });
 }
 
@@ -442,110 +444,121 @@ const BADGE_IC = {
   'Java OpModes': 'code', 'First commit': 'commit', 'Arena drill': 'play', 'Challenge winner': 'trophy', 'Prototype pro': 'bulb', Wiring: 'zap', Outreach: 'sparkle',
   Builder: 'wrench', Portfolio: 'note', 'Battery care': 'zap',
 };
-const COACH = { n: 'Coach', role: 'Mentor · YPP-screened', skills: ['Safety', 'Building', 'Java'], work: 'Finding a second screened mentor so chat can turn on' };
-const ownedBy = (n) => Object.entries(SUBSYS).filter(([, s]) => s.owners.includes(n)).map(([id]) => id);
+const badgesOf = (badges, p) => badges.filter((b) => b.data && (b.data.to === p.id || (!b.data.to && b.data.toName === p.name)));
+const subsOf = (p) => (Array.isArray(p.subs) ? p.subs : String(p.subs || '').split(',')).filter(Boolean);
 
-function personCard(k) {
-  const you = k.n === ME;
-  return `<button class="person" type="button" data-person="${k.n}" aria-label="Open ${k.n}'s profile">
-    <span class="row">${av(k.n, 48)}<span class="grow stack-v" style="gap:0"><span class="nm">${k.n}${you ? ' <span class="cap">(you)</span>' : ''}</span><span class="cap">${k.role}</span></span>
-      <span class="st" title="${k.badges.length} badges">${icon('trophy', 'i sm')}${k.badges.length}</span></span>
-    <span class="chipline">${k.skills.map((s) => tag(s)).join('')}</span>
-    <span class="work"><b>Working on</b>${k.work}</span>
+function personCard(p, badges, ctx) {
+  const n = badgesOf(badges, p).length;
+  const subs = subsOf(p);
+  return `<button class="person" type="button" data-person="${esc(p.id)}" aria-label="Open ${esc(p.name)}'s profile">
+    <span class="row">${av(p.name, 48)}<span class="grow stack-v" style="gap:0"><span class="nm">${esc(p.name)}${youTag(p.name)}</span><span class="cap">${esc(p.title || (p.role === 'mentor' ? 'Mentor' : 'Team member'))}</span></span>
+      <span class="st" title="${n} badge${n === 1 ? '' : 's'}">${icon('trophy', 'i sm')}${n}</span></span>
+    <span class="chipline">${subs.map((s) => tag(`${dot(ctx.SYS[s] ? ctx.SYS[s].c : 'var(--stone)', 8)} ${esc(ctx.SYS[s] ? ctx.SYS[s].name : s)}`)).join('')}${p.role === 'mentor' ? tag('Mentor', 'dark') : ''}</span>
+    <span class="work"><b>Today</b>${p.here ? `${dot('var(--ok)', 8)} Checked in` : 'Not checked in yet'}</span>
   </button>`;
 }
 
 function people(view, ctx) {
+  let badges = [];
+  const roster = () => [...(session.roster || [])].sort((a, b) => (a.role === b.role ? a.name.localeCompare(b.name) : a.role === 'student' ? -1 : 1));
   view.innerHTML = `<div class="zv">
-    ${strip('Who does what on the team, what everyone is working on, and the badges they have earned.', [tag('Phase 2 · Dec 7–18'), SAMPLE])}
+    ${strip('Who is on the team, which subsystems they own, who is here today and the badges they have earned.', [tag(`${(session.roster || []).filter((p) => p.here).length} here today`)])}
     <div class="robot-note">${icon('users')}<span><b>Privacy rule:</b> display names and robot avatars only. No last names, schools, face photos or contact details, anywhere in the Hub.</span></div>
-    <div class="people" id="peopleGrid">
-      ${KIDS.map(personCard).join('')}
-      <button class="person" type="button" data-person="Coach" aria-label="Open Coach's profile">
-        <span class="row">${av('Coach', 48)}<span class="grow stack-v" style="gap:0"><span class="nm">Coach</span><span class="cap">${COACH.role}</span></span></span>
-        <span class="chipline">${COACH.skills.map((s) => tag(s)).join('')}</span>
-        <span class="work"><b>Working on</b>${COACH.work}</span>
-      </button>
-      <div class="person ghost">
-        <span class="row"><span class="oc2">${icon('plus', 'i sm')}</span><span class="nm">Second mentor needed</span></span>
-        <p class="lead">FIRST's Youth Protection Program asks for two screened adults. A second mentor unlocks chat and lets us follow the two-adult rule at every meeting.</p>
-        <button class="btn soft pill sm" type="button" data-toast="Thank you! Ask a grown-up to talk to Coach. FIRST screens every mentor before they join.">${icon('help', 'i sm')}Know someone who could help?</button>
-      </div>
-    </div>
+    <div class="people" id="peopleGrid">${loading()}</div>
   </div>`;
+  const draw = () => {
+    const list = roster();
+    const ghost = session.team.chatEnabled ? '' : `<div class="person ghost">
+      <span class="row"><span class="oc2">${icon('plus', 'i sm')}</span><span class="nm">Second trained adult needed</span></span>
+      <p class="lead">FIRST's Youth Protection Program asks for two screened adults. A second one lets a mentor turn on chat and helps us follow the two-adult rule at every meeting.</p>
+      ${isMentor() ? `<a class="btn soft pill sm" href="/mentor">${icon('users', 'i sm')}Open Mentor tools</a>` : `<button class="btn soft pill sm" type="button" data-toast="Thank you! Ask a grown-up to talk to a mentor. FIRST screens every adult before they help.">${icon('help', 'i sm')}Know someone who could help?</button>`}
+    </div>`;
+    $('#peopleGrid', view).innerHTML = (list.length ? list.map((p) => personCard(p, badges, ctx)).join('') : empty('Nobody is on the team yet. A mentor shares the Team Code so students can join.')) + ghost;
+  };
+  (async () => {
+    try { badges = await api.list('badge'); } catch (err) { ctx.toast(`Badges did not load. ${errMsg(err)}`); }
+    draw();
+  })();
   view.addEventListener('click', (e) => {
     const b = e.target.closest('[data-person]');
-    if (b) openPerson(b.dataset.person, ctx);
+    if (b) openPerson(b.dataset.person, ctx, badges, (next) => { badges = next; draw(); });
   });
 }
 
-function openPerson(n, ctx) {
-  const isCoach = n === MENTOR.n;
-  const k = isCoach ? { ...COACH, badges: [], stats: null } : KID[n];
-  const subs = ownedBy(n);
-  const you = n === ME;
-  const html = `<div class="pf-head">${av(n, 72)}<div><h3>${n}${you ? ' <span class="cap">(you)</span>' : ''}</h3><p class="lead">${k.role}${isCoach ? ' (sample)' : ''}</p></div></div>
-    <div class="chipline">${k.skills.map((s) => tag(s)).join('')}</div>
-    <div class="work-box"><span class="cap">Working on</span><div>${k.work}</div></div>
-    ${k.stats ? `<h4>Contributions</h4><div class="contrib">${['Ideas', 'Prints', 'Commits', 'Notes'].map((l, i) => `<div><b>${k.stats[i]}</b><span>${l}</span></div>`).join('')}</div>` : ''}
-    ${k.badges.length ? `<h4>Badges <span class="cap">${k.badges.length}</span></h4><div class="medals">${k.badges.map((b) => `<div class="medal2"><span class="m">${icon(BADGE_IC[b] || 'trophy', 'i sm')}</span>${b}</div>`).join('')}</div>` : ''}
-    ${subs.length ? `<h4>Subsystems ${isCoach ? 'they help with' : 'they own'}</h4><div class="chips">${subs.map((id) => `<button class="chip" type="button" data-sys="${id}">${dot(ctx.SYS[id] ? ctx.SYS[id].c : 'var(--stone)', 8)}${ctx.SYS[id] ? ctx.SYS[id].name : id}</button>`).join('')}</div>` : ''}
-    ${isCoach ? '<p class="lead">Coach can read every channel, and so will the second mentor. That keeps chat safe for everyone.</p>' : ''}
-    ${you ? '<p class="cap">This is your profile. Teammates see exactly this.</p>' : `<button class="btn primary pill" type="button" id="pfThanks">${icon('chat', 'i sm')}Say thanks in #shoutouts</button>`}
-    <p class="cap">Sample profile.</p>`;
-  const el = drawer(html, { label: `${n}'s profile` });
+async function openPerson(id, ctx, badges, onBadges) {
+  const p = (session.roster || []).find((x) => x.id === id);
+  if (!p) return;
+  const you = p.name === me();
+  const subs = subsOf(p);
+  const mineBadges = () => badgesOf(badges, p);
+  const html = `<div class="pf-head">${av(p.name, 72)}<div><h3>${esc(p.name)}${youTag(p.name)}</h3><p class="lead">${esc(p.title || (p.role === 'mentor' ? 'Mentor' : 'Team member'))}</p></div></div>
+    <div class="chipline">${p.role === 'mentor' ? tag('Mentor', 'dark') : ''}${p.here ? tag(`${dot('var(--ok)', 8)} Here today`) : tag('Not checked in today')}</div>
+    <h4>Contributions</h4><div class="contrib" id="pfContrib">${['Ideas', 'Prints', 'Shares', 'Notes'].map((l) => `<div><b>…</b><span>${l}</span></div>`).join('')}</div>
+    <h4>Badges <span class="cap" id="pfBadgeN"></span></h4><div class="medals" id="pfBadges"></div>
+    ${isMentor() ? `<form class="row wrap kc-give" id="pfGive"><label class="sr" for="pfBadgeIn">Badge name</label><input class="inp" id="pfBadgeIn" list="pfBadgeList" maxlength="40" placeholder="Give a badge, like Shop safety"><datalist id="pfBadgeList">${Object.keys(BADGE_IC).map((b) => `<option value="${esc(b)}"></option>`).join('')}</datalist><button class="btn primary pill sm" type="submit">${icon('trophy', 'i sm')}Give badge</button></form>` : ''}
+    ${subs.length ? `<h4>Subsystems ${p.role === 'mentor' ? 'they help with' : 'they own'}</h4><div class="chips">${subs.map((s) => `<button class="chip" type="button" data-sys="${esc(s)}">${dot(ctx.SYS[s] ? ctx.SYS[s].c : 'var(--stone)', 8)}${esc(ctx.SYS[s] ? ctx.SYS[s].name : s)}</button>`).join('')}</div>` : ''}
+    ${p.role === 'mentor' ? '<p class="lead">Mentors can read every channel. That keeps chat safe for everyone.</p>' : ''}
+    ${you ? '<p class="cap">This is your profile. Teammates see exactly this. A mentor sets your title and subsystems.</p>' : session.team.chatEnabled ? `<button class="btn primary pill" type="button" id="pfThanks">${icon('chat', 'i sm')}Say thanks in #shoutouts</button>` : ''}`;
+  const el = drawer(html, { label: `${p.name}'s profile` });
+  const drawBadges = () => {
+    const list = mineBadges();
+    $('#pfBadgeN', el).textContent = list.length;
+    $('#pfBadges', el).innerHTML = list.length
+      ? list.map((b) => `<div class="medal2"><span class="m">${icon(BADGE_IC[b.data.name] || 'trophy', 'i sm')}</span>${esc(b.data.name || 'Badge')}${isMentor() ? `<button class="icon-btn sm kc-unbadge" type="button" data-unbadge="${esc(b.id)}" aria-label="Take back the ${esc(b.data.name)} badge">${icon('x', 'i sm')}</button>` : ''}</div>`).join('')
+      : `<p class="cap kc-mem-empty">No badges yet.${isMentor() ? ' Give the first one below.' : ' Mentors give badges for skills you learn.'}</p>`;
+  };
+  drawBadges();
   $$('[data-sys]', el).forEach((b) => b.addEventListener('click', () => { ctx.state.sys = b.dataset.sys; closeDrawer(); ctx.go('robot', 'Subsystems'); }));
   const t = $('#pfThanks', el);
   if (t) t.addEventListener('click', () => {
     ctx.state.chan = 'shoutouts';
-    ctx.state.chatDraft = `Shoutout to ${n} for `;
+    ctx.state.chatDraft = `Shoutout to ${p.name} for `;
     closeDrawer();
     ctx.go('crew', 'Chat');
   });
+  const give = $('#pfGive', el);
+  if (give) give.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = $('#pfBadgeIn', el).value.trim();
+    if (!name) { $('#pfBadgeIn', el).focus(); return; }
+    try {
+      const b = await api.create('badge', { to: p.id, toName: p.name, name });
+      badges = [b, ...badges]; onBadges(badges);
+      $('#pfBadgeIn', el).value = '';
+      drawBadges();
+      ctx.toast(`${p.name} earned ${name}.`);
+    } catch (err) { ctx.toast(errMsg(err)); }
+  });
+  el.addEventListener('click', async (e) => {
+    const u = e.target.closest('[data-unbadge]');
+    if (!u) return;
+    try {
+      await api.remove('badge', u.dataset.unbadge);
+      badges = badges.filter((b) => b.id !== u.dataset.unbadge); onBadges(badges);
+      drawBadges();
+    } catch (err) { ctx.toast(errMsg(err)); }
+  });
+  // Counts of what this person added, from the shared records.
+  const count = async (kind, test = () => true) => { try { return (await api.list(kind)).filter((r) => r.user_id === p.id && test(r)).length; } catch (err) { return 0; } };
+  const nums = await Promise.all([count('idea'), count('print'), count('inspiration'), count('session')]);
+  const box = $('#pfContrib', el);
+  if (box) box.innerHTML = ['Ideas', 'Prints', 'Shares', 'Notes'].map((l, i) => `<div><b>${nums[i]}</b><span>${l}</span></div>`).join('');
 }
 
 // ================================================================= Feedback
-const COLS = [['review', 'Under review', 'clock'], ['planned', 'Planned', 'calendar'], ['progress', 'In progress', 'wrench'], ['shipped', 'Shipped', 'check']];
+const COLS = [['review', 'Under review', 'clock'], ['planned', 'Planned', 'calendar'], ['doing', 'In progress', 'wrench'], ['done', 'Shipped', 'check']];
 const FTYPE = { idea: ['Idea', 'bulb'], broken: ["Something's broken", 'alert'], love: ['I love this', 'sparkle'] };
-const IDEAS = [
-  ['review', 'idea', 'Let us pick the color of our robot avatar', 'Nova', 4],
-  ['review', 'broken', 'The print queue jumps to the top when it refreshes', 'Rivet', 2],
-  ['review', 'idea', 'A sound on the shop TV when a print finishes', 'Gizmo', 5],
-  ['planned', 'idea', 'Quiz mode for the Glossary', 'Pixel', 6],
-  ['planned', 'idea', "Show who's checked in to the meeting on Home", 'Gizmo', 3],
-  ['progress', 'idea', 'A timer for each Arena drill', 'Byte', 7],
-  ['progress', 'love', 'Bigger shoutouts on the shop TV', 'Echo', 4],
-  ['shipped', 'idea', 'Night shift theme for evening meetings', 'Echo', 9],
-  ['shipped', 'idea', 'Gecko wheel spacing in the Mechanism Lab', 'Pixel', 6],
-].map(([col, type, t, who, v], i) => ({ id: `f${i}`, col, type, t, who, v, me: false }));
-const NEWS = [
-  ['Nov 6', 'Night shift theme', 'Echo', 'Dark colors for evening meetings, from Echo\'s idea.'],
-  ['Nov 3', 'Gecko wheel spacing in the Mechanism Lab', 'Pixel', 'Try spacing before printing anything, suggested by Pixel.'],
-  ['Oct 29', 'Bigger buttons on phones', 'Nova', 'Nova noticed the buttons were hard to tap on a small phone.'],
-  ['Oct 27', 'Arena practice drill', 'Byte', 'Byte asked for a drill to practice before driving the real robot.'],
-];
 let fbType = 'idea';
-
-function ideaHtml(it) {
-  const [tl, ic] = FTYPE[it.type];
-  const n = it.v + (it.me ? 1 : 0);
-  return `<div class="ridea${it.mine ? ' mine' : ''}">
-    <span class="row" style="gap:6px"><span class="st">${icon(ic, 'i sm')}${tl}</span>${it.mine ? '<span class="st volt">New</span>' : ''}</span>
-    <div class="t">${esc(it.t)}</div>
-    <div class="row between"><span class="row" style="gap:6px">${av(it.who, 22)}<span class="cap">${it.who}${it.who === ME ? ' (you)' : ''}</span></span>
-      <button class="react" type="button" data-fvote="${it.id}" aria-pressed="${it.me}" aria-label="Vote for this, ${n} votes">▲ <span class="num">${n}</span></button></div>
-  </div>`;
-}
 
 function feedback(view, ctx) {
   const draft = ctx.state.fbDraft || '';
   delete ctx.state.fbDraft;
+  let items = [], votes = [];
   view.innerHTML = `<div class="zv">
-    ${strip('Tell us what to build next, what is broken and what you love about the Hub. Vote for the ideas you want most.', [tag('Phase 2 · Dec 7–18'), SAMPLE])}
+    ${strip('Tell us what to build next, what is broken and what you love about the Hub. Vote for the ideas you want most.', [])}
     <article class="card">
-      <div class="card-head"><h3 class="card-title">Roadmap</h3>${tag('Sample ideas')}</div>
-      <div class="road" id="fbRoad"></div>
-      <p class="cap">${icon('code', 'i sm')} Some of these you could build yourself in Student Dev Mode, which arrives in Phase 7.</p>
+      <div class="card-head"><h3 class="card-title">Roadmap</h3>${isMentor() ? tag('You can move cards') : ''}</div>
+      <div class="road" id="fbRoad">${loading()}</div>
     </article>
     <article class="card c7">
       <div class="card-head"><h3 class="card-title">Send feedback</h3></div>
@@ -553,41 +566,96 @@ function feedback(view, ctx) {
       <label class="sr" for="fbText">Your feedback</label>
       <textarea class="inp" id="fbText" maxlength="300" placeholder="${fbPlaceholder()}">${esc(draft)}</textarea>
       <span class="ferr" id="fbErr" aria-live="polite"></span>
-      <div class="row between wrap"><span class="cap">Coach reads new ideas every Friday.</span><button class="btn primary pill" type="button" id="fbSend">${icon('arrow', 'i sm')}Send</button></div>
+      <div class="row between wrap"><span class="cap">The whole team can see it, and mentors move it along the roadmap.</span><button class="btn primary pill" type="button" id="fbSend">${icon('arrow', 'i sm')}Send</button></div>
     </article>
     <article class="card c5">
-      <div class="card-head"><h3 class="card-title">What's new</h3>${tag('Sample')}</div>
-      <div class="items">${NEWS.map(([d, t, who, x]) => `<div class="it">${av(who, 32)}<div class="grow"><div class="t">${t}</div><div class="meta cap" style="font-weight:400">${x}</div></div><span class="end cap">${d}</span></div>`).join('')}</div>
+      <div class="card-head"><h3 class="card-title">What's new</h3></div>
+      <div class="items" id="fbNews">${loading()}</div>
     </article>
   </div>`;
+  const ideaHtml = (it) => {
+    const d = it.data, [tl, ic] = FTYPE[d.type] || FTYPE.idea;
+    const vs = votesFor(votes, 'feedback', it.id), mine = vs.some(isMine), n = vs.length;
+    const st = COLS.some((c) => c[0] === d.status) ? d.status : 'review';
+    return `<div class="ridea${isMine(it) ? ' mine' : ''}" data-fid="${esc(it.id)}">
+      <span class="row" style="gap:6px"><span class="st">${icon(ic, 'i sm')}${tl}</span>${canRemove(it) ? `<button class="icon-btn sm kc-fdel" type="button" data-fdel="${esc(it.id)}" aria-label="Remove this feedback" title="Remove">${icon('x', 'i sm')}</button>` : ''}</span>
+      <div class="t">${esc(d.text || '')}</div>
+      <div class="row between"><span class="row" style="gap:6px">${av(it.author, 22)}<span class="cap">${esc(it.author)}${it.author === me() ? ' (you)' : ''}</span></span>
+        <button class="react" type="button" data-fvote="${esc(it.id)}" aria-pressed="${mine}" aria-label="Vote for this, ${n} votes">▲ <span class="num">${n}</span></button></div>
+      ${isMentor() ? `<label class="kc-status"><span class="cap">Status</span><select class="inp" data-fstat="${esc(it.id)}">${COLS.map(([v, t]) => `<option value="${v}"${v === st ? ' selected' : ''}>${t}</option>`).join('')}</select></label>` : ''}
+    </div>`;
+  };
+  const statusOf = (it) => (COLS.some((c) => c[0] === it.data.status) ? it.data.status : 'review');
   const road = () => {
     $('#fbRoad', view).innerHTML = COLS.map(([id, name, ic]) => {
-      const list = IDEAS.filter((x) => x.col === id);
-      return `<section class="rcol" aria-label="${name}"><h4 class="row">${icon(ic, 'i sm')}<span class="grow">${name}</span><span class="tag">${list.length}</span></h4>${list.map(ideaHtml).join('')}</section>`;
+      const list = items.filter((x) => statusOf(x) === id).sort((a, b) => votesFor(votes, 'feedback', b.id).length - votesFor(votes, 'feedback', a.id).length);
+      return `<section class="rcol" aria-label="${name}"><h4 class="row">${icon(ic, 'i sm')}<span class="grow">${name}</span><span class="tag">${list.length}</span></h4>${list.length ? list.map(ideaHtml).join('') : `<p class="cap kc-mem-empty">${id === 'review' ? 'Nothing new. Send the first idea below.' : 'Nothing here yet.'}</p>`}</section>`;
     }).join('');
+    const done = items.filter((x) => statusOf(x) === 'done').sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at)).slice(0, 5);
+    $('#fbNews', view).innerHTML = done.length
+      ? done.map((it) => `<div class="it">${av(it.author, 32)}<div class="grow"><div class="t">${esc(it.data.text)}</div><div class="meta cap" style="font-weight:400">Idea from ${esc(it.author)}</div></div><span class="end cap">${fmtMD.format(new Date(it.updated_at))}</span></div>`).join('')
+      : empty('Nothing shipped yet. When a mentor marks an idea as shipped, it shows up here.');
   };
-  road();
+  (async () => {
+    try {
+      const [f, v] = await Promise.all([api.list('feedback'), api.list('vote')]);
+      items = f; votes = v.filter((x) => x.data && x.data.feedback);
+      road();
+    } catch (err) { $('#fbRoad', view).innerHTML = empty(`Feedback did not load. ${esc(errMsg(err))}`); $('#fbNews', view).innerHTML = ''; }
+  })();
   wireSeg(view, 'ftype', (v) => { fbType = v; $('#fbText', view).placeholder = fbPlaceholder(); });
-  view.addEventListener('click', (e) => {
+  view.addEventListener('click', async (e) => {
     const b = e.target.closest('[data-fvote]');
-    if (!b) return;
-    const it = IDEAS.find((x) => x.id === b.dataset.fvote);
-    it.me = !it.me;
-    const n = it.v + (it.me ? 1 : 0);
-    b.setAttribute('aria-pressed', String(it.me));
-    b.setAttribute('aria-label', `Vote for this, ${n} votes`);
-    $('.num', b).textContent = n;
+    if (b) {
+      const id = b.dataset.fvote;
+      const mine = votes.find((v) => isMine(v) && v.data.feedback === id);
+      b.disabled = true;
+      try {
+        if (mine) { await api.remove('vote', mine.id); votes = votes.filter((v) => v !== mine); }
+        else votes = [await api.create('vote', { feedback: id }), ...votes];
+        const n = votesFor(votes, 'feedback', id).length;
+        b.setAttribute('aria-pressed', String(!mine));
+        b.setAttribute('aria-label', `Vote for this, ${n} votes`);
+        $('.num', b).textContent = n;
+      } catch (err) { ctx.toast(errMsg(err)); }
+      b.disabled = false;
+      return;
+    }
+    const d = e.target.closest('[data-fdel]');
+    if (d) {
+      const it = items.find((x) => x.id === d.dataset.fdel);
+      if (!it || !confirm('Remove this feedback?')) return;
+      try { await api.remove('feedback', it.id); items = items.filter((x) => x !== it); road(); ctx.toast('Removed.'); }
+      catch (err) { ctx.toast(errMsg(err)); }
+    }
+  });
+  view.addEventListener('change', async (e) => {
+    const s = e.target.closest('[data-fstat]');
+    if (!s) return;
+    const it = items.find((x) => x.id === s.dataset.fstat);
+    try {
+      const u = await api.update('feedback', it.id, { status: s.value });
+      Object.assign(it, { data: u.data, updated_at: u.updated_at });
+      road();
+      ctx.toast(`Moved to ${COLS.find((c) => c[0] === s.value)[1]}.`);
+    } catch (err) { ctx.toast(errMsg(err)); road(); }
   });
   const txt = $('#fbText', view), err = $('#fbErr', view);
   txt.addEventListener('input', () => { err.textContent = ''; });
-  $('#fbSend', view).addEventListener('click', () => {
+  $('#fbSend', view).addEventListener('click', async () => {
     const t = txt.value.trim();
-    if (t.length < 5) { err.textContent = 'Write a few words first, so Coach knows what you mean.'; txt.focus(); return; }
-    if (EMAIL.test(t) || PHONE.test(t)) { err.textContent = 'Please leave out email addresses and phone numbers. Coach can find you at the next meeting.'; txt.focus(); return; }
-    IDEAS.unshift({ id: `f${IDEAS.length}`, col: 'review', type: fbType, t, who: ME, v: 0, me: true, mine: true });
-    txt.value = '';
-    road();
-    ctx.toast('Thanks! It is in Under review. Coach reads new ideas every Friday.');
+    if (t.length < 5) { err.textContent = 'Write a few words first, so a mentor knows what you mean.'; txt.focus(); return; }
+    if (EMAIL.test(t) || PHONE.test(t)) { err.textContent = 'Please leave out email addresses and phone numbers. A mentor can find you at the next meeting.'; txt.focus(); return; }
+    const btn = $('#fbSend', view);
+    btn.disabled = true;
+    try {
+      const it = await api.create('feedback', { type: fbType, text: t, status: 'review' });
+      items = [it, ...items];
+      txt.value = '';
+      road();
+      ctx.toast('Thanks! It is in Under review, and the team can vote on it.');
+    } catch (e2) { err.textContent = errMsg(e2); }
+    btn.disabled = false;
   });
   if (draft) { txt.focus({ preventScroll: true }); txt.setSelectionRange(draft.length, draft.length); }
 }

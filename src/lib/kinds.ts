@@ -12,7 +12,7 @@ export const KINDS: Record<string, KindRule> = {
   inventory:   { see: 'team', create: 'any',    edit: 'any' },     // parts stock and checkouts
   issue:       { see: 'team', create: 'any',    edit: 'any' },     // robot part issues
   version:     { see: 'team', create: 'mentor', edit: 'mentor' },  // robot versions
-  progress:    { see: 'self', create: 'any',    edit: 'author' },  // learning path lessons done
+  progress:    { see: 'team', create: 'any',    edit: 'author' },  // learning path lessons done
   badge:       { see: 'team', create: 'mentor', edit: 'mentor' },  // badges awarded by mentors
   challenge:   { see: 'team', create: 'mentor', edit: 'mentor' },  // weekly code challenges
   submission:  { see: 'team', create: 'any',    edit: 'author' },  // challenge submissions

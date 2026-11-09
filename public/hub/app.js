@@ -1,7 +1,7 @@
 // Kilowattchaos Hub: everything except the 3D viewer (viewer.js) and the zone pages (zones/).
 import { loadZone, initGlossaryTips, closeDrawer, slug } from './zones/index.js';
-import { api, session as S } from './api.js';
-import { setRoster } from './zones/common.js';
+import { api, session as S, isMentor } from './api.js';
+import { setRoster, esc, drawer } from './zones/common.js';
 
 // Who is signed in, and the team. Everything below can rely on it.
 const BOOT = await api.me();
@@ -68,7 +68,7 @@ if (hasLinear) {
   root.style.setProperty('--spring-dur', `${SPRING.ms}ms`);
 }
 
-// ---------------------------------------------------------------- Dates (season is real, meetings are samples)
+// ---------------------------------------------------------------- Dates (season dates are real; meetings come from the Logbook calendar)
 const KICKOFF = new Date(2026, 8, 12);
 const dayStart = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
 const seasonWeek = (d = new Date()) => {
@@ -95,11 +95,11 @@ function greeting() {
 const ZONES = [
   { id: 'home', name: 'Home', icon: 'home', subs: ['Dashboard', 'Shop TV', 'Customize'], q: "What's happening, and what's next?" },
   { id: 'robot', name: 'Robot', icon: 'bot', subs: ['3D Explorer', 'Versions', 'Subsystems', 'Specs and parts', 'AR and VR'], q: 'What does our robot look like now, and how did it get here?' },
-  { id: 'build', name: 'Build', icon: 'wrench', subs: ['Ideas', 'Mechanism Lab', 'Print Shop', 'Parts and inventory'], q: 'How do we make it better, and can I get that part printed?', when: 'The Mechanism Lab cards reach the shop TV the week of November 16. Print Shop v0 opens on December 1, Ideas with prototype tests arrive in Phase 3, and the print bridge in Phase 5.' },
-  { id: 'learn', name: 'Learn', icon: 'book', subs: ['Paths', 'FIRST and BIOBUZZ', 'Setup and FAQ', 'Build tips', 'AI agents', 'Glossary'], q: 'How do I do this, and what do the rules say?', when: 'FIRST and BIOBUZZ basics and Setup and FAQ (OnBot Java first) open on December 1. Learning paths and the glossary follow in Phase 3.' },
-  { id: 'code', name: 'Code', icon: 'code', subs: ['BioBuzz Arena', 'Our code', 'Snippets', 'Challenges'], q: 'Where do I write code, and does it work?', when: 'BioBuzz Arena v0, your twin with gamepads on, opens on December 1. The Arena editor, team code and challenges land in Phase 4, January 25 to February 12.' },
-  { id: 'crew', name: 'Crew', icon: 'users', subs: ['Chat', 'Inspiration', 'People', 'Feedback'], q: "What's the team talking about?", when: 'Chat, inspiration and profiles come in Phase 2, December 7 to 18. Chat switches on only once a second YPP-cleared adult is in place.' },
-  { id: 'logbook', name: 'Logbook', icon: 'logbook', subs: ['Calendar', 'Sessions', 'Progress', 'Competitions', 'Portfolio'], q: 'What did we do, and when is the next thing?', when: 'The calendar and session notes open on December 1. Competitions and the portfolio helper follow in Phase 2, December 7 to 18.' },
+  { id: 'build', name: 'Build', icon: 'wrench', subs: ['Ideas', 'Mechanism Lab', 'Print Shop', 'Parts and inventory'], q: 'How do we make it better, and can I get that part printed?' },
+  { id: 'learn', name: 'Learn', icon: 'book', subs: ['Paths', 'FIRST and BIOBUZZ', 'Setup and FAQ', 'Build tips', 'AI agents', 'Glossary'], q: 'How do I do this, and what do the rules say?' },
+  { id: 'code', name: 'Code', icon: 'code', subs: ['BioBuzz Arena', 'Our code', 'Snippets', 'Challenges'], q: 'Where do I write code, and does it work?' },
+  { id: 'crew', name: 'Crew', icon: 'users', subs: ['Chat', 'Inspiration', 'People', 'Feedback'], q: "What's the team talking about?" },
+  { id: 'logbook', name: 'Logbook', icon: 'logbook', subs: ['Calendar', 'Sessions', 'Progress', 'Competitions', 'Portfolio'], q: 'What did we do, and when is the next thing?' },
 ];
 
 // A pill group with a sliding indicator, used by the zone bar and the design-system demo.
@@ -244,78 +244,329 @@ document.addEventListener('click', (e) => {
   if (t) { toast(t.dataset.toast); closePop(); }
 });
 
+// ---------------------------------------------------------------- Team data for Home (real records)
+// Everything on the dashboard, the bell and the Shop TV reads from these lists. Empty is normal for a new team.
+const DAY_MS = 864e5;
+const H = { loaded: false, events: [], rsvps: [], tasks: [], agenda: [], prints: [], sessions: [], versions: [], shoutouts: [], comps: [], prefs: [], issues: [] };
+const KIND_KEY = { event: 'events', rsvp: 'rsvps', task: 'tasks', agenda: 'agenda', print: 'prints', session: 'sessions', version: 'versions', shoutout: 'shoutouts', competition: 'comps', pref: 'prefs', issue: 'issues' };
+const homeBus = new EventTarget();
+const changed = () => homeBus.dispatchEvent(new Event('change'));
+async function loadHome(kinds = Object.keys(KIND_KEY)) {
+  await Promise.all(kinds.map(async (k) => {
+    try { H[KIND_KEY[k]] = (await api.list(k)) || []; } catch (err) { console.error(err); }
+  }));
+  H.loaded = true;
+}
+const isMentorName = (n) => BOOT.roster.some((r) => r.name === n && r.role === 'mentor');
+const pad2 = (n) => String(n).padStart(2, '0');
+const ymd = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+const parseYmd = (s) => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(s || '')); return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null; };
+const atTime = (day, t) => {
+  const m = /^(\d{1,2}):(\d{2})\s*(am|pm)?/i.exec(String(t || '').trim());
+  if (!m || !day) return null;
+  let h = +m[1];
+  const ap = (m[3] || '').toLowerCase();
+  if (ap === 'pm' && h < 12) h += 12;
+  if (ap === 'am' && h === 12) h = 0;
+  if (!ap && h < 8 && m[1].length === 1) h += 12; // "3:30" on a team plan means the afternoon; "07:30" from a time picker stays morning
+  return new Date(day.getFullYear(), day.getMonth(), day.getDate(), h, +m[2]);
+};
+const t12 = (d) => d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+const tShort = (d) => t12(d).replace(/\s?[AP]M$/, '');
+function timeRange(a, b) {
+  const pa = t12(a).slice(-2), pb = t12(b).slice(-2);
+  return pa === pb ? `${tShort(a)}–${tShort(b)} ${pb}` : `${t12(a)}–${t12(b)}`;
+}
+const recDate = (r) => parseYmd(r.data && (r.data.date || r.data.day)) || new Date(r.created_at);
+const txt = (d, keys) => { for (const k of keys) if (d && typeof d[k] === 'string' && d[k].trim()) return d[k].trim(); return ''; };
+const whoOf = (d) => {
+  const w = d && (d.who ?? d.owner ?? d.assignee);
+  return Array.isArray(w) ? w.filter((x) => typeof x === 'string') : typeof w === 'string' && w ? [w] : [];
+};
+// An event record from Logbook, read whichever way its date and times were saved.
+function evInfo(r) {
+  const d = r.data || {};
+  const iso = (v) => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(v);
+  const day = parseYmd(d.date || d.day) || (typeof d.start === 'string' && /^\d{4}-\d{2}-\d{2}/.test(d.start) ? parseYmd(d.start) : null);
+  let start = null, allDay = false;
+  const s0 = d.start ?? d.time ?? d.at;
+  if (iso(s0) || typeof s0 === 'number') start = new Date(s0);
+  else if (day && s0 && !/^\d{4}-\d{2}-\d{2}$/.test(String(s0))) start = atTime(day, s0);
+  if ((!start || isNaN(start)) && day) { start = day; allDay = true; }
+  if (!start || isNaN(start)) return null;
+  const e0 = d.end ?? d.endTime ?? d.until;
+  let end = iso(e0) || typeof e0 === 'number' ? new Date(e0) : e0 ? atTime(start, e0) : null;
+  if (!end || isNaN(end) || end <= start) end = allDay ? new Date(start.getTime() + DAY_MS - 1) : new Date(start.getTime() + (Number(d.minutes) || 120) * 60e3);
+  const bring = Array.isArray(d.bring) ? d.bring.filter((x) => typeof x === 'string' && x.trim()) : typeof d.bring === 'string' ? d.bring.split(',').map((x) => x.trim()).filter(Boolean) : [];
+  return { id: r.id, rec: r, start, end, allDay, title: txt(d, ['title', 'name', 'what']) || 'Team meeting', where: txt(d, ['where', 'place', 'location']), bring, kind: txt(d, ['kind', 'type']) };
+}
+const allEvents = () => H.events.map(evInfo).filter(Boolean).sort((a, b) => a.start - b.start);
+const nextEvent = (now = new Date()) => allEvents().find((e) => e.end > now) || null;
+const isMeet = (e) => /meet|competition|tournament|scrimmage|qualifier|championship/i.test(`${e.kind} ${e.title}`);
+// Competitions from Logbook (and events marked as a meet), soonest first.
+function meets() {
+  const out = H.comps.map((r) => {
+    const d = r.data || {};
+    const at = parseYmd(d.date || d.day || d.start);
+    return at ? { id: r.id, at, title: txt(d, ['name', 'title']) || 'Competition', where: txt(d, ['where', 'place', 'location']) } : null;
+  }).filter(Boolean);
+  for (const e of allEvents()) if (isMeet(e) && !out.some((m) => ymd(m.at) === ymd(e.start))) out.push({ id: e.id, at: dayStart(e.start), title: e.title, where: e.where });
+  return out.sort((a, b) => a.at - b.at);
+}
+// The agenda for today, or the next one a mentor has posted.
+function planFor(now = new Date()) {
+  const today = ymd(now);
+  const recs = H.agenda.map((r) => ({ r, date: (r.data && r.data.date) || ymd(new Date(r.created_at)) }));
+  const t = recs.find((x) => x.date === today);
+  if (t) return { rec: t.r, date: t.date, today: true };
+  const fut = recs.filter((x) => x.date > today).sort((a, b) => (a.date < b.date ? -1 : 1))[0];
+  return fut ? { rec: fut.r, date: fut.date, today: false } : null;
+}
+function planItems(plan) {
+  if (!plan) return [];
+  const day = parseYmd(plan.date);
+  const items = Array.isArray(plan.rec.data.items) ? plan.rec.data.items : [];
+  return items.filter((a) => a && typeof a.what === 'string' && a.what.trim()).map((a) => {
+    const at = atTime(day, a.time);
+    return { time: String(a.time || ''), at, t: at ? tShort(at) : String(a.time || ''), what: a.what, sys: a.sys || '', who: Array.isArray(a.who) ? a.who.filter((n) => typeof n === 'string') : [] };
+  }).sort((a, b) => (a.at && b.at ? a.at - b.at : 0));
+}
+const printSt = (r) => String((r.data && r.data.status) || 'queued').toLowerCase();
+const printName = (r) => txt(r.data, ['name', 'title', 'what', 'part']) || 'A print';
+const printWho = (r) => txt(r.data, ['who', 'by']) || r.author;
+function printQueue() {
+  const by = (a, b) => new Date(a.created_at) - new Date(b.created_at);
+  const printing = H.prints.filter((r) => printSt(r) === 'printing').sort(by);
+  const queued = H.prints.filter((r) => printSt(r) === 'queued').sort(by);
+  const recent = H.prints.filter((r) => ['done', 'failed'].includes(printSt(r)) && Date.now() - new Date(r.updated_at) < 3 * DAY_MS).sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
+  return { printing, queued, recent };
+}
+const sysColor = (k) => (SYS[k] ? SYS[k].c : 'var(--stone)');
+const sysName = (k) => (SYS[k] ? SYS[k].name : k === 'code' ? 'Code' : k === 'learn' ? 'Learn' : k === 'outreach' ? 'Outreach' : k === 'portfolio' ? 'Portfolio' : '');
+const TASK_SYS = () => [...SYS_ORDER.filter((k) => k !== 'hardware').map((k) => [k, SYS[k].name]), ['code', 'Code'], ['learn', 'Learn'], ['outreach', 'Outreach'], ['portfolio', 'Portfolio']];
+const ago = (t) => {
+  const s = Math.max(0, (Date.now() - new Date(t)) / 1000);
+  if (s < 90) return 'just now';
+  if (s < 3600) return `${Math.round(s / 60)} min ago`;
+  if (s < 86400) return `${Math.round(s / 3600)} h ago`;
+  const d = Math.round(s / 86400);
+  return d === 1 ? 'yesterday' : `${d} days ago`;
+};
+const avBot = (n) => `<span class="av" title="${esc(n)}">${bot(PEOPLE[n])}</span>`;
+const loadingRow = (tagName = 'div') => `<${tagName} class="live-empty">Loading the team's data…</${tagName}>`;
+
 // ---------------------------------------------------------------- Header lines
 function renderHeader() {
   const now = new Date();
   $('#seasonLine').textContent = `BIOBUZZ 2026–27 · Season week ${seasonWeek(now)} · ${fmtDay.format(now)}`;
   if (zone === 'home') $('#hello').textContent = greeting();
 }
+// The preview's "Sample" tags come off the cards that now read real data.
+$$('.w-next .card-head .tag, .w-timeline .card-head .tag, .w-plan .card-head .tag, .w-print .card-head .tag').forEach((t) => t.remove());
+$('#dock').setAttribute('aria-label', 'Season dock');
+{ const c = $('.w-print .card-foot .cap'); if (c) c.textContent = 'A mentor starts each print and updates its progress here.'; }
 
-// ---------------------------------------------------------------- Next up
-let going = false;
+// ---------------------------------------------------------------- Next up (events from Logbook, RSVPs from everyone)
+let nextEv = null;
+function rsvpFor(evId, userId) { return H.rsvps.find((r) => r.data && r.data.event === evId && r.user_id === userId) || null; }
+function goingNames(evId) {
+  const seenU = new Set(), names = [];
+  for (const r of H.rsvps) {
+    if (!r.data || r.data.event !== evId || seenU.has(r.user_id)) continue;
+    seenU.add(r.user_id);
+    if (r.data.going) names.push(r.author);
+  }
+  return names;
+}
 function renderNext() {
   const now = new Date();
-  const m = nextMeeting(now);
-  if (!m) return;
-  const t12 = (d) => d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).replace(' PM', '').replace(' AM', '');
-  $('#nextWhen').textContent = `${fmtShort.format(m.start)} · ${t12(m.start)}–${t12(m.end)} PM`;
-  const el = $('#nextCount');
-  if (now >= m.start) { el.innerHTML = 'Happening now'; return; }
-  const mins = Math.max(0, Math.floor((m.start - now) / 60000));
-  const d = Math.floor(mins / 1440), h = Math.floor((mins % 1440) / 60), mm = mins % 60;
-  el.innerHTML = d > 0 ? `${d}<small>d</small>${h}<small>h</small>` : `${h}<small>h</small>${mm}<small>min</small>`;
-  el.setAttribute('aria-label', `Starts in ${d ? `${d} days ` : ''}${h} hours${d ? '' : ` ${mm} minutes`}`);
+  nextEv = nextEvent(now);
+  const ev = nextEv;
+  const el = $('#nextCount'), what = $('.w-next .next-what'), when = $('#nextWhen'), bring = $('.w-next .bring'), btn = $('#rsvpBtn');
+  if (!ev) {
+    el.textContent = H.loaded ? 'Nothing yet' : '…';
+    el.removeAttribute('aria-label');
+    what.textContent = H.loaded ? 'Nothing on the team calendar yet.' : 'Loading the calendar…';
+    when.parentElement.hidden = !H.loaded ? true : !isMentor();
+    when.textContent = 'Add the next meeting in Logbook.';
+    bring.hidden = true;
+    $('#goingStack').innerHTML = H.loaded ? '<span class="cap">A mentor adds meetings to the calendar.</span>' : '';
+    btn.hidden = !isMentor() || !H.loaded;
+    btn.innerHTML = `${icon('plus', 'i sm')}Add event`;
+    btn.setAttribute('aria-pressed', 'false');
+    return;
+  }
+  when.parentElement.hidden = false;
+  when.textContent = ev.allDay ? `${fmtShort.format(ev.start)} · all day` : `${fmtShort.format(ev.start)} · ${timeRange(ev.start, ev.end)}`;
+  what.textContent = ev.where ? `${ev.title} · ${ev.where}` : ev.title;
+  bring.hidden = !ev.bring.length;
+  bring.innerHTML = `<span class="cap">Bring</span>${ev.bring.map((b) => `<span class="chip-sm">${esc(b)}</span>`).join('')}`;
+  if (now >= ev.start) { el.textContent = 'Happening now'; el.removeAttribute('aria-label'); }
+  else {
+    const mins = Math.max(0, Math.floor((ev.start - now) / 60000));
+    const d = Math.floor(mins / 1440), h = Math.floor((mins % 1440) / 60), mm = mins % 60;
+    el.innerHTML = d > 0 ? `${d}<small>d</small>${h}<small>h</small>` : `${h}<small>h</small>${mm}<small>min</small>`;
+    el.setAttribute('aria-label', `Starts in ${d ? `${d} days ` : ''}${h} hours${d ? '' : ` ${mm} minutes`}`);
+  }
+  btn.hidden = false;
+  renderGoing();
 }
 function renderGoing() {
-  const names = ['Pixel', 'Gizmo', 'Byte', 'Nova', 'Rivet', 'Echo'];
-  if (going) names.unshift(ME.name);
-  $('#goingStack').innerHTML = names.slice(0, 5).map((n) => `<span class="av" title="${n}">${bot(PEOPLE[n])}</span>`).join('') + `<span class="cap">${names.length} of 7 going</span>`;
+  const ev = nextEv;
+  if (!ev) return;
+  const names = goingNames(ev.id);
+  const mine = rsvpFor(ev.id, ME.id);
+  const going = !!(mine && mine.data.going);
+  const btn = $('#rsvpBtn');
+  btn.setAttribute('aria-pressed', String(going));
+  btn.innerHTML = going ? `${icon('check', 'i sm')}Going` : mine ? 'Not going' : 'RSVP';
+  btn.setAttribute('aria-label', going ? `You're going to ${ev.title}. Press to change.` : `RSVP to ${ev.title}`);
+  $('#goingStack').innerHTML = names.length
+    ? names.slice(0, 5).map(avBot).join('') + `<span class="cap">${names.length} of ${BOOT.roster.length} going</span>`
+    : '<span class="cap">Nobody yet. Be the first!</span>';
 }
-$('#rsvpBtn').addEventListener('click', (e) => {
-  going = !going;
-  const b = e.currentTarget;
-  b.setAttribute('aria-pressed', String(going));
-  b.innerHTML = going ? `${icon('check', 'i sm')}Going` : 'RSVP';
+let rsvpBusy = false;
+$('#rsvpBtn').addEventListener('click', async () => {
+  const ev = nextEv;
+  if (!ev) { if (isMentor()) setZone('logbook', 'Calendar', { scroll: true }); return; }
+  if (rsvpBusy) return;
+  rsvpBusy = true;
+  const mine = rsvpFor(ev.id, ME.id);
+  const going = !(mine && mine.data.going);
+  const before = mine ? { ...mine.data } : null;
+  let temp = null;
+  if (mine) mine.data = { ...mine.data, going };
+  else { temp = { id: `tmp-${Date.now()}`, user_id: ME.id, author: ME.name, data: { event: ev.id, going }, created_at: new Date().toISOString(), updated_at: new Date().toISOString() }; H.rsvps.unshift(temp); }
   renderGoing();
+  try {
+    if (mine) await api.update('rsvp', mine.id, { going });
+    else Object.assign(temp, await api.create('rsvp', { event: ev.id, going }), { author: ME.name });
+    toast(going ? `You're going. See you at ${ev.title.toLowerCase().startsWith('team') ? 'the meeting' : ev.title}!` : "Got it. You're marked as not going.");
+  } catch (err) {
+    if (mine) mine.data = before; else H.rsvps.splice(H.rsvps.indexOf(temp), 1);
+    renderGoing();
+    toast(err.message);
+  } finally { rsvpBusy = false; }
 });
 
-// ---------------------------------------------------------------- My tasks
-const TASKS = [
-  { t: "Measure the flywheel's top speed", meta: 'Launcher · due Tuesday', c: 'var(--sys-launcher)', done: false },
-  { t: 'Print 4 intake roller hubs', meta: 'Intake · due Thursday', c: 'var(--sys-intake)', done: false },
-  { t: 'Finish Onshape Lesson 1', meta: 'Learn · due Friday', c: 'var(--stone)', done: false },
-  { t: 'Write the drive-forward auto', meta: "Code · from Thursday's note", c: 'var(--stone)', done: true },
-];
-let taskHint = false;
+// ---------------------------------------------------------------- My tasks (task records assigned by name)
+const DONE_KEEP = 7 * DAY_MS;
+function dueText(due, done) {
+  const d = parseYmd(due);
+  if (!d) return '';
+  const days = Math.round((d - dayStart(new Date())) / DAY_MS);
+  if (!done && days < 0) return `was due ${fmtShort.format(d)}`;
+  if (days === 0) return 'due today';
+  if (days === 1) return 'due tomorrow';
+  if (days > 1 && days < 7) return `due ${fmtWeekday.format(d)}`;
+  return `due ${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+}
+function taskList() {
+  const team = isMentor();
+  const now = Date.now();
+  return H.tasks.filter((r) => {
+    const d = r.data || {};
+    if (!txt(d, ['title', 'text', 'what'])) return false;
+    if (!team && !whoOf(d).includes(ME.name)) return false;
+    if (d.done && now - new Date(r.updated_at) > DONE_KEEP) return false;
+    if (team && !whoOf(d).length) return false;
+    return true;
+  }).sort((a, b) => {
+    const da = !!a.data.done, db = !!b.data.done;
+    if (da !== db) return da ? 1 : -1;
+    const xa = a.data.due || '9999', xb = b.data.due || '9999';
+    if (xa !== xb) return xa < xb ? -1 : 1;
+    return new Date(b.created_at) - new Date(a.created_at);
+  });
+}
+let taskFormOpen = false;
 function renderTasks() {
   const ul = $('#tasks');
-  ul.innerHTML = TASKS.map((k, i) => `<li class="task${k.done ? ' done' : ''}"><button class="check" type="button" data-task="${i}" aria-pressed="${k.done}" aria-label="${k.done ? 'Mark not done' : 'Mark done'}: ${k.t}">${icon('check')}</button><div><div class="t">${k.t}</div><div class="meta"><span class="sdot" style="--c:${k.c}"></span>${k.meta}</div></div></li>`).join('');
-  $('#tasksOpen').textContent = `${TASKS.filter((k) => !k.done).length} open`;
+  const team = isMentor();
+  $('#tasksTitle').textContent = team ? 'Team tasks' : 'My tasks';
+  const list = taskList();
+  const shown = list.slice(0, 6);
+  const open = list.filter((r) => !r.data.done).length;
+  $('#tasksOpen').textContent = H.loaded ? `${open} open` : '…';
+  if (!H.loaded) ul.innerHTML = loadingRow('li');
+  else if (!list.length) {
+    ul.innerHTML = `<li class="live-empty">${team ? 'No tasks handed out yet. Give someone their first one below.' : 'No tasks for you right now. A mentor can give you one, or pick something up in Build.'}</li>`;
+  } else {
+    ul.innerHTML = shown.map((r) => {
+      const d = r.data, title = txt(d, ['title', 'text', 'what']);
+      const bits = [sysName(d.sys), dueText(d.due, d.done)].filter(Boolean);
+      if (team) bits.push(`for ${whoOf(d).join(', ')}`);
+      else if (r.author && r.author !== ME.name) bits.push(`from ${r.author}`);
+      return `<li class="task${d.done ? ' done' : ''}"><button class="check" type="button" data-task="${esc(r.id)}" aria-pressed="${!!d.done}" aria-label="${d.done ? 'Mark not done' : 'Mark done'}: ${esc(title)}">${icon('check')}</button><div><div class="t">${esc(title)}</div><div class="meta"><span class="sdot" style="--c:${sysColor(d.sys)}"></span>${esc(bits.join(' · '))}</div></div></li>`;
+    }).join('') + (list.length > shown.length ? `<li class="cap lh-more">${list.length - shown.length} more ${team ? 'on the team' : 'for you'}</li>` : '');
+  }
+  renderTaskForm();
 }
-$('#tasks').addEventListener('click', (e) => {
+function renderTaskForm() {
+  const card = $('.w-tasks');
+  let box = $('#taskAdd', card);
+  if (!isMentor()) { if (box) box.remove(); return; }
+  if (!box) { box = document.createElement('div'); box.id = 'taskAdd'; box.className = 'lh-add'; card.appendChild(box); }
+  if (taskFormOpen && $('#taskForm', box)) return;
+  if (!taskFormOpen) { box.innerHTML = `<button class="btn soft pill" type="button" id="taskNew">${icon('plus', 'i sm')}Give a task</button>`; return; }
+  const people = BOOT.roster.filter((r) => r.role !== 'mentor').concat(BOOT.roster.filter((r) => r.role === 'mentor'));
+  box.innerHTML = `<form class="lh-form" id="taskForm">
+    <label class="field lh-full"><span>Task</span><input class="inp" name="title" maxlength="90" required placeholder="Measure the flywheel's top speed"></label>
+    <label class="field"><span>For</span><select class="inp" name="who" required>${people.map((p) => `<option value="${esc(p.name)}">${esc(p.name)}${p.role === 'mentor' ? ' (mentor)' : ''}</option>`).join('')}</select></label>
+    <label class="field"><span>Part of</span><select class="inp" name="sys"><option value="">Anything</option>${TASK_SYS().map(([k, n]) => `<option value="${k}">${n}</option>`).join('')}</select></label>
+    <label class="field"><span>Due</span><input class="inp" type="date" name="due"></label>
+    <div class="lh-btns"><button class="btn ghost pill" type="button" id="taskCancel">Cancel</button><button class="btn primary pill" type="submit">${icon('check', 'i sm')}Save task</button></div>
+  </form>`;
+  $('input[name=title]', box).focus({ preventScroll: true });
+}
+$('.w-tasks').addEventListener('click', (e) => {
+  if (e.target.closest('#taskNew')) { taskFormOpen = true; renderTaskForm(); }
+  else if (e.target.closest('#taskCancel')) { taskFormOpen = false; renderTaskForm(); $('#taskNew').focus(); }
+});
+$('.w-tasks').addEventListener('submit', async (e) => {
+  if (e.target.id !== 'taskForm') return;
+  e.preventDefault();
+  const f = new FormData(e.target);
+  const data = { title: String(f.get('title') || '').trim(), who: [String(f.get('who') || '')].filter(Boolean), sys: String(f.get('sys') || ''), due: String(f.get('due') || ''), done: false };
+  if (!data.title) { toast('Give the task a name first.'); return; }
+  const sub = $('button[type=submit]', e.target);
+  sub.disabled = true;
+  try {
+    const it = await api.create('task', data);
+    H.tasks.unshift({ ...it, author: ME.name });
+    taskFormOpen = false;
+    renderTasks();
+    toast(`Saved. ${data.who[0]} will see it in My tasks.`);
+    changed();
+  } catch (err) { sub.disabled = false; toast(err.message); }
+});
+$('#tasks').addEventListener('click', async (e) => {
   const b = e.target.closest('[data-task]');
   if (!b) return;
-  const k = TASKS[+b.dataset.task];
-  k.done = !k.done;
+  const r = H.tasks.find((x) => x.id === b.dataset.task);
+  if (!r) return;
+  const done = !r.data.done;
+  r.data = { ...r.data, done };
+  r.updated_at = new Date().toISOString();
   renderTasks();
-  $(`[data-task="${b.dataset.task}"]`).focus();
-  if (k.done && !taskHint) { taskHint = true; toast('Ticking a task off also updates the session note it came from.'); }
+  const again = $(`[data-task="${CSS.escape(r.id)}"]`);
+  if (again) again.focus();
+  try { await api.update('task', r.id, { done }); changed(); }
+  catch (err) { r.data = { ...r.data, done: !done }; renderTasks(); toast(err.message); }
 });
 
-// ---------------------------------------------------------------- Season timeline
+// ---------------------------------------------------------------- Season timeline (real season dates, real logs)
 const SEASON_A = new Date(2026, 8, 1), SEASON_B = new Date(2027, 4, 1);
 const pct = (d) => ((d - SEASON_A) / (SEASON_B - SEASON_A)) * 100;
-const EVENTS = [
+const FIXED = [
   { d: new Date(2026, 8, 12), t: 'Kickoff', s: 'Sep 12', icon: 'flag' },
   { d: new Date(2026, 11, 1), t: 'Hub doors open', s: 'Dec 1', icon: 'zap' },
-  { d: new Date(2027, 0, 16), t: 'League meet 1', s: 'Sample · Jan 16', icon: 'trophy' },
-  { d: new Date(2027, 1, 6), t: 'League meet 2', s: 'Sample · Feb 6', icon: 'trophy' },
-  { d: new Date(2027, 2, 6), t: 'League tournament', s: 'Sample · Mar 6', icon: 'trophy' },
 ];
 const BANDS = [
   { a: new Date(2026, 11, 21), b: new Date(2027, 0, 2), t: 'Winter break' },
   { a: new Date(2027, 2, 22), b: new Date(2027, 4, 1), t: 'Off-season: make it theirs' },
 ];
+const latestVersion = () => H.versions.slice().sort((a, b) => recDate(b) - recDate(a))[0] || null;
 function renderTimeline() {
   const now = new Date();
   const tp = clamp(pct(now), 0, 100);
@@ -326,44 +577,162 @@ function renderTimeline() {
     h += `<span class="tl-month" style="left:${pct(mid)}%">${a.toLocaleDateString('en-US', { month: 'short' })}</span>`;
   }
   for (const b of BANDS) h += `<div class="tl-band" style="left:${pct(b.a)}%;width:${pct(b.b) - pct(b.a)}%"><span>${b.t}</span></div>`;
-  for (const e of EVENTS) {
+  const nodes = FIXED.concat(meets().filter((m) => m.at >= SEASON_A && m.at < SEASON_B).map((m) => ({ d: m.at, t: esc(m.title), s: m.at.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), icon: 'trophy' })));
+  for (const e of nodes) {
     h += `<div class="tl-node${e.d > now ? ' future' : ''}" style="left:${pct(e.d)}%"><div class="tl-lbl">${e.t}<span>${e.s}</span></div><div class="tl-dot">${icon(e.icon, 'i sm')}</div></div>`;
   }
   h += `<div class="tl-today" style="left:${tp}%">Today · week ${seasonWeek(now)}</div>`;
   h += `<div class="tl-elbow" style="left:${tp}%"></div>`;
+  const v = latestVersion();
+  const vName = v ? txt(v.data, ['name', 'title']) || 'Robot version' : 'StarterBot v0';
+  const monthNotes = H.sessions.filter((r) => { const d = recDate(r); return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth(); }).length;
+  const q = printQueue();
+  const inQ = q.printing.length + q.queued.length;
   h += `<div class="tl-objs" style="left:calc(${tp}% + 26px)">
-    <button class="obj" type="button" data-robot="1"><span class="oc">${icon('commit', 'i sm')}</span>StarterBot v0</button>
-    <button class="obj" type="button" data-goto="logbook|Sessions"><span class="oc">${icon('note', 'i sm')}</span>Session notes<span class="x">×2</span></button>
-    <button class="obj" type="button" data-goto="build|Print Shop"><span class="oc">${icon('printer', 'i sm')}</span>Roller hub<span class="x">×4</span></button>
+    <button class="obj" type="button" data-goto="robot|Versions"><span class="oc">${icon('commit', 'i sm')}</span>${esc(vName)}</button>
+    <button class="obj" type="button" data-goto="logbook|Sessions"><span class="oc">${icon('note', 'i sm')}</span>${monthNotes ? `Session notes<span class="x">×${monthNotes}</span>` : 'Write a session note'}</button>
+    ${inQ ? `<button class="obj" type="button" data-goto="build|Print Shop"><span class="oc">${icon('printer', 'i sm')}</span>In the print queue<span class="x">×${inQ}</span></button>` : ''}
   </div>`;
   $('#tl').innerHTML = h;
   const sc = $('#tlScroll');
   sc.scrollLeft = Math.max(0, (sc.scrollWidth * tp) / 100 - sc.clientWidth * 0.3);
 }
-$('#tl').addEventListener('click', (e) => {
-  if (e.target.closest('[data-robot]')) { $('#hero').scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'center' }); }
-});
 
-// ---------------------------------------------------------------- Today's plan
-const AGENDA = [
-  { t: '3:30', what: 'Check in and safety glasses on', meta: 'Everyone', c: 'var(--stone)', who: [] },
-  { t: '3:40', what: 'Intake: try 6 mm gecko wheel spacing', meta: 'Intake', c: 'var(--sys-intake)', who: ['Pixel', 'Nova'] },
-  { t: '3:40', what: "Launcher: measure the flywheel's top speed", meta: 'Launcher', c: 'var(--sys-launcher)', who: ['Sparky', 'Rivet'] },
-  { t: '4:30', what: 'Code: run the drive-forward auto on the robot', meta: 'Code', c: 'var(--stone)', who: ['Byte', 'Gizmo'] },
-  { t: '5:15', what: 'Clean up and one-line reflections', meta: 'Everyone', c: 'var(--stone)', who: [] },
-];
+// ---------------------------------------------------------------- Today's plan (agenda records; mentors edit inline)
+const AGENDA = []; // shared with Logbook through ctx: today's (or the next) plan
+let planEditing = false;
+function lastRecap() {
+  const r = H.sessions.slice().sort((a, b) => recDate(b) - recDate(a) || new Date(b.created_at) - new Date(a.created_at))[0];
+  if (!r) return '';
+  return txt(r.data, ['summary', 'did', 'what', 'result', 'notes', 'text', 'reflection', 'next', 'title']);
+}
 function renderPlan() {
   const now = new Date();
-  const meetingToday = now.getDay() === 2 || now.getDay() === 4;
-  const m = nextMeeting(now);
-  $('#planTitle').textContent = meetingToday ? "Today's plan" : 'Next session';
-  $('#planSub').textContent = meetingToday ? 'Today, 3:30 to 5:30 PM · Shop room' : `No meeting today. Here's the plan for ${m ? fmtWeekday.format(m.start) : 'next time'}.`;
-  $('#agenda').innerHTML = AGENDA.map((a) => `<li class="ag"><time>${a.t}</time><div><div class="what">${a.what}</div><div class="meta"><span class="sdot" style="--c:${a.c}"></span>${a.meta}</div></div><div class="stack">${a.who.map((n) => `<span class="av" title="${n}">${bot(PEOPLE[n])}</span>`).join('')}</div></li>`).join('');
+  const plan = planFor(now);
+  const items = planItems(plan);
+  AGENDA.splice(0, AGENDA.length, ...items.map((a) => ({ t: a.t, what: a.what, who: a.who, meta: sysName(a.sys) || 'Everyone', c: sysColor(a.sys) })));
+  const head = $('.w-plan .card-head');
+  let edit = $('#planEdit', head);
+  if (isMentor() && !edit) {
+    head.insertAdjacentHTML('beforeend', `<button class="btn ghost pill" type="button" id="planEdit">${icon('note', 'i sm')}Edit plan</button>`);
+    edit = $('#planEdit', head);
+  }
+  if (edit) edit.hidden = planEditing || !H.loaded;
+  const ev = nextEvent(now);
+  const evToday = ev && ymd(ev.start) === ymd(now) ? ev : null;
+  if (planEditing) return;
+  if (plan && plan.today) {
+    $('#planTitle').textContent = "Today's plan";
+    $('#planSub').textContent = evToday && !evToday.allDay ? `Today, ${timeRange(evToday.start, evToday.end)}${evToday.where ? ` · ${evToday.where}` : ''}` : 'Today';
+  } else if (plan) {
+    const d = parseYmd(plan.date);
+    $('#planTitle').textContent = 'Next session';
+    $('#planSub').textContent = `No plan for today. Here's the plan for ${Math.round((d - dayStart(now)) / DAY_MS) < 7 ? fmtWeekday.format(d) : fmtShort.format(d)}.`;
+  } else {
+    $('#planTitle').textContent = "Today's plan";
+    $('#planSub').textContent = evToday ? `Today, ${evToday.allDay ? 'all day' : timeRange(evToday.start, evToday.end)}` : '';
+  }
+  const ol = $('#agenda');
+  if (!H.loaded) ol.innerHTML = loadingRow('li');
+  else if (!items.length) ol.innerHTML = `<li class="live-empty">${isMentor() ? 'No plan posted yet. Press Edit plan to write today\'s blocks.' : 'No plan posted yet. A mentor adds it before the meeting.'}</li>`;
+  else ol.innerHTML = items.map((a) => `<li class="ag"><time>${esc(a.t)}</time><div><div class="what">${esc(a.what)}</div><div class="meta"><span class="sdot" style="--c:${sysColor(a.sys)}"></span>${esc(sysName(a.sys) || 'Everyone')}</div></div><div class="stack">${a.who.map(avBot).join('')}</div></li>`).join('');
+  const recap = lastRecap();
+  $('#recap').hidden = !recap;
+  $('#recap').innerHTML = recap ? `<b>Last time:</b> ${esc(recap.length > 220 ? `${recap.slice(0, 217)}…` : recap)}` : '';
+}
+const to24 = (t) => { const d = atTime(new Date(), t); return d ? `${pad2(d.getHours())}:${pad2(d.getMinutes())}` : ''; };
+function planRowHtml(a = {}) {
+  const who = Array.isArray(a.who) ? a.who : [];
+  return `<div class="lh-prow">
+    <input class="inp lh-time" type="time" value="${to24(a.time)}" aria-label="Time">
+    <input class="inp lh-what" maxlength="120" value="${esc(a.what || '')}" placeholder="What happens in this block" aria-label="What happens">
+    <select class="inp lh-sys" aria-label="Part of the robot"><option value="">Everyone</option>${TASK_SYS().map(([k, n]) => `<option value="${k}"${k === a.sys ? ' selected' : ''}>${n}</option>`).join('')}</select>
+    <button class="icon-btn sm lh-del" type="button" aria-label="Remove this block">${icon('x', 'i sm')}</button>
+    <div class="lh-who" role="group" aria-label="Who">${BOOT.roster.filter((p) => p.role !== 'mentor').map((p) => `<button type="button" class="lh-chip" data-who="${esc(p.name)}" aria-pressed="${who.includes(p.name)}">${avBot(p.name)}${esc(p.name)}</button>`).join('')}</div>
+  </div>`;
+}
+function openPlanEditor() {
+  if (!isMentor()) return;
+  planEditing = true;
+  const now = new Date();
+  const plan = planFor(now);
+  const ev = nextEvent(now);
+  const date = plan && plan.today ? plan.date : ev ? ymd(ev.start) : ymd(now);
+  const rec = H.agenda.find((r) => r.data && r.data.date === date);
+  const rows = rec && Array.isArray(rec.data.items) && rec.data.items.length ? rec.data.items : [{ time: '15:30', what: 'Check in and safety glasses on' }, {}];
+  $('#planEdit').hidden = true;
+  $('#planTitle').textContent = 'Edit the plan';
+  $('#planSub').textContent = 'Everyone sees it on Home and the Shop TV.';
+  $('#recap').hidden = true;
+  $('#agenda').innerHTML = `<li class="lh-planed"><form id="planForm">
+    <label class="field lh-date"><span>Day</span><input class="inp" type="date" name="date" value="${date}" required></label>
+    <div id="planRows">${rows.map(planRowHtml).join('')}</div>
+    <div class="lh-btns"><button class="btn soft pill" type="button" id="planAddRow">${icon('plus', 'i sm')}Add a block</button><span class="lh-sp"></span><button class="btn ghost pill" type="button" id="planCancel">Cancel</button><button class="btn primary pill" type="submit">${icon('check', 'i sm')}Save plan</button></div>
+  </form></li>`;
+  const form = $('#planForm');
+  form.date.addEventListener('change', () => {
+    const r = H.agenda.find((x) => x.data && x.data.date === form.date.value);
+    if (r && Array.isArray(r.data.items)) $('#planRows').innerHTML = r.data.items.map(planRowHtml).join('');
+  });
+  $('.w-plan').scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'nearest' });
+  const first = $('.lh-what', form);
+  if (first) first.focus({ preventScroll: true });
+}
+$('.w-plan').addEventListener('click', (e) => {
+  if (e.target.closest('#planEdit')) { openPlanEditor(); return; }
+  if (e.target.closest('#planCancel')) { planEditing = false; renderPlan(); $('#planEdit').focus(); return; }
+  if (e.target.closest('#planAddRow')) { $('#planRows').insertAdjacentHTML('beforeend', planRowHtml()); const all = $$('#planRows .lh-what'); all[all.length - 1].focus(); return; }
+  const del = e.target.closest('.lh-del');
+  if (del) { del.closest('.lh-prow').remove(); return; }
+  const chip = e.target.closest('.lh-chip');
+  if (chip) chip.setAttribute('aria-pressed', String(chip.getAttribute('aria-pressed') !== 'true'));
+});
+$('.w-plan').addEventListener('submit', async (e) => {
+  if (e.target.id !== 'planForm') return;
+  e.preventDefault();
+  const form = e.target;
+  const date = form.date.value;
+  if (!date) { toast('Pick a day for the plan.'); return; }
+  const items = $$('.lh-prow', form).map((row) => ({
+    time: $('.lh-time', row).value,
+    what: $('.lh-what', row).value.trim(),
+    sys: $('.lh-sys', row).value,
+    who: $$('.lh-chip[aria-pressed="true"]', row).map((c) => c.dataset.who),
+  })).filter((a) => a.what);
+  const sub = $('button[type=submit]', form);
+  sub.disabled = true;
+  try {
+    const rec = H.agenda.find((r) => r.data && r.data.date === date);
+    if (rec) Object.assign(rec, await api.update('agenda', rec.id, { items }));
+    else H.agenda.unshift({ ...(await api.create('agenda', { date, items })), author: ME.name });
+    planEditing = false;
+    renderPlan();
+    toast(items.length ? 'Plan saved. It shows on Home and the Shop TV.' : 'Plan cleared.');
+    changed();
+  } catch (err) { sub.disabled = false; toast(err.message); }
+});
+
+// ---------------------------------------------------------------- Print queue (print records from the Print Shop; read only here)
+const RING_C = 2 * Math.PI * 22;
+const ringHtml = (p, inner) => `<div class="ring" data-pct="${p}"><svg viewBox="0 0 52 52"><circle class="track" cx="26" cy="26" r="22"/><circle class="val" cx="26" cy="26" r="22" style="stroke-dasharray:${RING_C};stroke-dashoffset:${RING_C * (1 - clamp(p, 0, 100) / 100)}"/></svg><span class="pct">${inner}</span></div>`;
+function renderPrints() {
+  const box = $('#prints');
+  if (!H.loaded) { box.innerHTML = loadingRow(); return; }
+  const { printing, queued, recent } = printQueue();
+  const rows = [];
+  for (const r of printing) {
+    const p = clamp(Math.round(Number(r.data.progress) || 0), 0, 100);
+    rows.push(`<div class="pr">${ringHtml(p, `${p}%`)}<div><div class="what">${esc(printName(r))}</div><div class="meta"><span class="pulse" aria-hidden="true"></span>Printing${r.data.printer ? ` on ${esc(r.data.printer)}` : ''} · for ${esc(printWho(r))}</div></div></div>`);
+  }
+  queued.forEach((r, i) => rows.push(`<div class="pr">${ringHtml(0, `#${i + 1}`)}<div><div class="what">${esc(printName(r))}</div><div class="meta">Queued · ${i === 0 ? 'next in line' : `${i + 1}${['st', 'nd', 'rd'][i] || 'th'} in line`} · for ${esc(printWho(r))}</div></div></div>`));
+  for (const r of recent) {
+    const ok = printSt(r) === 'done';
+    rows.push(`<div class="pr">${ringHtml(ok ? 100 : 0, icon(ok ? 'check' : 'alert', 'i sm'))}<div><div class="what">${esc(printName(r))}</div><div class="meta">${ok ? 'Done · ready to pick up' : "Didn't work · a mentor will try again"} · for ${esc(printWho(r))}</div></div></div>`);
+  }
+  box.innerHTML = rows.length ? rows.slice(0, 4).join('') + (rows.length > 4 ? `<p class="cap">${rows.length - 4} more in the Print Shop</p>` : '') : '<div class="live-empty">Nothing in the print queue. Need a part? Send a request and a mentor prints it.</div>';
 }
 
-// ---------------------------------------------------------------- Print queue rings and count-ups
-const RING_C = 2 * Math.PI * 22;
-$$('.ring .val').forEach((v) => { v.style.strokeDasharray = `${RING_C}`; v.style.strokeDashoffset = `${RING_C}`; });
+// ---------------------------------------------------------------- Count-ups for the robot vitals
 function countUp(el, to, ms, suffix = '') {
   if (reduced) { el.textContent = fmt(to) + suffix; return; }
   const t0 = performance.now();
@@ -378,41 +747,54 @@ const seen = new IntersectionObserver((entries) => {
   for (const en of entries) {
     if (!en.isIntersecting) continue;
     seen.unobserve(en.target);
-    const el = en.target;
-    if (el.classList.contains('ring')) {
-      const p = +el.dataset.pct;
-      if (p > 0) {
-        el.querySelector('.val').style.strokeDashoffset = `${RING_C * (1 - p / 100)}`;
-        countUp(el.querySelector('.pct'), p, 1000, '%');
-      }
-    } else if (el.dataset.count) {
-      countUp(el, +el.dataset.count, 900);
-    }
+    if (en.target.dataset.count) countUp(en.target, +en.target.dataset.count, 900);
   }
 }, { threshold: 0.4 });
-$$('.ring, [data-count]').forEach((el) => seen.observe(el));
+$$('[data-count]').forEach((el) => seen.observe(el));
 document.addEventListener('visibilitychange', () => document.body.classList.toggle('paused', document.hidden));
 
-// ---------------------------------------------------------------- Season dock (sample activity)
-const DOCK = [
-  { m: 'Sep', y: '2026', items: [['note', 6, 'session notes'], ['printer', 1, 'print']] },
-  { m: 'Oct', items: [['note', 8, 'session notes'], ['printer', 3, 'prints'], ['commit', 1, 'robot version']] },
-  { m: 'Nov', now: true, items: [['note', 2, 'session notes'], ['printer', 1, 'print'], ['commit', 1, 'robot version']] },
-  { m: 'Dec', future: true, items: [['zap', 0, 'Hub doors open']] },
-  { m: 'Jan', future: true, items: [['trophy', 0, 'league meet']] },
-  { m: 'Feb', future: true, items: [['trophy', 0, 'league meet']] },
-  { m: 'Mar', future: true, items: [['trophy', 0, 'tournament']] },
-  { m: 'Apr', y: '2027', future: true, items: [['sparkle', 0, 'off-season']] },
-];
+// ---------------------------------------------------------------- Season dock (real activity per month)
 function renderDock() {
-  $('#dockTrack').innerHTML = DOCK.map((d, i) => {
-    const title = d.items.map(([, n, what]) => (n ? `${n} ${what}` : what)).join(', ');
-    const chips = d.items.map(([ic, n]) => `<span class="dch">${icon(ic, 'i sm')}${n ? `<span class="b">${n}</span>` : ''}</span>`).join('');
-    return `${i ? '<span class="dsep" aria-hidden="true"></span>' : ''}<div class="dm${d.now ? ' now' : ''}${d.future ? ' future' : ''}" title="${d.m}: ${title} (sample)"><span class="m">${d.y ? `${d.m}<b>${d.y}</b>` : d.m}</span>${chips}</div>`;
+  const now = new Date();
+  const months = [];
+  for (let m = 0; m < 8; m++) months.push(new Date(2026, 8 + m, 1));
+  const inMonth = (d, a) => d.getFullYear() === a.getFullYear() && d.getMonth() === a.getMonth();
+  const ms = meets();
+  $('#dockTrack').innerHTML = months.map((a, i) => {
+    const cur = inMonth(now, a), future = a > now && !cur;
+    const items = [];
+    if (!future) {
+      const n = H.sessions.filter((r) => inMonth(recDate(r), a)).length;
+      const p = H.prints.filter((r) => inMonth(new Date(r.created_at), a)).length;
+      const v = H.versions.filter((r) => inMonth(recDate(r), a)).length;
+      if (n) items.push(['note', n, n === 1 ? 'session note' : 'session notes']);
+      if (p) items.push(['printer', p, p === 1 ? 'print' : 'prints']);
+      if (v) items.push(['commit', v, v === 1 ? 'robot version' : 'robot versions']);
+    }
+    if (a.getMonth() === 11 && a.getFullYear() === 2026 && now < new Date(2026, 11, 2)) items.push(['zap', 0, 'Hub doors open']);
+    const mm = ms.filter((x) => inMonth(x.at, a) && x.at >= dayStart(now));
+    if (mm.length) items.push(['trophy', mm.length > 1 ? mm.length : 0, mm.map((x) => x.title).join(', ')]);
+    if (a.getMonth() === 3) items.push(['sparkle', 0, 'off-season']);
+    const label = `${a.toLocaleDateString('en-US', { month: 'short' })}`;
+    const title = items.length ? items.map(([, n, what]) => (n ? `${n} ${what}` : what)).join(', ') : future ? 'Nothing planned yet' : 'Nothing logged';
+    const chips = items.map(([ic, n]) => `<span class="dch">${icon(ic, 'i sm')}${n ? `<span class="b">${n}</span>` : ''}</span>`).join('');
+    const y = i === 0 || a.getMonth() === 0 ? `<b>${a.getFullYear()}</b>` : '';
+    return `${i ? '<span class="dsep" aria-hidden="true"></span>' : ''}<div class="dm${cur ? ' now' : ''}${future ? ' future' : ''}" title="${esc(`${label}: ${title}`)}"><span class="m">${label}${y}</span>${chips}</div>`;
   }).join('');
-  const now = $('.dm.now');
-  if (now) { const tr = $('#dockTrack'); tr.scrollLeft = now.offsetLeft - tr.clientWidth / 2 + now.offsetWidth / 2; }
+  const nowEl = $('.dm.now');
+  if (nowEl) { const tr = $('#dockTrack'); tr.scrollLeft = nowEl.offsetLeft - tr.clientWidth / 2 + nowEl.offsetWidth / 2; }
 }
+
+function renderHomeAll() {
+  renderNext();
+  renderTasks();
+  renderTimeline();
+  if (!planEditing) renderPlan();
+  renderPrints();
+  renderDock();
+  renderBell();
+}
+homeBus.addEventListener('change', () => { renderHomeAll(); syncAnchorIssues(); if (sheetPart && sheet.classList.contains('is-open')) renderSheetIssue(); });
 
 // ---------------------------------------------------------------- Edge fade on horizontal scrollers
 function edgeFade(el) {
@@ -463,18 +845,115 @@ document.addEventListener('pointerdown', (e) => {
 });
 const item = (ic, label, sub, attrs) => `<button class="item" type="button" role="menuitem" ${attrs}><span class="oc">${icon(ic, 'i sm')}</span><span>${label}${sub ? `<small>${sub}</small>` : ''}</span></button>`;
 $('#createBtn').addEventListener('click', (e) => showPop(e.currentTarget, `<h5>Create</h5>
+  ${isMentor() ? item('check', 'Task', 'Give someone a job for the next meeting', 'id="mkTask"') : ''}
+  ${isMentor() ? item('note', "Today's plan", 'The blocks for the meeting', 'id="mkPlan"') : ''}
+  ${isMentor() ? item('calendar', 'Event', 'A meeting or a meet on the calendar', 'data-goto="logbook|Calendar"') : ''}
+  ${item('sparkle', 'Shoutout', 'Say thanks to a teammate', 'id="mkShout"')}
   ${item('bulb', 'Idea', 'Pitch a mechanism or a fix', 'data-goto="build|Ideas"')}
   ${item('sparkle', 'Inspiration', 'A video or robot worth studying', 'data-goto="crew|Inspiration"')}
   ${item('printer', 'Print request', 'Send a part with a note', 'data-goto="build|Print Shop"')}
   ${item('note', 'Session note', 'From the meeting template', 'data-goto="logbook|Sessions"')}
-  ${item('help', 'Question', 'Ask in #help, a mentor answers too', 'data-goto="crew|Chat" data-chan="help"')}
-  ${item('chat', 'Chat post', 'Only once chat is switched on', 'data-goto="crew|Chat"')}`));
-$('#bellBtn').addEventListener('click', (e) => showPop(e.currentTarget, `<h5>Alerts (sample)</h5>
-  ${item('printer', 'Your roller hubs are 62% printed', 'Print queue · 12 min ago', 'data-goto="build|Print Shop"')}
-  ${item('alert', 'Gizmo pinned a problem on a bearing', 'Robot · yesterday', 'id="alertIssue"')}
-  ${item('calendar', "Tuesday's agenda is ready", 'Logbook · yesterday', 'data-goto="logbook|Calendar"')}`));
+  ${S.team.chatEnabled ? item('help', 'Question', 'Ask in #help, a mentor answers too', 'data-goto="crew|Chat" data-chan="help"') : ''}
+  ${item('chat', 'Chat post', S.team.chatEnabled ? 'Post in a team channel' : 'Turns on once a second trained adult is set up', 'data-goto="crew|Chat"')}`));
 document.addEventListener('click', (e) => {
-  if (e.target.closest('#alertIssue')) { closePop(); showIssue(); }
+  if (e.target.closest('#mkShout')) { closePop(); openShoutout(); }
+  else if (e.target.closest('#mkTask')) { closePop(); goHomeCard('.w-tasks', () => { taskFormOpen = true; renderTaskForm(); }); }
+  else if (e.target.closest('#mkPlan')) { closePop(); goHomeCard('.w-plan', () => { if (!planEditing) openPlanEditor(); }); }
+});
+// Open the dashboard, make sure a card is showing, and scroll to it.
+function goHomeCard(sel, then) {
+  if (!(zone === 'home' && subIdx === 0)) setZone('home', 0);
+  const card = $(sel);
+  if (card && card.hidden) { toast('That card is hidden on your Home. Turn it back on in Customize.'); return; }
+  if (then) then();
+  requestAnimationFrame(() => card && card.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'center' }));
+}
+
+// ---------------------------------------------------------------- Shoutouts (anyone can give one; the whole team sees it)
+function openShoutout(to = '') {
+  const people = BOOT.roster.filter((p) => p.name !== ME.name);
+  const el = drawer(`<h3 class="card-title" style="margin:0 0 4px">Give a shoutout</h3>
+    <p class="cap" style="font-weight:400;margin:0 0 14px">Say what a teammate did that helped. The whole team sees it on Home and the Shop TV.</p>
+    <form class="lh-form" id="shoutForm">
+      <label class="field lh-full"><span>Who is it for?</span><select class="inp" name="to" required>${people.length ? people.map((p) => `<option value="${esc(p.name)}"${p.name === to ? ' selected' : ''}>${esc(p.name)}</option>`).join('') : '<option value="">Nobody else is on the team yet</option>'}</select></label>
+      <label class="field lh-full"><span>What did they do?</span><textarea class="inp" name="text" maxlength="200" required placeholder="Rivet stiffened the launcher mount, and it stopped wobbling."></textarea><small>Keep it kind and about the work. Up to 200 letters.</small></label>
+      <div class="lh-btns"><span class="lh-sp"></span><button class="btn primary pill" type="submit">${icon('sparkle', 'i sm')}Send shoutout</button></div>
+    </form>`, { label: 'Give a shoutout' });
+  const form = $('#shoutForm', el);
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const data = { to: form.to.value, text: form.text.value.trim() };
+    if (!data.to || !data.text) { toast('Pick a teammate and write what they did.'); return; }
+    const sub = $('button[type=submit]', form);
+    sub.disabled = true;
+    try {
+      const it = await api.create('shoutout', data);
+      H.shoutouts.unshift({ ...it, author: ME.name });
+      closeDrawer();
+      toast(`Shoutout sent to ${data.to}.`);
+      changed();
+    } catch (err) { sub.disabled = false; toast(err.message); }
+  });
+  setTimeout(() => form.text.focus({ preventScroll: true }), 50);
+}
+
+// ---------------------------------------------------------------- Bell: alerts worked out from the team's records
+const ALERT_DAYS = 14 * DAY_MS;
+function alerts() {
+  const now = Date.now(), out = [];
+  const fresh = (t) => now - new Date(t) < ALERT_DAYS;
+  for (const r of H.tasks) {
+    const d = r.data || {};
+    if (!d.done && r.user_id !== ME.id && whoOf(d).includes(ME.name) && fresh(r.created_at)) out.push({ at: r.created_at, ic: 'check', t: `${r.author} gave you a task: ${txt(d, ['title', 'text', 'what'])}`, sub: `My tasks · ${ago(r.created_at)}`, act: 'data-hgo="tasks"' });
+  }
+  for (const r of H.prints) {
+    const st = printSt(r);
+    if ((r.user_id === ME.id || printWho(r) === ME.name) && (st === 'done' || st === 'failed') && fresh(r.updated_at)) out.push({ at: r.updated_at, ic: st === 'done' ? 'printer' : 'alert', t: st === 'done' ? `Your print is done: ${printName(r)}` : `Your print didn't work: ${printName(r)}`, sub: `Print Shop · ${ago(r.updated_at)}`, act: 'data-goto="build|Print Shop"' });
+  }
+  for (const e of allEvents()) {
+    const r = e.rec;
+    if (r.user_id !== ME.id && fresh(r.created_at) && e.end > now) out.push({ at: r.created_at, ic: isMeet(e) ? 'trophy' : 'calendar', t: `New on the calendar: ${e.title}`, sub: `${fmtShort.format(e.start)} · added by ${r.author}`, act: 'data-goto="logbook|Calendar"' });
+  }
+  for (const r of H.agenda) {
+    if (r.user_id !== ME.id && fresh(r.updated_at) && r.data && r.data.date >= ymd(new Date())) { const d = parseYmd(r.data.date); out.push({ at: r.updated_at, ic: 'note', t: `The plan for ${ymd(d) === ymd(new Date()) ? 'today' : fmtWeekday.format(d)} is ready`, sub: `Home · ${ago(r.updated_at)}`, act: 'data-hgo="plan"' }); }
+  }
+  for (const r of H.shoutouts) {
+    if (r.data && r.data.to === ME.name && r.user_id !== ME.id && fresh(r.created_at)) out.push({ at: r.created_at, ic: 'sparkle', t: `${r.author} gave you a shoutout`, sub: r.data.text || '', act: 'data-goto="home|Shop TV"' });
+  }
+  return out.sort((a, b) => new Date(b.at) - new Date(a.at)).slice(0, 8);
+}
+const seenPref = () => H.prefs.find((r) => r.user_id === ME.id && r.data && 'alertsSeenAt' in r.data) || null;
+const seenAt = () => { const p = seenPref(); return p ? Number(p.data.alertsSeenAt) || 0 : 0; };
+function renderBell() {
+  const n = H.loaded ? alerts().filter((a) => new Date(a.at).getTime() > seenAt()).length : 0;
+  const btn = $('#bellBtn');
+  let b = $('.badge', btn);
+  if (!b) { b = document.createElement('span'); b.className = 'badge'; btn.appendChild(b); }
+  b.hidden = n === 0;
+  b.textContent = n > 9 ? '9+' : String(n);
+  btn.setAttribute('aria-label', n ? `Alerts, ${n} new` : 'Alerts');
+}
+async function markSeen() {
+  const at = Date.now();
+  const p = seenPref();
+  try {
+    if (p) { p.data = { ...p.data, alertsSeenAt: at }; renderBell(); await api.update('pref', p.id, { alertsSeenAt: at }); }
+    else { const it = await api.create('pref', { alertsSeenAt: at }); H.prefs.unshift(it); renderBell(); }
+  } catch (err) { console.error(err); }
+}
+$('#bellBtn').addEventListener('click', (e) => {
+  const list = H.loaded ? alerts() : [];
+  const since = seenAt();
+  showPop(e.currentTarget, `<h5>Alerts</h5>${list.length
+    ? list.map((a) => item(a.ic, `${new Date(a.at).getTime() > since ? '<span class="lh-new" aria-label="New"></span>' : ''}${esc(a.t)}`, esc(a.sub.length > 70 ? `${a.sub.slice(0, 67)}…` : a.sub), a.act)).join('')
+    : `<p class="lh-none">${H.loaded ? "Nothing new. You're all caught up." : 'Loading…'}</p>`}`);
+  if (list.some((a) => new Date(a.at).getTime() > since)) markSeen();
+});
+document.addEventListener('click', (e) => {
+  const g = e.target.closest('[data-hgo]');
+  if (!g) return;
+  closePop();
+  goHomeCard(g.dataset.hgo === 'plan' ? '.w-plan' : '.w-tasks');
 });
 $('#moreBtn').addEventListener('click', (e) => showPop(e.currentTarget, `<h5>More zones</h5>
   ${item('book', 'Learn', 'Paths, rules, setup and FAQ', 'data-zone="learn"')}
@@ -631,23 +1110,75 @@ function onSelect(info) {
   $('#sheetSize').textContent = dims.length ? `${dims.join(' × ')} mm` : '—';
   $('#sheetSame').textContent = !info.sku ? 'One of many small bits' : info.same > 1 ? `${info.same} of this part` : 'Just this one';
   $('#sheetNote').textContent = info.note;
-  $('#sheetIssue').hidden = !info.isIssue;
+  sheetPart = info;
+  renderSheetIssue();
   sheet.classList.add('is-open');
   sheet.setAttribute('aria-hidden', 'false');
 }
 $('#sheetClose').addEventListener('click', () => { if (viewer) viewer.select(null); $('#robotCanvas').focus({ preventScroll: true }); });
 $('#sheetFocus').addEventListener('click', () => viewer && viewer.frameCurrent());
-$('#sheetReport').addEventListener('click', () => toast('Pins arrive with the 3D Explorer in Phase 3: pin a problem on the robot and follow it to a fix.'));
+// Problems pinned on a part are `issue` records {part, sys, text, status}, the same ones Robot and Build show.
+let sheetPart = null;
+const openIssues = (name) => H.issues.filter((r) => r.data && r.data.part === name && (r.data.status || 'open') !== 'fixed');
+function renderSheetIssue() {
+  const box = $('#sheetIssue');
+  const list = sheetPart ? openIssues(sheetPart.name) : [];
+  box.hidden = !list.length;
+  if (list.length) {
+    const r = list[0];
+    box.innerHTML = `${icon('alert')}<div><b>${list.length === 1 ? 'Open problem' : `${list.length} open problems`}</b><br>"${esc(String(r.data.text || '').slice(0, 160))}" Pinned by ${esc(r.author)} ${esc(ago(r.created_at))}.</div>`;
+  }
+}
+$('#sheetReport').addEventListener('click', () => {
+  if (!sheetPart) return;
+  const part = sheetPart;
+  const el = drawer(`<h3 class="card-title" style="margin:0 0 4px">Pin a problem</h3>
+    <p class="cap" style="font-weight:400;margin:0 0 14px">On <b>${esc(part.name)}</b> (${esc(SYS[part.sys] ? SYS[part.sys].name : part.sys)}). The team sees it in Robot and Build until someone marks it fixed.</p>
+    <form class="lh-form" id="issueForm">
+      <label class="field lh-full"><span>What's wrong?</span><textarea class="inp" name="text" maxlength="300" required placeholder="This bearing keeps popping out after a few matches."></textarea></label>
+      <div class="lh-btns"><span class="lh-sp"></span><button class="btn primary pill" type="submit">${icon('flag', 'i sm')}Pin it</button></div>
+    </form>`, { label: 'Pin a problem' });
+  const form = $('#issueForm', el);
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const text = form.text.value.trim();
+    if (!text) { toast('Say what is wrong first.'); return; }
+    const sub = $('button[type=submit]', form);
+    sub.disabled = true;
+    try {
+      const it = await api.create('issue', { part: part.name, sys: part.sys, text, status: 'open' });
+      H.issues.unshift({ ...it, author: ME.name });
+      closeDrawer();
+      renderSheetIssue();
+      toast('Pinned. The team can see it in Robot.');
+      changed();
+    } catch (err) { sub.disabled = false; toast(err.message); }
+  });
+  setTimeout(() => form.text.focus({ preventScroll: true }), 50);
+});
 
 const badge = $('#issueBadge');
+// The pin badge shows only when a real open problem sits on the part the viewer anchors it to.
+let anchorIssues = 0;
+function syncAnchorIssues() {
+  anchorIssues = 0;
+  if (!viewer || !viewer.issuePartId) return;
+  for (const r of H.issues) if (r.data && r.data.part && (r.data.status || 'open') !== 'fixed' && viewer.findPart(r.data.part) === viewer.issuePartId) anchorIssues++;
+  badge.textContent = String(anchorIssues);
+  badge.setAttribute('aria-label', `${anchorIssues} open problem${anchorIssues === 1 ? '' : 's'} on this part`);
+  if (!anchorIssues) badge.hidden = true;
+}
 function onAnchor(x, y, vis) {
-  badge.hidden = !vis;
+  badge.hidden = !vis || !anchorIssues;
   if (vis) badge.style.transform = `translate(${x}px, ${y}px)`;
 }
 function showIssue() {
   setZone('home');
   $('#hero').scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'center' });
-  if (viewer && viewer.issuePartId) viewer.select(viewer.issuePartId, { frame: true });
+  if (!viewer) return;
+  const r = H.issues.find((x) => x.data && x.data.part && (x.data.status || 'open') !== 'fixed' && viewer.findPart(x.data.part));
+  if (r) viewer.select(viewer.findPart(r.data.part), { frame: true });
+  else toast('No open problems on the robot right now.');
 }
 badge.addEventListener('click', showIssue);
 function focusPart(name) {
@@ -731,6 +1262,7 @@ async function startViewer() {
       onAnchor,
     });
     window.__viewer = viewer;
+    syncAnchorIssues();
   } catch (err) {
     console.error(err);
     bar.style.transform = 'scaleX(0)';
@@ -830,23 +1362,35 @@ const ctx = {
   },
   rerender: () => showSub(subIdx, { noHash: true }),
   state: zstate,
-  SYS, SYS_ORDER, local, reduced, isDark, nextMeeting, seasonWeek, AGENDA, TASKS,
+  SYS, SYS_ORDER, local, reduced, isDark, nextMeeting, seasonWeek, AGENDA,
   bento: $('#bento'),
+  // Home's live team data, shared with the Shop TV and Customize (zones/home.js).
+  homeData: {
+    H, load: loadHome, nextEvent, allEvents, meets, planFor, planItems, printQueue, printName, printWho, evInfo,
+    sysName, sysColor, timeRange, ymd, shoutout: openShoutout,
+    onChange(fn) { homeBus.addEventListener('change', fn); return () => homeBus.removeEventListener('change', fn); },
+    changed,
+  },
 };
 
 // ---------------------------------------------------------------- Boot
 initGlossaryTips();
-import('./zones/home.js').then((m) => m.applyLayout(document.getElementById('bento'), ctx)).catch((e) => console.error(e));
+const homeMod = import('./zones/home.js');
+homeMod.then((m) => m.initLayout(document.getElementById('bento'), ctx)).catch((e) => console.error(e));
 renderHeader();
-renderNext();
-renderGoing();
-renderTasks();
-renderTimeline();
-renderPlan();
-renderDock();
+renderHomeAll();
+loadHome().then(() => {
+  homeMod.then((m) => m.applyLayout(document.getElementById('bento'), ctx)).catch(() => {});
+  changed();
+});
 if (!fromHash()) setZone('home', 0, { noHash: true });
 [$('#sysRow'), $('#dockTrack'), $('#subtabs')].forEach(edgeFade);
 setInterval(() => { if (!document.hidden) { renderNext(); renderHeader(); } }, 30000);
+// Pick up what teammates and mentors saved, every two minutes while the tab is open.
+setInterval(() => {
+  if (document.hidden || planEditing || taskFormOpen) return;
+  loadHome().then(changed);
+}, 120000);
 if (!session.get('kwc-splash') && !new URLSearchParams(location.search).has('nosplash')) {
   session.set('kwc-splash', '1');
   playSplash();

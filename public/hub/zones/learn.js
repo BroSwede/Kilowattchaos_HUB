@@ -1,6 +1,7 @@
 // Learn zone: Paths, FIRST and BIOBUZZ, Setup and FAQ, Build tips, AI agents, Glossary.
-// FIRST facts and links are real. Progress, badges and team details are sample data.
-import { $, $$, esc, clamp, icon, tag, SAMPLE, strip, avStack, bar, seg, wireSeg, acc, copyText, codeBlock, drawer, closeDrawer, gl, GLOSSARY, KIDS } from './common.js';
+// FIRST facts, lessons and links are real content. Progress, badges and glossary suggestions are saved team data.
+import { $, $$, esc, clamp, icon, tag, strip, av, avStack, bar, seg, wireSeg, acc, copyText, codeBlock, drawer, closeDrawer, gl, GLOSSARY } from './common.js';
+import { api, session, isMentor, me } from '../api.js';
 
 const TYPE_IC = { Read: 'book', Do: 'wrench', Quiz: 'check', Sim: 'sliders', Explore: 'focus', Challenge: 'trophy' };
 const soft = 'background:var(--raised);color:var(--text)';
@@ -13,50 +14,100 @@ const PATHS = [
   { id: 'onshape', t: 'Onshape Basics', ic: 'layers', badge: 'Onshape Basics', d: 'Sketch, extrude and put parts together in the browser CAD the team uses. Works on Chromebooks.', steps: [
     ['Join the team Onshape classroom', 'Do', 5], ['Sketch a bracket', 'Do', 20], ['Extrude it, round the corners, add holes', 'Do', 15], ['Mate two parts together', 'Do', 20], ['Share it with Coach', 'Do', 5]] },
   { id: 'cad', t: 'CAD for FTC', ic: 'bot', badge: 'CAD for FTC', d: 'Design with real goBILDA parts, the same ones on our StarterBot, so what you draw is what you can build.', steps: [
-    ['Onshape Lesson 1: bring in real goBILDA parts', 'Do', 25, null, ['goBILDA puts a CAD file (a STEP file) on every product page, so you never have to draw a motor or a channel yourself.', ['Find the 5203 Yellow Jacket motor on gobilda.com. It is the motor on our drivetrain.', 'Download its STEP file from the product page.', 'In your Onshape document, click <b>Import</b> and pick the file.', 'Put it in an assembly next to a U-channel and mate them together.', 'Take a screenshot and post it in #build.'], 'Stuck? Pixel finished this path and is happy to help.']],
+    ['Onshape Lesson 1: bring in real goBILDA parts', 'Do', 25, null, ['goBILDA puts a CAD file (a STEP file) on every product page, so you never have to draw a motor or a channel yourself.', ['Find the 5203 Yellow Jacket motor on gobilda.com. It is the motor on our drivetrain.', 'Download its STEP file from the product page.', 'In your Onshape document, click <b>Import</b> and pick the file.', 'Put it in an assembly next to a U-channel and mate them together.', 'Take a screenshot and post it in #build.'], 'Stuck? Ask a teammate who has the CAD for FTC badge, or a mentor.']],
     ['Model a channel with the right hole pattern', 'Do', 20], ['Build a mini drivetrain assembly', 'Do', 40], ['Find our StarterBot parts in 3D', 'Explore', 10, ['robot', 'Specs and parts']], ['Design a part for the Print Shop', 'Do', 30, ['build', 'Print Shop']]] },
   { id: 'mech', t: 'Mechanisms 101', ic: 'wrench', badge: 'Mechanisms 101', d: 'Gears, wheels, intakes and launchers: how they work and how to test them.', steps: [
     ['Gears, torque and speed', 'Read', 8], ['Try the intake compression sim', 'Sim', 10, ['build', 'Mechanism Lab']], ['How a flywheel launches a ball', 'Read', 6], ['Build a two-wheel test rig', 'Do', 30], ['Mechanisms quiz', 'Quiz', 5]] },
   { id: 'java', t: 'Java OpModes', ic: 'code', badge: 'Java OpModes', d: 'Write the programs the robot runs, in OnBot Java, from "Hello" to driving.', steps: [
     ['Set up OnBot Java on your device', 'Do', 10, ['learn', 'Setup and FAQ']], ['Your first OpMode: Hello Robot', 'Do', 15], ['Read the gamepad', 'Do', 15], ['Drive a motor with a stick', 'Do', 20],
     ['Telemetry: make the robot talk', 'Do', 10, ['code', 'Snippets'], ['Telemetry puts numbers on the Driver Station screen while your OpMode runs. It is the fastest way to find out what the robot thinks is happening.', ['Inside your loop, add <code>telemetry.addData("Left stick", gamepad1.left_stick_y);</code>', 'Add <code>telemetry.update();</code> at the end of the loop, or nothing shows.', 'Build it, run it and move the stick. The number should follow your thumb.', 'Add one more line that shows something you care about, like a motor power.'], 'Snippets has a ready-made version called "Telemetry you can read".']],
-    ['Change our TeleOp, with Byte', 'Do', 30, ['code', 'Our code']]] },
+    ['Change our TeleOp, with a mentor', 'Do', 30, ['code', 'Our code']]] },
   { id: 'drive', t: 'Driving', ic: 'gamepad', badge: 'Driver', d: 'Field sense and smooth driving, practiced in the Arena before the real robot.', steps: [
     ['Drive the Arena practice drill', 'Do', 10, ['code', 'BioBuzz Arena']], ['Collect 10 pollen in under 40 seconds', 'Challenge', 10, ['code', 'BioBuzz Arena']], ['Driver Station: Init, Start, Stop', 'Read', 5], ['Practice with the real robot', 'Do', 30]] },
   { id: 'print', t: '3D printing', ic: 'printer', badge: 'First print', d: 'From an Onshape part to a printed one that fits, without wasting a spool.', steps: [
     ['What an STL and a slicer are', 'Read', 5], ['Why prints fail', 'Read', 6, ['learn', 'Build tips']], ['Request your first print', 'Do', 10, ['build', 'Print Shop']], ['Check that it fits, then log it', 'Do', 10]] },
   { id: 'wire', t: 'Wiring and power', ic: 'zap', badge: 'Wiring', d: 'The Control Hub, ports, batteries and wires that survive a match.', steps: [
-    ['Inside the Control Hub', 'Read', 6, null, ["The Control Hub is the robot's brain: it runs your code and talks to every motor, servo and sensor.", ['Find the four motor ports (0 to 3) and the six servo ports (0 to 5).', 'Find where the sensors plug in.', 'Look at our robot: which port is each drive motor on? The names are in the hardware map in Code, Our code.', 'Ask Echo to show you the battery and the power switch.'], 'Never plug or unplug a wire while the robot is powered on.']],
-    ['Motor and servo ports', 'Read', 6], ['Battery care and the main switch', 'Read', 5], ['Crimp and label a wire', 'Do', 20], ['Wiring check with Echo', 'Do', 10]] },
+    ['Inside the Control Hub', 'Read', 6, null, ["The Control Hub is the robot's brain: it runs your code and talks to every motor, servo and sensor.", ['Find the four motor ports (0 to 3) and the six servo ports (0 to 5).', 'Find where the sensors plug in.', 'Look at our robot: which port is each drive motor on? The names are in the hardware map in Code, Our code.', 'Ask a mentor to show you the battery and the power switch.'], 'Never plug or unplug a wire while the robot is powered on.']],
+    ['Motor and servo ports', 'Read', 6], ['Battery care and the main switch', 'Read', 5], ['Crimp and label a wire', 'Do', 20], ['Wiring check with a mentor', 'Do', 10]] },
   { id: 'port', t: 'Portfolio and outreach', ic: 'note', badge: 'Portfolio', d: 'Tell the story of how we designed the robot, and share it with people outside the team.', steps: [
     ['What judges look for', 'Read', 6],
     ['Write a good session note', 'Do', 10, ['logbook', 'Sessions'], ['A good note makes the portfolio almost write itself. Judges love seeing what you tried, what happened and what you changed.', ['Write what you tried in one line, with numbers: "Gecko wheels 4 mm closer: 7 of 10 balls."', 'Add one photo of the part or the test, not of people.', 'Write one "I like", one "I wonder" and one "What if".', 'List the next steps, with a name on each.'], '']],
     ['Take photos that tell a story', 'Read', 5], ['Draft one portfolio section', 'Do', 30, ['logbook', 'Portfolio']], ['Practice the judging interview', 'Do', 20]] },
 ];
-// Sparky's sample progress (steps done). It matches Sparky's badges in Crew, People.
-const PROG = { safety: 5, onshape: 5, cad: 0, mech: 5, java: 4, drive: 4, print: 4, wire: 0, port: 1 };
-const isDone = (p) => PROG[p.id] >= p.steps.length;
 const mins = (p) => p.steps.reduce((a, s) => a + s[2], 0);
+const stepId = (p, i) => `${p.id}.${i}`;
+// Steps are done in order, so a path's progress is how many steps in a row are done from the start.
+const doneCount = (p, done) => { let n = 0; while (n < p.steps.length && done.has(stepId(p, n))) n++; return n; };
+const pathDone = (p, done) => doneCount(p, done) >= p.steps.length;
+const BADGE_IC = Object.fromEntries(PATHS.map((p) => [p.badge, p.ic]));
+const fmtDay = (iso) => { try { return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); } catch (e) { return ''; } };
+
+// ---------------------------------------------------------------- My progress record (one per person, updated in place)
+// data: { done: [stepIds], ticks: { challengeId: [check indexes] } }. Code, Challenges uses it for ticks too.
+let progRec = null, progLoaded = null, progChain = Promise.resolve();
+export async function myProgress() {
+  const uid = session.user?.id;
+  if (progRec && progRec.user_id === uid) return progRec;
+  if (!progLoaded) progLoaded = api.list('progress').then((items) => { progRec = items.find((r) => r.user_id === uid) || null; return progRec; }).finally(() => { progLoaded = null; });
+  return progLoaded;
+}
+export function saveProgress(patch) {
+  const run = async () => {
+    const rec = await myProgress();
+    progRec = rec ? await api.update('progress', rec.id, patch) : await api.create('progress', { done: [], ticks: {}, ...patch });
+    return progRec;
+  };
+  const p = progChain.then(run, run);
+  progChain = p.catch(() => {});
+  return p;
+}
 
 function paths(view, ctx) {
-  let cur = ctx.state.path || 'cad';
+  let cur = ctx.state.path || 'safety';
+  let done = new Set(), allProg = [], awards = [], loaded = false, dead = false;
+  const mentor = isMentor();
   view.innerHTML = `<div class="zv">
-    ${strip('Short paths that end in a badge. Each step is a few minutes of reading or doing, and many open the right place in the Hub. Mentors see who is stuck and can help.', [tag('Phase 3 · Jan 4–22'), SAMPLE])}
+    ${strip('Short paths that end in a badge. Each step is a few minutes of reading or doing, and many open the right place in the Hub. Your progress saves to your account, so it follows you to any device.', [tag(`${PATHS.length} paths`)])}
     <article class="card">
       <div class="card-head"><h3 class="card-title">Your paths</h3><span class="tag" id="pathSum"></span></div>
       <div class="paths" id="pathGrid"></div>
     </article>
     <article class="card c8" id="pathDetail"></article>
     <article class="card c4">
-      <div class="card-head"><h3 class="card-title">Team badges</h3>${tag('Sample')}</div>
-      <div class="items" id="teamBadges"></div>
+      <div class="card-head"><h3 class="card-title">Team badges</h3><span class="tag" id="badgeSum"></span></div>
+      <div class="items" id="teamBadges"><div class="live-empty">Loading badges…</div></div>
+      ${mentor ? `<div class="card-foot"><span class="cap">Mentors can hand out badges too</span><button class="btn soft pill sm" type="button" id="awardOpen">${icon('trophy', 'i sm')}Award a badge</button></div>
+      <div id="awardForm" hidden></div>` : ''}
     </article>
   </div>`;
+
+  // Who has each badge: finished paths (from progress records) plus badges a mentor awarded.
+  const holders = () => {
+    const map = new Map();
+    const add = (badge, uid, name, how) => {
+      if (!map.has(badge)) map.set(badge, new Map());
+      const m = map.get(badge);
+      if (!m.has(uid)) m.set(uid, { name, how });
+    };
+    const meId = session.user?.id;
+    const progs = allProg.filter((r) => r.user_id !== meId);
+    progs.push({ user_id: meId, author: me(), data: { done: [...done] } });
+    const students = new Set(session.roster.filter((x) => x.role === 'student').map((x) => x.id));
+    for (const r of progs) {
+      if (!students.has(r.user_id)) continue;
+      const ds = new Set(r.data?.done || []);
+      for (const p of PATHS) if (pathDone(p, ds)) add(p.badge, r.user_id, r.author, 'path');
+    }
+    for (const a of awards) if (a.data?.to && a.data?.badge) add(a.data.badge, a.data.to, a.data.toName || nameOf(a.data.to), 'award');
+    return map;
+  };
+  const nameOf = (uid) => (session.roster.find((r) => r.id === uid) || {}).name || 'A teammate';
+
   const grid = () => {
-    const doneN = PATHS.filter(isDone).length;
-    $('#pathSum').textContent = `${doneN} of ${PATHS.length} badges`;
-    $('#pathGrid').innerHTML = PATHS.map((p) => {
-      const n = PROG[p.id], all = p.steps.length, d = isDone(p);
+    const doneN = PATHS.filter((p) => pathDone(p, done)).length;
+    $('#pathSum', view).textContent = loaded ? `${doneN} of ${PATHS.length} badges` : 'Loading…';
+    $('#pathGrid', view).innerHTML = PATHS.map((p) => {
+      const n = doneCount(p, done), all = p.steps.length, d = n >= all;
       return `<button class="path" type="button" data-path="${p.id}" aria-pressed="${p.id === cur}">
         <span class="row"><span class="oc2${d ? ' solid' : ''}">${icon(p.ic, 'i sm')}</span>${d ? `<span class="st volt">${icon('check', 'i sm')}Badge earned</span>` : n ? '<span class="st">In progress</span>' : '<span class="st">New</span>'}</span>
         <h4>${p.t}</h4>
@@ -64,46 +115,120 @@ function paths(view, ctx) {
         ${bar((n / all) * 100, `${n} of ${all} steps done`)}
       </button>`;
     }).join('');
-    $('#teamBadges').innerHTML = PATHS.map((p) => {
-      const who = KIDS.filter((k) => (k.n === 'Sparky' ? isDone(p) : k.badges.includes(p.badge))).map((k) => k.n);
-      return `<div class="it"><span class="oc2">${icon(p.ic, 'i sm')}</span><div class="grow"><div class="t">${p.badge}</div><div class="meta cap">${who.length} of 7</div></div><span class="end">${who.length ? avStack(who.slice(0, 5), 22) : '<span class="cap">Nobody yet</span>'}</span></div>`;
+  };
+  const badges = () => {
+    const box = $('#teamBadges', view);
+    if (!loaded) return;
+    const map = holders();
+    const names = [...new Set([...PATHS.map((p) => p.badge), ...map.keys()])];
+    const kids = session.roster.filter((r) => r.role === 'student').length;
+    const total = [...map.values()].reduce((a, m) => a + m.size, 0);
+    $('#badgeSum', view).textContent = `${total} earned`;
+    box.innerHTML = (total ? '' : `<div class="live-empty">No badges yet. Finish a path to earn the team's first one.</div>`) + names.map((b) => {
+      const m = map.get(b) || new Map();
+      const who = [...m.values()].map((x) => x.name);
+      const mine = m.has(session.user?.id);
+      const myAward = mentor ? awards.filter((a) => a.data?.badge === b) : [];
+      return `<div class="it"><span class="oc2${mine ? ' solid' : ''}">${icon(BADGE_IC[b] || 'trophy', 'i sm')}</span><div class="grow"><div class="t">${esc(b)}</div><div class="meta cap">${who.length}${kids ? ` of ${kids}` : ''}${mine ? ' · you have it' : ''}</div></div><span class="end">${who.length ? avStack(who.slice(0, 5), 22) : '<span class="cap">Nobody yet</span>'}</span></div>
+        ${myAward.length ? `<div class="lv-awards">${myAward.map((a) => `<span class="st">${esc(a.data.toName || nameOf(a.data.to))}<button class="lv-x" type="button" data-unaward="${esc(a.id)}" aria-label="Take back ${esc(b)} from ${esc(a.data.toName || '')}">${icon('x', 'i sm')}</button></span>`).join('')}</div>` : ''}`;
     }).join('');
   };
   const detail = (pop) => {
-    const p = PATHS.find((x) => x.id === cur), n = PROG[p.id];
-    $('#pathDetail').innerHTML = `<div class="card-head"><span class="oc2${isDone(p) ? ' solid' : ''}">${icon(p.ic, 'i sm')}</span><h3 class="card-title">${p.t}</h3><span class="tag">${n} of ${p.steps.length}</span></div>
+    const p = PATHS.find((x) => x.id === cur), n = doneCount(p, done);
+    $('#pathDetail', view).innerHTML = `<div class="card-head"><span class="oc2${n >= p.steps.length ? ' solid' : ''}">${icon(p.ic, 'i sm')}</span><h3 class="card-title">${p.t}</h3><span class="tag">${n} of ${p.steps.length}</span></div>
       <p class="lead">${p.d}</p>
-      ${pop ? `<div class="badge-pop" role="status"><span class="medal">${icon('trophy', 'i lg')}</span><div><b>Badge earned: ${p.badge}</b><div>It's on your profile in Crew, People, and Coach gets a note to say well done.</div></div></div>` : ''}
+      ${pop ? `<div class="badge-pop" role="status"><span class="medal">${icon('trophy', 'i lg')}</span><div><b>Badge earned: ${p.badge}</b><div>It's on the team badges card now. Nice work!</div></div></div>` : ''}
       <ol class="lsteps">${p.steps.map(([t, type, m, go, les], i) => {
         const st = i < n ? 'done' : i === n ? 'now' : 'lock';
         const acts = st === 'done' ? `<span class="cap row" style="gap:4px">${icon('check', 'i sm')}Done</span>${i === n - 1 ? '<button class="btn ghost pill sm" type="button" data-undo="1">Undo</button>' : ''}`
-          : st === 'now' ? `${les ? `<button class="btn soft pill sm" type="button" data-lesson="${i}">Open</button>` : go ? `<button class="btn soft pill sm" type="button" data-go="${i}">${icon('arrow', 'i sm')}Open</button>` : ''}<button class="btn primary pill sm" type="button" data-done="1">Mark done</button>`
+          : st === 'now' ? `${les ? `<button class="btn soft pill sm" type="button" data-lesson="${i}">Open</button>` : go ? `<button class="btn soft pill sm" type="button" data-go="${i}">${icon('arrow', 'i sm')}Open</button>` : ''}<button class="btn primary pill sm" type="button" data-done="1"${loaded ? '' : ' disabled'}>Mark done</button>`
             : '<span class="cap">Locked</span>';
         return `<li class="lstep ${st}"><span class="n">${st === 'done' ? icon('check', 'i sm') : i + 1}</span><div style="min-width:0"><div class="t">${t}</div><div class="cap row" style="gap:6px">${icon(TYPE_IC[type], 'i sm')}${type} · ${m} min${go ? ` · opens ${go[1]}` : ''}</div></div><div class="row">${acts}</div></li>`;
       }).join('')}</ol>`;
   };
-  grid(); detail(false);
+  const all = (pop) => { grid(); detail(pop); badges(); };
+  all(false);
+
+  Promise.all([myProgress(), mentor ? api.list('progress') : Promise.resolve([]), api.list('badge')]).then(([mine, progs, bs]) => {
+    if (dead) return;
+    done = new Set(mine?.data?.done || []);
+    allProg = progs; awards = bs; loaded = true;
+    all(false);
+  }).catch((err) => { if (!dead) { $('#teamBadges', view).innerHTML = `<div class="live-empty">Could not load progress. ${esc(err.message)}</div>`; ctx.toast(err.message); } });
+
+  const save = async (prev) => {
+    try { await saveProgress({ done: [...done] }); }
+    catch (err) { done = prev; all(false); ctx.toast(err.message); }
+  };
   const markDone = () => {
     const p = PATHS.find((x) => x.id === cur);
-    if (isDone(p)) return;
-    PROG[p.id]++;
-    const fin = isDone(p);
-    grid(); detail(fin);
+    if (!loaded || pathDone(p, done)) return;
+    const prev = new Set(done);
+    done.add(stepId(p, doneCount(p, done)));
+    const fin = pathDone(p, done);
+    all(fin);
     if (fin) ctx.toast(`Badge earned: ${p.badge}.`);
-    const next = $('#pathDetail .lstep.now [data-done]');
+    const next = $('#pathDetail .lstep.now [data-done]', view);
     if (next) next.focus({ preventScroll: true });
+    save(prev);
   };
-  view.addEventListener('click', (e) => {
+  const undo = () => {
+    const p = PATHS.find((x) => x.id === cur), n = doneCount(p, done);
+    if (!n) return;
+    const prev = new Set(done);
+    done.delete(stepId(p, n - 1));
+    all(false);
+    save(prev);
+  };
+
+  // ---- Mentor: award a badge by hand (for things like Helper or Builder that are not a path)
+  const awardForm = () => {
+    const f = $('#awardForm', view);
+    f.hidden = !f.hidden;
+    if (f.hidden) return;
+    const kids = session.roster.filter((r) => r.role === 'student');
+    f.innerHTML = kids.length ? `<div class="form-grid lv-form">
+        <label class="field"><span>Who</span><select class="inp" id="awWho">${kids.map((k) => `<option value="${esc(k.id)}">${esc(k.name)}</option>`).join('')}</select></label>
+        <label class="field"><span>Badge</span><select class="inp" id="awPick">${PATHS.map((p) => `<option>${p.badge}</option>`).join('')}<option value="">Something else…</option></select></label>
+        <label class="field full" id="awOtherF" hidden><span>Badge name</span><input class="inp" id="awOther" maxlength="40" placeholder="Helper, Builder, Outreach…"></label>
+        <div class="row full"><button class="btn primary pill sm" type="button" id="awGo">${icon('trophy', 'i sm')}Award it</button><button class="btn ghost pill sm" type="button" id="awX">Cancel</button></div>
+      </div>` : '<div class="live-empty">No students on the team yet. Badges can go out once someone joins.</div>';
+    if (!kids.length) return;
+    $('#awPick', f).addEventListener('change', (e) => { $('#awOtherF', f).hidden = e.target.value !== ''; });
+    $('#awX', f).addEventListener('click', () => { f.hidden = true; });
+    $('#awGo', f).addEventListener('click', async (e) => {
+      const to = $('#awWho', f).value, badge = ($('#awPick', f).value || $('#awOther', f).value).trim();
+      if (!badge) { ctx.toast('Give the badge a name first.'); $('#awOther', f).focus(); return; }
+      const toName = (kids.find((k) => k.id === to) || {}).name || '';
+      if (holders().get(badge)?.has(to)) { ctx.toast(`${toName} already has ${badge}.`); return; }
+      e.currentTarget.disabled = true;
+      try {
+        const rec = await api.create('badge', { badge, to, toName });
+        awards.unshift({ ...rec, author: me() });
+        f.hidden = true; badges();
+        ctx.toast(`${badge} awarded to ${toName}.`);
+      } catch (err) { ctx.toast(err.message); e.currentTarget.disabled = false; }
+    });
+  };
+
+  view.addEventListener('click', async (e) => {
     const pb = e.target.closest('[data-path]');
     if (pb) {
       cur = pb.dataset.path; ctx.state.path = cur;
       $$('[data-path]', view).forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.path === cur)));
       detail(false);
-      if (matchMedia('(max-width: 1099px)').matches) $('#pathDetail').scrollIntoView({ behavior: ctx.reduced ? 'auto' : 'smooth', block: 'start' });
+      if (matchMedia('(max-width: 1099px)').matches) $('#pathDetail', view).scrollIntoView({ behavior: ctx.reduced ? 'auto' : 'smooth', block: 'start' });
       return;
     }
     if (e.target.closest('[data-done]')) { markDone(); return; }
-    if (e.target.closest('[data-undo]')) { PROG[cur] = Math.max(0, PROG[cur] - 1); grid(); detail(false); return; }
+    if (e.target.closest('[data-undo]')) { undo(); return; }
+    if (e.target.closest('#awardOpen')) { awardForm(); return; }
+    const ua = e.target.closest('[data-unaward]');
+    if (ua) {
+      try { await api.remove('badge', ua.dataset.unaward); awards = awards.filter((a) => a.id !== ua.dataset.unaward); badges(); ctx.toast('Badge taken back.'); }
+      catch (err) { ctx.toast(err.message); }
+      return;
+    }
     const g = e.target.closest('[data-go]');
     if (g) { const s = PATHS.find((x) => x.id === cur).steps[+g.dataset.go]; ctx.go(s[3][0], s[3][1]); return; }
     const l = e.target.closest('[data-lesson]');
@@ -121,16 +246,17 @@ function paths(view, ctx) {
       });
     }
   });
+  return () => { dead = true; };
 }
 
 // ================================================================= FIRST and BIOBUZZ
 const CORE = [
-  ['Discovery', 'We explore new skills and ideas.', 'Trying the gecko wheels 4 mm closer when nobody knew if it would work.'],
-  ['Innovation', 'We use creativity and persistence to solve problems.', 'Ten tests on the servo gate so far, and still going.'],
-  ['Impact', 'We apply what we learn to improve our world.', "Nova's robot demo at the library in December."],
+  ['Discovery', 'We explore new skills and ideas.', 'Trying a change when nobody knows yet if it will work, then testing it.'],
+  ['Innovation', 'We use creativity and persistence to solve problems.', 'Testing a part ten times, and still going, until it works.'],
+  ['Impact', 'We apply what we learn to improve our world.', 'Showing the robot at a library or a school, so other kids want to try FIRST.'],
   ['Inclusion', 'We respect each other and embrace our differences.', 'Everyone gets Arena time, not just the drivers.'],
-  ['Teamwork', 'We are stronger when we work together.', 'Pixel measures, Nova writes it down, then they swap.'],
-  ['Fun', 'We enjoy and celebrate what we do!', 'Shoutouts on the shop TV at the end of every meeting.'],
+  ['Teamwork', 'We are stronger when we work together.', 'One person measures, one writes it down, then you swap.'],
+  ['Fun', 'We enjoy and celebrate what we do!', 'Shoutouts at the end of a meeting for something a teammate did well.'],
 ];
 const LINKS = [
   ['Competition Manual', 'The official game and robot rules', 'https://ftc.game/manual/'],
@@ -151,7 +277,16 @@ const QUIZ = {
   ],
   right: 1,
 };
-const AGREE = ['Be kind and helpful, to teammates and to other teams.', 'Compete hard and treat everyone well: Gracious Professionalism.', 'Safety first: glasses on, and tools only with a mentor nearby.', 'Keep personal info private. Display names and robot avatars only.', 'Team chat only, no private messages. Mentors can see everything.', 'Ask for help, and help when someone asks you.', 'Tell a mentor if something feels wrong, online or in the shop.'];
+// The Team Code every student agrees to at sign-up (the same words as src/lib/teamcode.ts).
+const AGREE = [
+  'I use my display name, never my real full name, and I never post where I live, my school schedule, my phone number or photos of faces without a mentor saying OK.',
+  'I am kind. I give feedback on ideas, not on people. Gracious Professionalism always.',
+  'There are no private messages here. Everything I post can be seen by the team and the mentors.',
+  "If something online makes me uncomfortable, I tell a mentor or a parent right away. I won't get in trouble for telling.",
+  'I wear safety glasses in the shop and I only use tools I have been checked out on.',
+  'I use AI agents with a mentor, on the team laptop, and I read and understand code before it goes on the robot.',
+  'I keep my password to myself and sign out on shared computers.',
+];
 const COMP_FAQ = [
   ['What happens at a league meet?', 'You play several matches, each with a different alliance partner, and your scores count toward the league rankings. Judged awards usually happen at tournaments and qualifiers. Each event\'s page says what to expect.'],
   ["What's inspection?", 'Before you play, inspectors check that the robot follows the robot rules and is safe. Practice with the checklist in Logbook, Competitions, and bring the official checklist from the manual.'],
@@ -172,9 +307,10 @@ function seasonStep(d = new Date()) {
 }
 function first(view, ctx) {
   const now = seasonStep();
+  const agreed = session.roster.filter((r) => r.role === 'student').map((r) => r.name);
   let cv = 0;
   view.innerHTML = `<div class="zv">
-    ${strip("What FIRST is, how a season runs, and where BIOBUZZ's official rules live. Game rules stay as links to FIRST's own pages, so nothing here goes out of date.", [tag('Opens Dec 1'), tag('Game guide fills in after the manual')])}
+    ${strip("What FIRST is, how a season runs, and where BIOBUZZ's official rules live. Game rules stay as links to FIRST's own pages, so nothing here goes out of date.", [tag('Game guide fills in after the manual')])}
     <article class="card c7 stretch">
       <div class="card-head"><h3 class="card-title">How an FTC season runs</h3><span class="tag">BIOBUZZ 2026–27</span></div>
       <div class="season-run">${['Kickoff|Sep 12 · the game is revealed', 'Build and practice|Design, build, test', 'Meets and qualifiers|Winter · matches and judging', 'Championships|Late winter · state or region', 'FIRST Championship|April · teams earn a spot'].map((s, i) => { const [a, b] = s.split('|'); return `<div class="${i === now ? 'now' : ''}">${a}<span>${i === now ? `We are here · ${b}` : b}</span></div>`; }).join('')}</div>
@@ -211,10 +347,10 @@ function first(view, ctx) {
       <div id="quizOut" aria-live="polite"></div>
     </article>
     <article class="card c6 stretch">
-      <div class="card-head"><span class="oc2">${icon('check', 'i sm')}</span><h3 class="card-title">Our team agreement</h3>${tag('Sample')}</div>
-      <p class="lead">What everyone agreed to at sign-up. Parents and guardians agreed to it too.</p>
+      <div class="card-head"><span class="oc2">${icon('check', 'i sm')}</span><h3 class="card-title">Our Team Code</h3><span class="tag">Everyone agreed</span></div>
+      <p class="lead">Every student read this and ticked "I agree" when they joined. A parent or guardian read it too before saying OK.</p>
       <ul class="checks">${AGREE.map((a) => `<li><span class="ci ok">${icon('check')}</span>${a}</li>`).join('')}</ul>
-      <div class="card-foot"><span class="cap">You agreed when you signed up · sample</span><button class="btn ghost pill sm" type="button" data-toast="Coach can update the agreement in Coach tools. Everyone re-agrees after a change.">${icon('note', 'i sm')}Changes</button></div>
+      <div class="card-foot">${agreed.length ? `${avStack(agreed.slice(0, 7), 24)}<span class="cap">${agreed.length} student${agreed.length === 1 ? '' : 's'} agreed at sign-up</span>` : '<span class="cap">Each student agrees when they join with the Team Code.</span>'}</div>
     </article>
     <article class="card">
       <div class="card-head"><h3 class="card-title">Competition questions</h3></div>
@@ -223,7 +359,7 @@ function first(view, ctx) {
   </div>`;
   const cvDraw = () => {
     const [n, d, ours] = CORE[cv];
-    $('#cvBody').innerHTML = `<p style="font:500 22px/28px Outfit,sans-serif">${d}</p><div class="callout" style="${soft}">${icon('sparkle')}<div><b>On our team:</b> ${ours} <span class="muted">(sample)</span></div></div><p class="cap" style="font-weight:400">${n} is one of the six FIRST Core Values. Judges look for them in how you work, not just in what you say.</p>`;
+    $('#cvBody').innerHTML = `<p style="font:500 22px/28px Outfit,sans-serif">${d}</p><div class="callout" style="${soft}">${icon('sparkle')}<div><b>Try this:</b> ${ours}</div></div><p class="cap" style="font-weight:400">${n} is one of the six FIRST Core Values. Judges look for them in how you work, not just in what you say.</p>`;
   };
   cvDraw();
   $('#cv').addEventListener('click', (e) => { const b = e.target.closest('[data-cv]'); if (!b) return; cv = +b.dataset.cv; $$('#cv button').forEach((o) => o.setAttribute('aria-pressed', String(o === b))); cvDraw(); });
@@ -290,7 +426,7 @@ const OBJ_STEPS = [
 const DEV_FAQ = [
   ["My laptop can't see the robot's Wi-Fi", 'Check the robot is on and has had a minute to start. Move closer. If your device is managed by a school, it may block other networks. Tell Coach, and pair up with a teammate whose device connects.'],
   ['The build has red errors', 'Read the first error only, and look at its line number. A missing <b>;</b> or <b>}</b> causes most of them. Still stuck? Post the error in #help.'],
-  ['Where does my code live?', "On the Control Hub. It also gets copied into the team's code repository, so nothing is lost. Code, Our code shows it."],
+  ['Where does my code live?', "On the Control Hub. Once a mentor connects the team's GitHub repo, a copy lives there too, and Code, Our code shows it."],
   ['Can I code at home?', 'Yes. Try ideas in the BioBuzz Arena and Snippets. OnBot Java needs the robot, so build those changes at the next meeting.'],
   ['Which gamepad is which?', 'On the Driver Station, press Start and A together on a gamepad to make it gamepad 1, the driver. Start and B makes it gamepad 2, the operator.'],
   ['The Hub is slow on my phone', 'Close other tabs, and turn off low power mode while you use the 3D robot. Robot, Specs and parts has everything without 3D.'],
@@ -309,7 +445,7 @@ function setup(view, ctx) {
   const auto = detectDevice();
   let dev = ctx.state.device || auto;
   view.innerHTML = `<div class="zv">
-    ${strip("Everyone uses their own device, so this page shows what works on yours. OnBot Java comes first: it runs in a browser on the robot's Wi-Fi, so it works on Chromebooks.", [tag('Opens Dec 1')])}
+    ${strip("Everyone uses their own device, so this page shows what works on yours. OnBot Java comes first: it runs in a browser on the robot's Wi-Fi, so it works on Chromebooks.", [tag('Your own device')])}
     <article class="card c7">
       <div class="card-head"><h3 class="card-title">What works on your device</h3></div>
       <div class="row wrap">${seg('dev', DEVICES, dev, 'Your device')}<span class="cap" id="devAuto"></span></div>
@@ -408,7 +544,7 @@ function fitVerdict(g) {
 function buildtips(view, ctx) {
   let t = 3, o = 'flat', gap = 0.05;
   view.innerHTML = `<div class="zv">
-    ${strip('Quick rules of thumb for parts that hold up in a match. The three cards on top are tiny experiments: change the numbers and watch what happens.', [tag('Phase 6 · Mar 1–19'), tag('The numbers are rules of thumb')])}
+    ${strip('Quick rules of thumb for parts that hold up in a match. The three cards on top are tiny experiments: change the numbers and watch what happens.', [tag('The numbers are rules of thumb')])}
     <article class="card c4 stretch">
       <div class="card-head"><span class="oc2">${icon('sliders', 'i sm')}</span><h3 class="card-title">Thicker is stiffer, fast</h3></div>
       <div class="sim-art" id="ribArt"></div>
@@ -497,7 +633,7 @@ Our code is in TeamCode/src/main/java/org/firstinspires/ftc/teamcode/.
 - Name things for what they do: launcherAtSpeed, not flag2.`;
 function agents(view, ctx) {
   view.innerHTML = `<div class="zv">
-    ${strip("AI coding agents can read, change and test code for you. Used well, they teach you as they go. This is how the team uses them safely, with OpenCode on a mentor's laptop.", [tag('Phase 4 · Jan 25–Feb 12'), tag('Mentor-led for under 13')])}
+    ${strip("AI coding agents can read, change and test code for you. Used well, they teach you as they go. This is how the team uses them safely, with OpenCode on a mentor's laptop.", [tag('Mentor-led for under 13')])}
     <article class="card c7 stretch">
       <div class="card-head"><h3 class="card-title">Autocomplete or agent?</h3></div>
       <div class="cmp">
@@ -529,9 +665,9 @@ function agents(view, ctx) {
       <div class="code-head"><span class="path">A good commit message</span></div>
       <pre class="code" tabindex="0"><code>Launcher: wait until at speed before feeding
 
-Gizmo found balls feeding before the flywheel was ready.
-AI-assisted: the agent found the timing bug; Gizmo tested it.</code></pre>
-      <button class="btn soft pill" type="button" data-goto="code|Our code">${icon('code', 'i sm')}See our commits</button>
+A teammate found balls feeding before the flywheel was ready.
+AI-assisted: the agent found the timing bug; we tested it.</code></pre>
+      <button class="btn soft pill" type="button" data-goto="code|Our code">${icon('code', 'i sm')}See our code</button>
     </article>
   </div>`;
   view.addEventListener('click', (e) => {
@@ -556,12 +692,13 @@ const ANIM = {
 };
 const animSvg = (k) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ANIM[k] || ANIM.check}</svg>`;
 function glossary(view, ctx) {
-  let cat = 'All', q = ctx.state.glossQ || '';
+  let cat = 'All', q = ctx.state.glossQ || '', words = [], loaded = false, dead = false;
+  const mentor = isMentor();
   const cats = ['All', ...new Set(GLOSSARY.map((g) => g[1]))];
   const day = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 864e5);
   const wod = GLOSSARY[day % GLOSSARY.length];
   view.innerHTML = `<div class="zv">
-    ${strip('Every word with a dotted underline in the Hub opens one of these. Search, or pick a group. Kids can suggest new words.', [tag(`${GLOSSARY.length} words`), tag('Phase 3 · Jan 4–22')])}
+    ${strip('Every word with a dotted underline in the Hub opens one of these. Search, or pick a group. Anyone can suggest a new word, and a mentor checks it before it joins the list.', [`<span class="tag" id="glCount">${GLOSSARY.length} words</span>`])}
     <article class="card c4 stretch">
       <div class="card-head"><span class="oc2 volt">${icon('sparkle', 'i sm')}</span><h3 class="card-title">Word of the day</h3></div>
       <div class="term" style="background:transparent;padding:0"><span class="anim">${animSvg(wod[3])}</span><b style="font:500 22px/28px Outfit,sans-serif">${wod[0]}</b><p>${wod[1]}</p></div>
@@ -573,17 +710,82 @@ function glossary(view, ctx) {
       <p class="cap" id="glN" aria-live="polite"></p>
       <div class="gloss" id="gloss"></div>
     </article>
+    <article class="card" id="sugCard">
+      <div class="card-head"><span class="oc2">${icon('plus', 'i sm')}</span><h3 class="card-title">Team suggestions</h3><span class="tag" id="sugN"></span></div>
+      <div id="sugForm" hidden></div>
+      <div class="items" id="sugList"><div class="live-empty">Loading suggestions…</div></div>
+      <div class="card-foot"><span class="cap">A mentor checks each word first</span><button class="btn soft pill sm" type="button" id="sugOpen">${icon('plus', 'i sm')}Suggest a word</button></div>
+    </article>
   </div>`;
+  const accepted = () => words.filter((w) => w.data?.accepted && w.data?.term).map((w) => [w.data.term, w.data.cat || 'Team', w.data.def || '', 'check', w.author]);
   const draw = () => {
     const ql = q.trim().toLowerCase();
-    const list = GLOSSARY.filter(([t, c, d]) => (cat === 'All' || c === cat) && (!ql || t.toLowerCase().includes(ql) || d.toLowerCase().includes(ql)));
-    $('#glN').textContent = `${list.length} word${list.length === 1 ? '' : 's'}`;
-    $('#gloss').innerHTML = list.map(([t, c, d, a]) => `<div class="term"><span class="anim">${animSvg(a)}</span><b>${t} <span class="cap" style="margin-left:4px">${c}</span></b><p>${d}</p></div>`).join('') || `<p class="lead">No word matches "${esc(q)}". Suggest it, and it gets added after a mentor checks the definition.</p>`;
+    const all = [...GLOSSARY, ...accepted()];
+    $('#glCount', view).textContent = `${all.length} words`;
+    const list = all.filter(([t, c, d]) => (cat === 'All' || c === cat) && (!ql || t.toLowerCase().includes(ql) || d.toLowerCase().includes(ql)));
+    $('#glN', view).textContent = `${list.length} word${list.length === 1 ? '' : 's'}`;
+    $('#gloss', view).innerHTML = list.map(([t, c, d, a, by]) => `<div class="term"><span class="anim">${animSvg(a)}</span><b>${esc(t)} <span class="cap" style="margin-left:4px">${esc(c)}</span></b><p>${esc(d)}</p>${by ? `<span class="cap row" style="gap:6px">${av(by, 18)}Suggested by ${esc(by)}</span>` : ''}</div>`).join('')
+      || `<div class="live-empty">No word matches "${esc(q)}". <button class="btn ghost pill sm" type="button" data-suggest="1">Suggest it</button></div>`;
+  };
+  const sugList = () => {
+    if (!loaded) return;
+    const waiting = words.filter((w) => !w.data?.accepted).length;
+    $('#sugN', view).textContent = words.length ? `${waiting} waiting` : 'None yet';
+    $('#sugList', view).innerHTML = words.length ? words.map((w) => {
+      const d = w.data || {}, mine = w.user_id === session.user?.id;
+      return `<div class="it lv-sug">${av(w.author, 28)}<div class="grow"><div class="t">${esc(d.term || '')} <span class="cap" style="margin-left:4px">${esc(d.cat || 'Team')}</span></div><div class="meta cap" style="font-weight:400">${esc(d.def || 'No meaning written yet.')}</div><div class="meta cap">${esc(w.author)} · ${fmtDay(w.created_at)}</div></div>
+        <span class="end lv-wrap">${d.accepted ? `<span class="st volt">${icon('check', 'i sm')}In the glossary</span>` : '<span class="st">Waiting for a mentor</span>'}${mentor ? `<button class="btn ${d.accepted ? 'ghost' : 'primary'} pill sm" type="button" data-acc="${esc(w.id)}">${d.accepted ? 'Take out' : 'Accept'}</button>` : ''}${mentor || (mine && !d.accepted) ? `<button class="btn ghost pill sm" type="button" data-rm="${esc(w.id)}">Remove</button>` : ''}</span></div>`;
+    }).join('') : '<div class="live-empty">No suggestions yet. Heard a robot word that is not in the list? Suggest it, and a mentor adds it after checking the meaning.</div>';
+  };
+  const openForm = (term = '') => {
+    const f = $('#sugForm', view);
+    f.hidden = false;
+    f.innerHTML = `<div class="form-grid lv-form">
+      <label class="field"><span>The word</span><input class="inp" id="swT" maxlength="40" placeholder="Bevel gear" value="${esc(term)}"></label>
+      <label class="field"><span>Group</span><select class="inp" id="swC">${cats.slice(1).map((c) => `<option>${c}</option>`).join('')}</select></label>
+      <label class="field full"><span>What it means, in your own words</span><textarea class="inp" id="swD" maxlength="300" placeholder="A gear cut at an angle, so it can turn a shaft around a corner."></textarea><small>A mentor checks it before it joins the glossary.</small></label>
+      <div class="row full"><button class="btn primary pill sm" type="button" id="swGo">Send it</button><button class="btn ghost pill sm" type="button" id="swX">Cancel</button></div>
+    </div>`;
+    $('#swX', f).addEventListener('click', () => { f.hidden = true; });
+    $('#swGo', f).addEventListener('click', async (e) => {
+      const btn = e.currentTarget;
+      const term = $('#swT', f).value.trim(), def = $('#swD', f).value.trim(), c = $('#swC', f).value;
+      if (!term) { ctx.toast('Type the word first.'); $('#swT', f).focus(); return; }
+      if ([...GLOSSARY, ...accepted()].some(([t]) => t.toLowerCase() === term.toLowerCase())) { ctx.toast(`"${term}" is already in the glossary.`); return; }
+      btn.disabled = true;
+      try {
+        const rec = await api.create('word', { term, cat: c, def, accepted: false });
+        words.unshift({ ...rec, author: me() });
+        f.hidden = true; sugList();
+        ctx.toast('Thanks! A mentor will check it.');
+      } catch (err) { ctx.toast(err.message); btn.disabled = false; }
+    });
+    $('#sugCard', view).scrollIntoView({ behavior: ctx.reduced ? 'auto' : 'smooth', block: 'start' });
+    $('#swT', f).focus({ preventScroll: true });
   };
   draw();
-  $('#glF').addEventListener('click', (e) => { const b = e.target.closest('[data-c]'); if (!b) return; cat = b.dataset.c; $$('#glF .chip').forEach((o) => o.setAttribute('aria-pressed', String(o === b))); draw(); });
-  $('#glQ').addEventListener('input', (e) => { q = e.target.value; ctx.state.glossQ = q; draw(); });
-  $('#suggestWord').addEventListener('click', () => { ctx.state.fbDraft = 'Glossary: please add the word '; ctx.go('crew', 'Feedback'); });
+  api.list('word').then((items) => { if (dead) return; words = items; loaded = true; sugList(); draw(); })
+    .catch((err) => { if (!dead) $('#sugList', view).innerHTML = `<div class="live-empty">Could not load suggestions. ${esc(err.message)}</div>`; });
+  $('#glF', view).addEventListener('click', (e) => { const b = e.target.closest('[data-c]'); if (!b) return; cat = b.dataset.c; $$('#glF .chip', view).forEach((o) => o.setAttribute('aria-pressed', String(o === b))); draw(); });
+  $('#glQ', view).addEventListener('input', (e) => { q = e.target.value; ctx.state.glossQ = q; draw(); });
+  $('#suggestWord', view).addEventListener('click', () => openForm());
+  $('#sugOpen', view).addEventListener('click', () => openForm());
+  view.addEventListener('click', async (e) => {
+    if (e.target.closest('[data-suggest]')) { openForm(q.trim()); return; }
+    const a = e.target.closest('[data-acc]');
+    if (a) {
+      const w = words.find((x) => x.id === a.dataset.acc); if (!w) return;
+      try { const r = await api.update('word', w.id, { accepted: !w.data.accepted }); w.data = r.data; sugList(); draw(); ctx.toast(w.data.accepted ? `"${w.data.term}" is in the glossary now.` : 'Taken out of the glossary.'); }
+      catch (err) { ctx.toast(err.message); }
+      return;
+    }
+    const rm = e.target.closest('[data-rm]');
+    if (rm) {
+      try { await api.remove('word', rm.dataset.rm); words = words.filter((x) => x.id !== rm.dataset.rm); sugList(); draw(); ctx.toast('Removed.'); }
+      catch (err) { ctx.toast(err.message); }
+    }
+  });
+  return () => { dead = true; };
 }
 
 export const LEARN = { Paths: paths, 'FIRST and BIOBUZZ': first, 'Setup and FAQ': setup, 'Build tips': buildtips, 'AI agents': agents, Glossary: glossary };

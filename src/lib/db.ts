@@ -7,7 +7,9 @@ import { SCHEMA } from './schema';
 type Row = Record<string, unknown>;
 type Runner = (text: string, params: unknown[]) => Promise<Row[]>;
 
-let runner: Promise<Runner> | null = null;
+// Cached on globalThis: Next bundles route handlers and pages separately, and each bundle gets its own
+// copy of this module. One shared runner means one database connection (and one PGlite folder lock).
+const G = globalThis as unknown as { __kwcRunner?: Promise<Runner> | null };
 
 export const isDemoDb = () => !process.env.DATABASE_URL;
 
@@ -28,8 +30,8 @@ async function makeRunner(): Promise<Runner> {
 }
 
 export async function q<T = Row>(text: string, params: unknown[] = []): Promise<T[]> {
-  if (!runner) runner = makeRunner().catch((e) => { runner = null; throw e; });
-  const run = await runner;
+  if (!G.__kwcRunner) G.__kwcRunner = makeRunner().catch((e) => { G.__kwcRunner = null; throw e; });
+  const run = await G.__kwcRunner;
   return (await run(text, params)) as T[];
 }
 

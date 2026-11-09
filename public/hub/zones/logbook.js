@@ -1,124 +1,107 @@
-// Logbook zone: Calendar, Sessions, Progress, Competitions, Portfolio.
-// Season dates (kickoff Sep 12 2026, Hub doors open Dec 1 2026) are real. Meetings, meets, notes, goals and
-// schedules are sample data until the Hub opens.
-import { $, $$, esc, clamp, icon, tag, SAMPLE, strip, av, avStack, dot, bar, lineChart, copyText, KIDS, MENTOR } from './common.js';
-import { STAGES, SUBSYS } from './robot.js';
-import { MATRIX } from './build.js';
+// Logbook zone: Calendar, Sessions, Progress, Competitions, Portfolio. Everything comes from the team database.
+// The season dates that are fixed (kickoff Sep 12 2026, Hub doors open Dec 1 2026) stay in code; mentors add
+// meetings, events and competitions, and anyone can write session notes and portfolio sections.
+import { $, $$, esc, icon, tag, strip, av, avStack, dot, bar, seg, wireSeg, lineChart, copyText } from './common.js';
+import { api, session, isMentor, me } from '../api.js';
 
 const D = (y, m, d) => new Date(y, m, d);
 const dayStart = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
-const key = (d) => `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
-const same = (a, b) => key(a) === key(b);
+const pad = (n) => String(n).padStart(2, '0');
+const ymd = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const pd = (s) => { const [y, m, d] = String(s || '').slice(0, 10).split('-').map(Number); return y ? new Date(y, (m || 1) - 1, d || 1) : null; };
+const same = (a, b) => !!a && !!b && ymd(a) === ymd(b);
 const fmtLong = new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+const fmtFull = new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
 const fmtShort = new Intl.DateTimeFormat('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 const fmtMon = new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' });
 const fmtMD = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' });
-const NAMES = KIDS.map((k) => k.n);
+const hm = (t) => { if (!t) return ''; const [h, m] = t.split(':').map(Number); return `${h % 12 || 12}:${pad(m)} ${h < 12 ? 'AM' : 'PM'}`; };
+const myId = () => session.user?.id || '';
+const isMine = (r) => r.user_id === myId();
+const errMsg = (err) => (err && err.message) || 'That did not save. Try again.';
+const loading = (t = 'Loading…') => `<div class="live-empty" role="status">${t}</div>`;
+const empty = (t) => `<div class="live-empty">${t}</div>`;
+const names = () => (session.roster || []).filter((p) => p.role === 'student').map((p) => p.name);
+const allNames = () => (session.roster || []).map((p) => p.name);
+const safeUrl = (u) => { try { const x = new URL(u); return /^https?:$/.test(x.protocol) ? x.href : ''; } catch (e) { return ''; } };
+const lines = (s) => String(s || '').split('\n').map((x) => x.trim()).filter(Boolean);
 
 // ================================================================= Calendar data
 const C = { meet: 'var(--text)', big: 'var(--sys-launcher)', hub: 'var(--volt)', due: 'var(--warn)', out: 'var(--sys-power)', off: 'var(--stone)' };
+const KINDS = [['meet', 'Meeting'], ['big', 'Competition'], ['due', 'Deadline'], ['out', 'Outreach'], ['off', 'No meeting'], ['hub', 'Milestone']];
 const KICKOFF = D(2026, 8, 12);
-const FIRST_MONTH = D(2026, 8, 1), LAST_MONTH = D(2027, 3, 1);
-const BREAK_A = D(2026, 11, 21), BREAK_B = D(2027, 0, 1);
-const OFFSEASON = D(2027, 2, 22), SEASON_END = D(2027, 3, 30);
-const NO_MEETING = [key(D(2026, 10, 26))];
-const inBreak = (d) => d >= BREAK_A && d <= BREAK_B;
-// [date, kind, title, time, more]
+const FIRST_MONTH = D(2026, 8, 1);
+// The fixed, real season dates.
 const FIXED = [
-  [KICKOFF, 'meet', 'Season kickoff', 'All day', 'BIOBUZZ was revealed. Week 1 of the season.'],
-  [D(2026, 10, 16), 'hub', 'Lab cards on the shop TV', 'All week', 'The Mechanism Lab cards go up on the shop TV this week.'],
-  [D(2026, 10, 26), 'off', 'Thanksgiving, no meeting', '', 'Enjoy the break. The next meeting is Tuesday.'],
-  [D(2026, 11, 1), 'hub', 'Hub doors open', 'All day', 'The real calendar and session notes open today.'],
-  [D(2026, 11, 7), 'hub', 'Competitions and portfolio helper', 'All day', 'Phase 2 starts: the Competitions page and the portfolio helper.'],
-  [D(2026, 11, 11), 'due', 'Register for League meet 1', 'By 5:00 PM', 'Coach registers the team. Bring your permission slip.'],
-  [D(2026, 11, 12), 'out', 'Library robot demo', '10:00 AM', "Nova's outreach demo at the library."],
-  [D(2026, 11, 21), 'off', 'Winter break starts', '', 'No meetings until January.'],
-  [D(2027, 0, 8), 'due', 'Portfolio draft to Coach', 'By 5:00 PM', 'Every section at least started.'],
-  [D(2027, 0, 16), 'big', 'League meet 1', '7:30 AM', 'Our first league meet.'],
-  [D(2027, 0, 22), 'due', 'Register for League meet 2', 'By 5:00 PM', ''],
-  [D(2027, 1, 6), 'big', 'League meet 2', '7:30 AM', ''],
-  [D(2027, 1, 19), 'due', 'Register for the League tournament', 'By 5:00 PM', ''],
-  [D(2027, 2, 6), 'big', 'League tournament', '7:30 AM', ''],
-  [OFFSEASON, 'hub', 'Off-season starts', 'All day', 'Make the robot yours: new ideas, new skills.'],
+  { fixed: true, date: ymd(KICKOFF), kind: 'meet', title: 'Season kickoff', time: '', note: 'BIOBUZZ was revealed. Week 1 of the season.' },
+  { fixed: true, date: ymd(D(2026, 11, 1)), kind: 'hub', title: 'Hub doors open', time: '', note: 'The Kilowattchaos Hub opens for the whole team.' },
 ];
-function eventsOn(d) {
-  const out = FIXED.filter((f) => same(f[0], d)).map(([, kind, t, time, more]) => ({ kind, t, time, more }));
-  const wd = d.getDay();
-  if ((wd === 2 || wd === 4) && d > KICKOFF && d <= SEASON_END && !inBreak(d) && !NO_MEETING.includes(key(d))) {
-    out.unshift({ kind: 'meet', t: d >= OFFSEASON ? 'Off-season meeting' : 'Team meeting', time: '3:30 PM', more: '3:30 to 5:30 PM · Shop room', meeting: true });
-  }
-  return out;
+// An event record: { title, start: 'YYYY-MM-DD' or 'YYYY-MM-DDTHH:MM', end, place, kind, note, weekly, until }.
+function occurs(ev, d) {
+  const s = pd(ev.data.start);
+  if (!s) return false;
+  if (same(s, d)) return true;
+  if (!ev.data.weekly || d < s || d.getDay() !== s.getDay()) return false;
+  const u = pd(ev.data.until);
+  if (u && d > u) return false;
+  return !(ev.data.skip || []).includes(ymd(d));
 }
-const LEGEND = [['meet', 'Meeting'], ['big', 'Meet'], ['hub', 'Hub milestone'], ['due', 'Deadline'], ['out', 'Outreach'], ['off', 'No meeting']];
+function eventsOn(d, events) {
+  const out = FIXED.filter((f) => f.date === ymd(d)).map((f) => ({ ...f }));
+  for (const ev of events) {
+    if (!occurs(ev, d)) continue;
+    const st = String(ev.data.start || ''), en = String(ev.data.end || '');
+    out.push({ id: ev.id, rec: ev, kind: ev.data.kind || 'meet', title: ev.data.title || 'Event', time: st.slice(11, 16), end: en.slice(11, 16), place: ev.data.place || '', note: ev.data.note || '', weekly: !!ev.data.weekly });
+  }
+  return out.sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+}
+const timeText = (e) => (e.time ? `${hm(e.time)}${e.end ? ` to ${hm(e.end)}` : ''}` : 'All day');
 
-// ================================================================= Session notes (all sample)
-const NOTES = [
-  { id: 'n1105', d: D(2026, 10, 5), title: 'Gecko wheels closer: 7 of 10', came: ['Sparky', 'Pixel', 'Gizmo', 'Byte', 'Nova', 'Echo'], scribe: 'Nova',
-    goal: 'Get the intake picking up more balls from a pile, and test the launcher from 4 ft.',
-    did: [['intake', 'Moved the gecko wheels 4 mm closer together. Pile pickup went from 5 to 7 of 10 balls.'], ['launcher', 'Ten shots from 4 ft: 6 of 10 landed in the target box.'], ['drivetrain', 'Byte finished the drive-forward autonomous and ran it twice on the floor.']],
-    tests: [['Pile pickup, 4 mm closer', '7 of 10 balls', 'intake'], ['Ten shots from 4 ft', '6 of 10 in the target box', 'launcher']],
-    problems: [['A bearing on the frame keeps popping out.', 'Pinned by Gizmo'], ['Balls sometimes jam where the intake meets the hopper.', 'Pinned by Pixel']],
-    photos: ['Gecko wheels, 4 mm closer', 'The 10-ball test pile', 'Target box from 4 ft'],
-    refl: [['I like', 'Pixel', 'The 4 mm change made a big difference for one small move.'], ['I wonder', 'Sparky', 'Would the shots land better with a hood?'], ['What if', 'Nova', 'What if we try 6 mm and see if it squeezes too hard?']],
-    next: [['Try the gecko wheels 6 mm closer', ['Pixel', 'Nova'], 'Tuesday'], ["Measure the flywheel's top speed", ['Sparky'], 'Tuesday'], ['Print 4 intake roller hubs', ['Nova'], 'Thursday'], ['Fix the popping bearing', ['Rivet'], 'Tuesday']] },
-  { id: 'n1103', d: D(2026, 10, 3), title: 'Servo gate timing', came: ['Sparky', 'Pixel', 'Gizmo', 'Byte', 'Rivet', 'Echo', 'Nova'], scribe: 'Echo',
-    goal: 'Make the ball path feed one ball at a time into the flywheel.',
-    did: [['ballpath', 'Tested the servo gate ten times. Two balls slipped through together 3 of 10 times.'], ['ballpath', 'Gizmo printed a gate arm for the hopper servo.'], ['drivetrain', 'Byte started the drive-forward autonomous.']],
-    tests: [['Servo gate, ten feeds', '3 of 10 double-feeds', 'ballpath']],
-    problems: [['The gate opens too fast, so a second ball follows the first.', 'Pinned by Gizmo']],
-    photos: ['The servo gate arm', 'Two balls in the gate'],
-    refl: [['I like', 'Gizmo', 'Counting every feed showed us exactly how often it fails.'], ['I wonder', 'Echo', 'Does the battery level change the servo speed?'], ['What if', 'Byte', 'What if the code waits a little longer between balls?']],
-    next: [['Try a longer gate pause between balls', ['Gizmo'], 'Thursday'], ['Finish the drive-forward auto', ['Byte'], 'Thursday']] },
-  { id: 'n1029', d: D(2026, 9, 29), title: 'Launcher wobble and battery runtime', came: ['Sparky', 'Gizmo', 'Byte', 'Nova', 'Rivet', 'Echo'], scribe: 'Gizmo',
-    goal: 'Find out why the launcher shakes, and how long a battery lasts.',
-    did: [['structure', 'At full speed the launcher mount wobbles where you can see it. We need a brace.'], ['power', 'Echo drove hard on one battery: it lasted about 9 minutes.'], ['launcher', 'Sparky and Rivet held the mount by hand and the shots got steadier.']],
-    tests: [['Launcher mount flex', 'Visible wobble at full speed', 'structure'], ['Battery runtime', 'About 9 minutes of hard driving', 'power']],
-    problems: [['The launcher mount bends at full speed.', 'Pinned by Rivet']],
-    photos: ['The launcher mount', 'Battery and charger'],
-    refl: [['I like', 'Echo', 'Now we know how many batteries a meet needs.'], ['I wonder', 'Rivet', 'Should the brace be metal or printed?'], ['What if', 'Sparky', 'What if we add the brace on both sides?']],
-    next: [['Design a brace for the launcher mount', ['Rivet'], 'Tuesday'], ['Label and rotate the three batteries', ['Echo'], 'Tuesday']] },
-  { id: 'n1027', d: D(2026, 9, 27), title: 'Flywheel spin-up', came: ['Sparky', 'Pixel', 'Gizmo', 'Byte', 'Nova', 'Rivet', 'Echo'], scribe: 'Sparky',
-    goal: 'Time how fast the flywheel gets up to speed.',
-    did: [['launcher', 'Timed the flywheel with telemetry: 1.4 s to full speed on a fresh battery.'], ['intake', 'Pixel and Nova planned a gecko wheel spacing test.'], ['drivetrain', 'Byte checked the 1.1 strafe factor from Oct 20. It still drives straight.']],
-    tests: [['Flywheel spin-up', '1.4 s to full speed', 'launcher']],
-    problems: [],
-    photos: ['Flywheel and motor', 'Telemetry on the Driver Station'],
-    refl: [['I like', 'Sparky', 'Telemetry gave us a real number, not a guess.'], ['I wonder', 'Byte', 'Is it slower on a tired battery?'], ['What if', 'Pixel', 'What if we time it again at the end of a meeting?']],
-    next: [['Test the launcher mount at full speed', ['Rivet', 'Sparky'], 'Thursday'], ['Time a battery run', ['Echo'], 'Thursday']] },
-  { id: 'n1022', d: D(2026, 9, 22), title: 'Intake baseline from a pile', came: ['Sparky', 'Pixel', 'Byte', 'Nova', 'Rivet', 'Echo'], scribe: 'Pixel',
-    goal: 'Measure how well the stock intake picks balls up from a pile.',
-    did: [['intake', 'Pile pickup with the stock gecko wheel spacing: 5 of 10 balls.'], ['intake', 'Balls that missed rolled off the side of the wheels.'], ['drivetrain', 'Strafe test from Oct 20 rechecked: drift is gone with the 1.1 factor.']],
-    tests: [['Pile pickup, stock spacing', '5 of 10 balls', 'intake']],
-    problems: [['Balls roll off the side of the intake.', 'Pinned by Nova']],
-    photos: ['Stock intake', 'The 10-ball test pile'],
-    refl: [['I like', 'Nova', 'Using the same 10-ball pile makes tests fair.'], ['I wonder', 'Pixel', 'Would more squeeze help the wheels grab?'], ['What if', 'Rivet', 'What if we move the wheels closer?']],
-    next: [['Plan a closer gecko wheel spacing', ['Pixel', 'Nova'], 'Tuesday']] },
-];
-const allNotes = (ctx) => [...(ctx.state.newNotes || []), ...NOTES];
+function icsFile(events) {
+  const esc2 = (s) => String(s || '').replace(/[\\;,]/g, (c) => `\\${c}`).replace(/\n/g, '\\n');
+  const dt = (s) => s.replace(/[-:]/g, '') + (s.length > 10 ? '00' : '');
+  const out = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Kilowattchaos Hub//EN', 'X-WR-CALNAME:Kilowattchaos'];
+  const add = (uid, title, start, end, place, note, rrule) => {
+    const allDay = start.length <= 10;
+    out.push('BEGIN:VEVENT', `UID:${uid}@kilowattchaos-hub`, `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').slice(0, 15)}Z`,
+      allDay ? `DTSTART;VALUE=DATE:${dt(start)}` : `DTSTART:${dt(start)}`,
+      ...(end && !allDay ? [`DTEND:${dt(end)}`] : []), `SUMMARY:${esc2(title)}`, ...(place ? [`LOCATION:${esc2(place)}`] : []), ...(note ? [`DESCRIPTION:${esc2(note)}`] : []), ...(rrule ? [rrule] : []), 'END:VEVENT');
+  };
+  FIXED.forEach((f, i) => add(`fixed-${i}`, f.title, f.date, '', '', f.note));
+  for (const ev of events) {
+    const d = ev.data, st = String(d.start || '');
+    if (!st) continue;
+    const end = d.end && String(d.end).length > 10 ? String(d.end) : '';
+    add(ev.id, d.title, st, end, d.place, d.note, d.weekly ? `RRULE:FREQ=WEEKLY${d.until ? `;UNTIL=${String(d.until).replace(/-/g, '')}T235959` : ''}` : '');
+  }
+  out.push('END:VCALENDAR');
+  return out.join('\r\n');
+}
 
 // ================================================================= Calendar
 function calendar(view, ctx) {
   const today = dayStart(new Date());
-  const startMonth = ctx.state.calMonth ? new Date(ctx.state.calMonth) : clampMonth(D(today.getFullYear(), today.getMonth(), 1));
-  let month = startMonth;
-  let sel = ctx.state.calSel ? new Date(ctx.state.calSel) : (today >= FIRST_MONTH && today < D(2027, 4, 1) ? today : month);
+  let events = [], rsvps = [], notes = [];
+  let lastMonth = D(2027, 7, 1);
+  const clampMonth = (m) => (m < FIRST_MONTH ? FIRST_MONTH : m > lastMonth ? lastMonth : m);
+  let month = ctx.state.calMonth ? new Date(ctx.state.calMonth) : clampMonth(D(today.getFullYear(), today.getMonth(), 1));
+  let sel = ctx.state.calSel ? new Date(ctx.state.calSel) : today;
   ctx.state.calSel = null;
-  const rsvp = ctx.state.rsvp || (ctx.state.rsvp = {});
-  const noteFor = (d) => NOTES.find((n) => same(n.d, d));
+  let editing = null; // null, 'new', or an event record
   view.innerHTML = `<div class="zv">
-    ${strip('Every meeting, meet and deadline in one place. Pick a day to see what is happening and tell the team if you can come. The real calendar opens on December 1.', [tag('Opens Dec 1'), SAMPLE],
-      `<button class="btn soft pill sm" type="button" data-sub="Google">${icon('calendar', 'i sm')}Google</button><button class="btn soft pill sm" type="button" data-sub="Apple">${icon('calendar', 'i sm')}Apple</button><button class="btn soft pill sm" type="button" data-sub="Outlook">${icon('calendar', 'i sm')}Outlook</button>`)}
+    ${strip('Every meeting, competition and deadline in one place. Pick a day to see what is happening and tell the team if you can come.', [],
+      `<button class="btn soft pill sm" type="button" id="calIcs">${icon('calendar', 'i sm')}Add to my calendar</button>${isMentor() ? `<button class="btn primary pill sm" type="button" id="calAdd">${icon('plus', 'i sm')}Add event</button>` : ''}`)}
     <article class="card c8">
       <div class="cal-head"><button class="icon-btn sm" type="button" id="calPrev" aria-label="Previous month"><svg class="i sm" viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round"><path d="m15 6-6 6 6 6"/></svg></button><h4 id="calMonth" aria-live="polite"></h4><button class="btn ghost pill sm" type="button" id="calToday">Today</button><button class="icon-btn sm" type="button" id="calNext" aria-label="Next month"><svg class="i sm" viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round"><path d="m9 6 6 6-6 6"/></svg></button></div>
       <div class="cal" id="calGrid"></div>
-      <div class="legend">${LEGEND.map(([k, t]) => `<span><i class="${k === 'hub' ? 'lb-volt' : ''}" style="--c:${C[k]}"></i>${t}</span>`).join('')}<span><i class="lb-brk"></i>Winter break</span></div>
+      <div class="legend">${KINDS.map(([k, t]) => `<span><i class="${k === 'hub' ? 'lb-volt' : ''}" style="--c:${C[k]}"></i>${t}</span>`).join('')}</div>
     </article>
-    <article class="card c4" id="calAgenda"></article>
+    <article class="card c4" id="calAgenda">${loading()}</article>
   </div>`;
   const grid = () => {
     $('#calMonth', view).textContent = fmtMon.format(month);
     $('#calPrev', view).disabled = month <= FIRST_MONTH;
-    $('#calNext', view).disabled = month >= LAST_MONTH;
+    $('#calNext', view).disabled = month >= lastMonth;
     const first = D(month.getFullYear(), month.getMonth(), 1);
     const start = D(first.getFullYear(), first.getMonth(), 1 - first.getDay());
     const last = D(month.getFullYear(), month.getMonth() + 1, 0);
@@ -126,52 +109,129 @@ function calendar(view, ctx) {
     let h = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => `<span class="dow">${d}</span>`).join('');
     for (let i = 0; i < weeks * 7; i++) {
       const d = D(start.getFullYear(), start.getMonth(), start.getDate() + i);
-      const ev = eventsOn(d);
-      const cls = ['day', d.getMonth() !== month.getMonth() ? 'out' : '', same(d, today) ? 'today' : '', inBreak(d) ? 'brk' : ''].filter(Boolean).join(' ');
-      const label = `${fmtLong.format(d)}${same(d, today) ? ', today' : ''}${inBreak(d) ? ', winter break' : ''}. ${ev.length ? ev.map((e) => e.t).join(', ') : 'Nothing planned'}.`;
-      const chips = ev.slice(0, 2).map((e) => `<span class="ev${e.kind === 'big' ? ' big' : e.kind === 'hub' ? ' hub' : ''}" style="--c:${C[e.kind]}">${e.kind === 'hub' ? '' : '<i></i>'}<span>${e.meeting ? `Meeting ${e.time.replace(' PM', '')}` : esc(e.t)}</span></span>`).join('');
+      const ev = eventsOn(d, events);
+      const cls = ['day', d.getMonth() !== month.getMonth() ? 'out' : '', same(d, today) ? 'today' : ''].filter(Boolean).join(' ');
+      const label = `${fmtLong.format(d)}${same(d, today) ? ', today' : ''}. ${ev.length ? ev.map((e) => e.title).join(', ') : 'Nothing planned'}.`;
+      const chips = ev.slice(0, 2).map((e) => `<span class="ev${e.kind === 'big' ? ' big' : e.kind === 'hub' ? ' hub' : ''}" style="--c:${C[e.kind] || C.meet}">${e.kind === 'hub' ? '' : '<i></i>'}<span>${esc(e.title)}</span></span>`).join('');
       const more = ev.length > 2 ? `<span class="cap lb-more">+${ev.length - 2} more</span>` : '';
-      const dots = ev.length ? `<span class="dots">${ev.slice(0, 3).map((e) => `<i class="${e.kind === 'hub' ? 'lb-volt' : ''}" style="--c:${C[e.kind]}"></i>`).join('')}</span>` : '';
-      h += `<button type="button" class="${cls}" data-day="${key(d)}" aria-pressed="${same(d, sel)}" aria-label="${esc(label)}"><span class="dn">${d.getDate()}</span>${chips}${more}${dots}</button>`;
+      const dots = ev.length ? `<span class="dots">${ev.slice(0, 3).map((e) => `<i class="${e.kind === 'hub' ? 'lb-volt' : ''}" style="--c:${C[e.kind] || C.meet}"></i>`).join('')}</span>` : '';
+      h += `<button type="button" class="${cls}" data-day="${ymd(d)}" aria-pressed="${same(d, sel)}" aria-label="${esc(label)}"><span class="dn">${d.getDate()}</span>${chips}${more}${dots}</button>`;
     }
     $('#calGrid', view).innerHTML = h;
   };
-  const agenda = () => {
-    const ev = eventsOn(sel);
-    const isPast = sel < today;
-    const note = noteFor(sel);
-    const m = ctx.nextMeeting ? ctx.nextMeeting(new Date()) : null;
-    const isNext = m && same(m.start, sel);
-    $('#calAgenda', view).innerHTML = `<div class="card-head"><h3 class="card-title">${same(sel, today) ? 'Today' : fmtLong.format(sel)}</h3>${same(sel, today) ? `<span class="tag">${fmtShort.format(sel)}</span>` : ''}</div>
-      ${inBreak(sel) ? `<p class="lead">Winter break. No meetings from December 21 to January 1.</p>` : ''}
-      <div class="agenda2">${ev.length ? ev.map((e, i) => {
-        const k = `${key(sel)}-${i}`;
-        const r = rsvp[k] || '';
-        const rs = e.meeting && !isPast ? `<div class="rs" role="group" aria-label="Can you come?">${[['going', 'Going'], ['maybe', 'Maybe'], ['no', "Can't make it"]].map(([v, t]) => `<button class="btn soft pill sm lb-rsvp" type="button" data-rsvp="${k}" data-v="${v}" aria-pressed="${r === v}">${t}</button>`).join('')}</div>` : '';
-        const t = e.time && e.time !== 'All day' && e.time !== 'All week' ? e.time.replace(/ (AM|PM)$/, '') : '';
-        const ap = (e.time.match(/AM|PM/) || [''])[0];
-        return `<div class="agi"><time>${t || '<small>' + (e.time || 'All day') + '</small>'}${t ? `<small>${e.time.startsWith('By') ? '' : ap}</small>` : ''}</time><div style="min-width:0"><div class="what">${e.kind === 'hub' ? '' : dot(C[e.kind], 8) + ' '}${esc(e.t)}${e.kind === 'big' ? ' ' + tag('Sample') : ''}</div><div class="cap">${esc(e.more || '')}</div>
-          ${e.meeting && isNext ? `<ul class="bul lb-plan">${(ctx.AGENDA || []).map((a) => `<li>${a.t} · ${esc(a.what)}</li>`).join('')}</ul>` : ''}
-          ${rs}
-          ${e.meeting && isPast ? (note ? `<div class="rs"><button class="btn soft pill sm" type="button" data-note="${note.id}">${icon('note', 'i sm')}Open the session note</button></div>` : '<div class="cap">No session note for this one in the preview.</div>') : ''}
-          ${e.kind === 'big' ? `<div class="rs"><button class="btn soft pill sm" type="button" data-goto="logbook|Competitions">${icon('trophy', 'i sm')}Get ready</button></div>` : ''}
-        </div></div>`;
-      }).join('') : `<p class="lead">Nothing planned on this day.</p>`}</div>
-      <hr class="hr">
-      <p class="cap" style="font-weight:400">Meetings are Tuesdays and Thursdays, 3:30 to 5:30 PM in the shop room. The meets and deadlines here are samples, not real event dates.</p>`;
+  const rsvpFor = (id, d) => rsvps.filter((r) => r.data.event === id && r.data.date === ymd(d));
+  const evForm = (ev) => {
+    const d = ev ? ev.data : {};
+    const st = String(d.start || ymd(sel)), en = String(d.end || '');
+    return `<div class="card-head"><h3 class="card-title">${ev ? 'Change event' : 'Add an event'}</h3></div>
+      <form class="stack-v kc-evform" id="evForm" novalidate>
+        <label class="field"><span>Title</span><input class="inp" name="title" maxlength="80" required value="${esc(d.title || '')}" placeholder="Team meeting"></label>
+        <label class="field"><span>Kind</span><select class="inp" name="kind">${KINDS.map(([k, t]) => `<option value="${k}"${(d.kind || 'meet') === k ? ' selected' : ''}>${t}</option>`).join('')}</select></label>
+        <label class="field"><span>Date</span><input class="inp" type="date" name="date" required value="${esc(st.slice(0, 10))}"></label>
+        <div class="kc-two"><label class="field"><span>Starts</span><input class="inp" type="time" name="t1" value="${esc(st.slice(11, 16))}"></label><label class="field"><span>Ends</span><input class="inp" type="time" name="t2" value="${esc(en.slice(11, 16))}"></label></div>
+        <p class="cap kc-hint">Leave the times empty for an all-day event.</p>
+        <label class="field"><span>Place</span><input class="inp" name="place" maxlength="80" value="${esc(d.place || '')}" placeholder="Shop room"></label>
+        <label class="field"><span>Note</span><textarea class="inp" name="note" rows="2" maxlength="300" placeholder="What to bring, what we will do">${esc(d.note || '')}</textarea></label>
+        <label class="kc-check"><input type="checkbox" name="weekly"${d.weekly ? ' checked' : ''}> Repeat every week on this day</label>
+        <label class="field"><span>Repeat until</span><input class="inp" type="date" name="until" value="${esc(d.until || '')}"></label>
+        <span class="ferr" id="evErr" aria-live="polite"></span>
+        <div class="card-foot">${ev ? `<button class="btn ghost pill sm kc-danger" type="button" id="evDel">${icon('x', 'i sm')}Delete</button>` : ''}<button class="btn ghost pill sm" type="button" id="evCancel">Cancel</button><button class="btn primary pill sm" type="submit">${icon('check', 'i sm')}Save</button></div>
+      </form>`;
   };
-  grid(); agenda();
+  const agenda = () => {
+    const box = $('#calAgenda', view);
+    if (editing) { box.innerHTML = evForm(editing === 'new' ? null : editing); wireForm(); return; }
+    const ev = eventsOn(sel, events);
+    const isPast = sel < today;
+    const note = notes.find((n) => n.data.date === ymd(sel));
+    box.innerHTML = `<div class="card-head"><h3 class="card-title">${same(sel, today) ? 'Today' : fmtLong.format(sel)}</h3>${same(sel, today) ? `<span class="tag">${fmtShort.format(sel)}</span>` : ''}</div>
+      <div class="agenda2">${ev.length ? ev.map((e) => {
+        const canRsvp = e.id && !isPast && !['off', 'hub', 'due'].includes(e.kind);
+        const rs = e.id ? rsvpFor(e.id, sel) : [];
+        const mine = rs.find(isMine);
+        const going = rs.filter((r) => r.data.going === 'going').map((r) => r.author);
+        const t = e.time ? hm(e.time).replace(/ (AM|PM)$/, '') : '';
+        const ap = e.time ? hm(e.time).slice(-2) : '';
+        return `<div class="agi"><time>${t ? `${t}<small>${ap}</small>` : '<small>All day</small>'}</time><div style="min-width:0"><div class="what">${e.kind === 'hub' ? '' : dot(C[e.kind] || C.meet, 8) + ' '}${esc(e.title)}${e.weekly ? ` <span class="cap">weekly</span>` : ''}</div>
+          <div class="cap">${esc([e.time ? timeText(e) : '', e.place].filter(Boolean).join(' · '))}</div>
+          ${e.note ? `<div class="cap" style="font-weight:400">${esc(e.note)}</div>` : ''}
+          ${canRsvp ? `<div class="rs" role="group" aria-label="Can you come?">${[['going', 'Going'], ['maybe', 'Maybe'], ['no', "Can't make it"]].map(([v, tx]) => `<button class="btn soft pill sm lb-rsvp" type="button" data-rsvp="${esc(e.id)}" data-v="${v}" aria-pressed="${mine ? mine.data.going === v : false}">${tx}</button>`).join('')}</div>` : ''}
+          ${going.length ? `<div class="row kc-going">${avStack(going.slice(0, 6), 22)}<span class="cap">${going.length} going</span></div>` : ''}
+          ${e.kind === 'meet' && note ? `<div class="rs"><button class="btn soft pill sm" type="button" data-note="${esc(note.id)}">${icon('note', 'i sm')}Open the session note</button></div>` : ''}
+          ${e.kind === 'big' ? `<div class="rs"><button class="btn soft pill sm" type="button" data-goto="logbook|Competitions">${icon('trophy', 'i sm')}Get ready</button></div>` : ''}
+          ${isMentor() && e.rec ? `<div class="rs"><button class="btn ghost pill sm" type="button" data-evedit="${esc(e.id)}">${icon('note', 'i sm')}Change</button>${e.weekly ? `<button class="btn ghost pill sm" type="button" data-evskip="${esc(e.id)}">${icon('x', 'i sm')}Cancel just this day</button>` : ''}</div>` : ''}
+        </div></div>`;
+      }).join('') : `<p class="lead">Nothing planned on this day.</p>${note ? `<div class="rs"><button class="btn soft pill sm" type="button" data-note="${esc(note.id)}">${icon('note', 'i sm')}Open the session note</button></div>` : ''}`}</div>
+      ${isMentor() ? `<div class="rs"><button class="btn soft pill sm" type="button" id="calAddDay">${icon('plus', 'i sm')}Add an event on this day</button></div>` : ''}
+      <hr class="hr">
+      <p class="cap" style="font-weight:400">${events.length ? 'Add the team calendar to your phone or laptop with Add to my calendar.' : isMentor() ? 'No meetings on the calendar yet. Press Add event, and tick Repeat every week for regular meetings.' : 'No meetings on the calendar yet. A mentor adds them here.'}</p>`;
+  };
+  const wireForm = () => {
+    const f = $('#evForm', view);
+    $('[name="title"]', f).focus({ preventScroll: true });
+    $('#evCancel', view).addEventListener('click', () => { editing = null; agenda(); });
+    const del = $('#evDel', view);
+    if (del) del.addEventListener('click', async () => {
+      if (!confirm('Delete this event for everyone? Repeating events are deleted on every day.')) return;
+      try { await api.remove('event', editing.id); events = events.filter((x) => x !== editing); editing = null; grid(); agenda(); ctx.toast('Event deleted.'); }
+      catch (err) { ctx.toast(errMsg(err)); }
+    });
+    f.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const v = (n) => $(`[name="${n}"]`, f).value.trim();
+      const err = $('#evErr', view);
+      if (!v('title')) { err.textContent = 'Give the event a title.'; return; }
+      if (!v('date')) { err.textContent = 'Pick a date.'; return; }
+      if (v('t2') && !v('t1')) { err.textContent = 'Add a start time too, or leave both empty.'; return; }
+      const data = { title: v('title'), kind: v('kind'), start: v('t1') ? `${v('date')}T${v('t1')}` : v('date'), end: v('t2') ? `${v('date')}T${v('t2')}` : '', place: v('place'), note: v('note'), weekly: $('[name="weekly"]', f).checked, until: v('until') };
+      try {
+        if (editing === 'new') events = [await api.create('event', data), ...events];
+        else { const u = await api.update('event', editing.id, data); Object.assign(editing, { data: u.data }); }
+        sel = pd(data.start); editing = null;
+        show(sel); agenda();
+        ctx.toast('Saved to the team calendar.');
+      } catch (e2) { err.textContent = errMsg(e2); }
+    });
+  };
   const show = (d) => { month = clampMonth(D(d.getFullYear(), d.getMonth(), 1)); ctx.state.calMonth = +month; grid(); };
-  view.addEventListener('click', (e) => {
-    const s = e.target.closest('[data-sub]');
-    if (s) { ctx.toast(`The real calendar feed for ${s.dataset.sub} arrives on December 1. Until then these dates are samples.`); return; }
+  grid();
+  (async () => {
+    try {
+      const [e, r, n] = await Promise.all([api.list('event'), api.list('rsvp'), api.list('session')]);
+      events = e; rsvps = r; notes = n;
+      for (const ev of events) { const s = pd(ev.data.until || ev.data.start); if (s && s > lastMonth) lastMonth = D(s.getFullYear(), s.getMonth(), 1); }
+      grid(); agenda();
+    } catch (err) { $('#calAgenda', view).innerHTML = empty(`The calendar did not load. ${esc(errMsg(err))}`); }
+  })();
+  view.addEventListener('click', async (e) => {
+    if (e.target.closest('#calIcs')) {
+      try {
+        const url = URL.createObjectURL(new Blob([icsFile(events)], { type: 'text/calendar' }));
+        const a = document.createElement('a');
+        a.href = url; a.download = 'kilowattchaos.ics';
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 2000);
+        ctx.toast('Downloaded. Open the file to add the team events to your calendar app.');
+      } catch (err) { ctx.toast('The download is blocked here.'); }
+      return;
+    }
+    if (e.target.closest('#calAdd') || e.target.closest('#calAddDay')) { editing = 'new'; agenda(); if (matchMedia('(max-width: 1099px)').matches) $('#calAgenda', view).scrollIntoView({ behavior: ctx.reduced ? 'auto' : 'smooth', block: 'start' }); return; }
+    const ed = e.target.closest('[data-evedit]');
+    if (ed) { editing = events.find((x) => x.id === ed.dataset.evedit) || null; agenda(); return; }
+    const sk = e.target.closest('[data-evskip]');
+    if (sk) {
+      const ev = events.find((x) => x.id === sk.dataset.evskip);
+      try { const u = await api.update('event', ev.id, { skip: [...(ev.data.skip || []), ymd(sel)] }); ev.data = u.data; grid(); agenda(); ctx.toast(`Cancelled on ${fmtLong.format(sel)} only.`); }
+      catch (err) { ctx.toast(errMsg(err)); }
+      return;
+    }
     if (e.target.closest('#calPrev')) { show(D(month.getFullYear(), month.getMonth() - 1, 1)); return; }
     if (e.target.closest('#calNext')) { show(D(month.getFullYear(), month.getMonth() + 1, 1)); return; }
-    if (e.target.closest('#calToday')) { sel = today; show(today); agenda(); return; }
+    if (e.target.closest('#calToday')) { sel = today; editing = null; show(today); agenda(); return; }
     const dbtn = e.target.closest('[data-day]');
     if (dbtn) {
-      const [y, mo, da] = dbtn.dataset.day.split('-').map(Number);
-      sel = D(y, mo - 1, da);
+      sel = pd(dbtn.dataset.day);
+      editing = null;
       if (sel.getMonth() !== month.getMonth()) show(sel);
       else $$('[data-day]', view).forEach((b) => b.setAttribute('aria-pressed', String(b === dbtn)));
       agenda();
@@ -180,179 +240,250 @@ function calendar(view, ctx) {
     }
     const r = e.target.closest('[data-rsvp]');
     if (r) {
-      const k = r.dataset.rsvp, v = r.dataset.v;
-      rsvp[k] = rsvp[k] === v ? '' : v;
-      $$(`[data-rsvp="${k}"]`, view).forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === rsvp[k])));
-      ctx.toast(rsvp[k] === 'going' ? 'Thanks! Coach can see you are coming.' : rsvp[k] === 'maybe' ? "Got it. Tell the team when you know." : rsvp[k] === 'no' ? 'Thanks for letting us know. The session note will catch you up.' : 'Answer cleared.');
+      const id = r.dataset.rsvp, v = r.dataset.v, date = ymd(sel);
+      const mine = rsvps.find((x) => isMine(x) && x.data.event === id && x.data.date === date);
+      $$(`[data-rsvp="${CSS.escape(id)}"]`, view).forEach((b) => { b.disabled = true; });
+      try {
+        if (mine && mine.data.going === v) { await api.remove('rsvp', mine.id); rsvps = rsvps.filter((x) => x !== mine); }
+        else if (mine) { const u = await api.update('rsvp', mine.id, { going: v }); mine.data = u.data; }
+        else rsvps = [await api.create('rsvp', { event: id, date, going: v }), ...rsvps];
+        const now = rsvps.find((x) => isMine(x) && x.data.event === id && x.data.date === date);
+        const g = now ? now.data.going : '';
+        agenda();
+        ctx.toast(g === 'going' ? 'Thanks! The team can see you are coming.' : g === 'maybe' ? 'Got it. Tell the team when you know.' : g === 'no' ? 'Thanks for letting us know. The session note will catch you up.' : 'Answer cleared.');
+      } catch (err) { ctx.toast(errMsg(err)); agenda(); }
       return;
     }
     const n = e.target.closest('[data-note]');
     if (n) { ctx.state.note = n.dataset.note; ctx.go('logbook', 'Sessions'); }
   });
 }
-function clampMonth(m) { return m < FIRST_MONTH ? FIRST_MONTH : m > LAST_MONTH ? LAST_MONTH : m; }
 
 // ================================================================= Sessions
+// A session record: { date, title, goal, did: [[sys, text]], tests: [[test, result]], problems: [text], came: [names],
+// scribe, like, wonder, whatif, photos: [links], next: [[text, [names]]] }.
 function sessions(view, ctx) {
-  let cur = ctx.state.note || NOTES[0].id;
+  let notes = [];
+  let cur = ctx.state.note || null;
   ctx.state.note = null;
-  let editing = false;
+  let editing = null; // null, 'new' or a record
   view.innerHTML = `<div class="zv">
-    ${strip('One note per meeting: who came, what we tried, the numbers, and what is next. Good notes make the Engineering Portfolio much easier to write. Session notes open on December 1.', [tag('Opens Dec 1'), SAMPLE],
+    ${strip('One note per meeting: who came, what we tried, the numbers, and what is next. Anyone on the team can write or fix a note. Good notes make the Engineering Portfolio much easier to write.', [],
       `<button class="btn primary pill sm" type="button" id="sessNew">${icon('plus', 'i sm')}Start today's note</button>`)}
     <article class="card c4">
       <div class="card-head"><h3 class="card-title">Session notes</h3><span class="tag" id="sessCount"></span></div>
-      <div class="notes-list" id="sessList"></div>
+      <div class="notes-list" id="sessList">${loading()}</div>
     </article>
-    <article class="card c8" id="sessView"></article>
+    <article class="card c8" id="sessView">${loading()}</article>
   </div>`;
   const sysName = (k) => (ctx.SYS && ctx.SYS[k] ? ctx.SYS[k].name : 'Note');
   const sysC = (k) => (ctx.SYS && ctx.SYS[k] ? ctx.SYS[k].c : 'var(--stone)');
+  const sorted = () => [...notes].sort((a, b) => String(b.data.date).localeCompare(String(a.data.date)) || new Date(b.created_at) - new Date(a.created_at));
   const list = () => {
-    const notes = allNotes(ctx);
-    $('#sessCount', view).textContent = `${notes.length} notes`;
-    $('#sessList', view).innerHTML = notes.map((n) => `<button class="it" type="button" data-n="${n.id}" aria-pressed="${!editing && n.id === cur}"><span class="oc2">${icon('note', 'i sm')}</span><div class="grow"><div class="t">${esc(n.title)}</div><div class="meta cap">${fmtShort.format(n.d)} · ${n.came.length} came</div></div><span class="end">${avStack(n.came.slice(0, 3), 22)}</span></button>`).join('');
+    const ns = sorted();
+    $('#sessCount', view).textContent = `${ns.length} note${ns.length === 1 ? '' : 's'}`;
+    $('#sessList', view).innerHTML = ns.length ? ns.map((n) => {
+      const came = n.data.came || [];
+      return `<button class="it" type="button" data-n="${esc(n.id)}" aria-pressed="${!editing && n.id === cur}"><span class="oc2">${icon('note', 'i sm')}</span><div class="grow"><div class="t">${esc(n.data.title || 'Session note')}</div><div class="meta cap">${pd(n.data.date) ? fmtShort.format(pd(n.data.date)) : ''} · ${came.length} came</div></div><span class="end">${avStack(came.slice(0, 3), 22)}</span></button>`;
+    }).join('') : empty('No notes yet. After your next meeting, press Start today\'s note.');
   };
   const note = () => {
-    const n = allNotes(ctx).find((x) => x.id === cur) || NOTES[0];
-    const latest = n.id === NOTES[0].id;
-    $('#sessView', view).innerHTML = `<div class="card-head"><h3 class="card-title">${esc(n.title)}</h3>${n.mine ? tag('Yours', 'volt') : tag('Sample')}</div>
-      <div class="row wrap between"><span class="cap">${fmtLong.format(n.d)} · 3:30 to 5:30 PM · Shop room</span>${latest ? `<span class="editing">${av('Echo', 18)}Echo is editing</span>` : ''}</div>
-      <div class="row wrap lb-who"><span class="row">${avStack(n.came, 26)}<span class="cap">${n.came.length} of 7 came${n.coach !== false ? ', with Coach' : ''}</span></span><span class="row">${av(n.scribe, 22)}<span class="cap">Notes by ${esc(n.scribe)}</span></span></div>
-      <div class="note-sec"><h4>Goal for the day</h4><p class="lb-p">${esc(n.goal)}</p></div>
-      <div class="note-sec"><h4>What we did</h4><div>${n.did.map(([s, t]) => `<div class="did"><b>${dot(sysC(s), 8)}${esc(sysName(s))}</b><span>${esc(t)}</span></div>`).join('')}</div></div>
-      ${n.tests.length ? `<div class="note-sec"><h4>Tests</h4><div class="items">${n.tests.map(([t, r, s]) => `<div class="it"><span class="oc2">${icon('sliders', 'i sm')}</span><div class="grow"><div class="t">${esc(t)}</div><div class="meta cap">${s ? `${esc(sysName(s))} · ` : ''}<b class="lb-res">${esc(r)}</b></div></div></div>`).join('')}</div></div>` : ''}
-      <div class="note-sec"><h4>Problems and pins</h4>${n.problems.length ? `<ul class="checks">${n.problems.map(([t, w]) => `<li><span class="ci warn">${icon('alert')}</span><span>${esc(t)} <span class="cap">${esc(w)}</span></span></li>`).join('')}</ul>` : '<p class="cap" style="font-weight:400">No problems pinned this time.</p>'}</div>
-      <div class="note-sec"><h4>Photos</h4><div class="photos2">${(n.photos.length ? n.photos : ['Photo of the part']).map((p) => `<span title="${esc(p)}"><i class="lb-ph">${icon('camera')}<b>Photo of the part</b><small>${esc(p)}</small></i></span>`).join('')}<button class="lb-addph" type="button" data-toast="Photo uploads arrive with session notes on December 1. Take photos of parts and tests, never of faces.">${icon('plus')}<span>Add a photo</span></button></div></div>
-      <div class="note-sec"><h4>Reflections</h4><div class="refl">${n.refl.map(([k, w, t]) => `<div>${av(w, 26)}<span><b>${k}</b> · ${esc(w)}<br>${esc(t)}</span></div>`).join('')}</div></div>
-      <div class="note-sec"><h4>Next steps</h4><div class="items">${n.next.map(([t, who, when]) => `<div class="it"><span class="oc2">${icon('check', 'i sm')}</span><div class="grow"><div class="t">${esc(t)}</div><div class="meta cap">${esc(who.join(' and '))}${when ? ` · ${esc(when)}` : ''}</div></div><span class="end">${avStack(who, 24)}</span></div>`).join('')}</div></div>
-      <div class="card-foot"><span class="cap">Notes like this one feed the Portfolio.</span><div class="row"><button class="btn soft pill sm" type="button" id="sessCopy">${icon('note', 'i sm')}Copy as text</button><button class="btn soft pill sm" type="button" data-goto="logbook|Portfolio">${icon('book', 'i sm')}Portfolio</button></div></div>`;
-    $('#sessCopy', view).addEventListener('click', () => copyText(asText(n, sysName), ctx.toast));
-  };
-  const form = () => {
-    const now = new Date();
-    const m = ctx.nextMeeting ? ctx.nextMeeting(now) : null;
-    const opts = ['', ...(ctx.SYS_ORDER || [])].map((k) => `<option value="${k}">${k ? esc(sysName(k)) : 'Pick a subsystem'}</option>`).join('');
-    $('#sessView', view).innerHTML = `<div class="card-head"><h3 class="card-title">Today's note</h3>${tag(fmtShort.format(now))}</div>
-      <p class="lead">${m && same(m.start, now) ? 'Fill this in during the meeting.' : `There's no meeting today, so this is practice. The next one is ${m ? fmtLong.format(m.start) : 'soon'}.`} Write what happened in your own words, with numbers.</p>
-      <div class="note-sec"><h4>Who came</h4><div class="chips" id="sessCame">${NAMES.map((k) => `<button class="chip" type="button" data-came="${k}" aria-pressed="${k === 'Sparky'}">${av(k, 20)}${k}</button>`).join('')}</div></div>
-      <div class="form-grid">
-        <label class="field"><span>Who is taking notes</span><select class="inp" id="sessScribe">${NAMES.map((k) => `<option${k === 'Sparky' ? ' selected' : ''}>${k}</option>`).join('')}</select></label>
-        <label class="field"><span>Title</span><input class="inp" id="sessTitle" placeholder="Like: Gecko wheels 6 mm closer"></label>
-        <label class="field full"><span>Goal for the day</span><textarea class="inp" id="sessGoal" rows="2" placeholder="What do we want to find out or finish today?"></textarea></label>
-      </div>
-      <div class="note-sec"><h4>What we did</h4>${[0, 1, 2].map((i) => `<div class="lb-didf"><select class="inp" data-dsys="${i}" aria-label="Subsystem for row ${i + 1}">${opts}</select><input class="inp" data-dtxt="${i}" aria-label="What happened, row ${i + 1}" placeholder="What happened, with a number"></div>`).join('')}</div>
-      <div class="form-grid">
-        <label class="field"><span>Tests and results</span><textarea class="inp" id="sessTests" rows="3" placeholder="One per line, like: Pile pickup, 6 mm: 8 of 10"></textarea></label>
-        <label class="field"><span>Problems and pins</span><textarea class="inp" id="sessProb" rows="3" placeholder="One per line"></textarea></label>
-        <label class="field"><span>I like</span><textarea class="inp" id="sessLike" rows="2"></textarea></label>
-        <label class="field"><span>I wonder</span><textarea class="inp" id="sessWonder" rows="2"></textarea></label>
-        <label class="field"><span>What if</span><textarea class="inp" id="sessWhatif" rows="2"></textarea></label>
-        <label class="field"><span>Next steps</span><textarea class="inp" id="sessNext" rows="2" placeholder="One per line, like: Print the hubs (Nova)"></textarea><small>Put a name in brackets so everyone knows who owns it.</small></label>
-      </div>
-      <div class="card-foot"><button class="btn ghost pill" type="button" id="sessCancel">Cancel</button><button class="btn primary pill" type="button" id="sessSave">${icon('check', 'i sm')}Save note</button></div>`;
-    $('#sessGoal', view).focus({ preventScroll: true });
-  };
-  const save = () => {
-    const v = (id) => $(id, view).value.trim();
-    const lines = (id) => v(id).split('\n').map((s) => s.trim()).filter(Boolean);
-    const goal = v('#sessGoal');
-    const did = [0, 1, 2].map((i) => [$(`[data-dsys="${i}"]`, view).value, $(`[data-dtxt="${i}"]`, view).value.trim()]).filter(([, t]) => t);
-    if (!goal && !did.length) { ctx.toast('Write the goal for the day or one thing you did first.'); $('#sessGoal', view).focus(); return; }
-    const scribe = $('#sessScribe', view).value;
-    const came = $$('[data-came][aria-pressed="true"]', view).map((b) => b.dataset.came);
-    const n = {
-      id: `new${Date.now()}`, mine: true, d: dayStart(new Date()), title: v('#sessTitle') || 'Today\'s session', came: came.length ? came : [scribe], scribe, goal: goal || 'Not written yet.',
-      did: did.length ? did : [['', 'Nothing written yet.']],
-      tests: lines('#sessTests').map((t) => { const [a, ...b] = t.split(':'); return [a.trim(), b.join(':').trim() || 'Result not written', '']; }),
-      problems: lines('#sessProb').map((t) => [t, `Pinned by ${scribe}`]),
-      photos: [],
-      refl: [['I like', v('#sessLike')], ['I wonder', v('#sessWonder')], ['What if', v('#sessWhatif')]].filter(([, t]) => t).map(([k, t]) => [k, scribe, t]),
-      next: lines('#sessNext').map((t) => { const m = t.match(/^(.*?)\s*\(([^)]+)\)\s*$/); const who = m ? m[2].split(/,| and /).map((s) => s.trim()).filter((s) => NAMES.includes(s) || s === 'Coach') : []; return [m ? m[1] : t, who.length ? who : [scribe], '']; }),
-    };
-    (ctx.state.newNotes || (ctx.state.newNotes = [])).unshift(n);
-    editing = false; cur = n.id; list(); note();
-    ctx.toast('Saved. Your note is at the top of the list. In this preview it stays until you reload.');
-  };
-  list(); note();
-  view.addEventListener('click', (e) => {
-    const b = e.target.closest('[data-n]');
-    if (b) {
-      cur = b.dataset.n; editing = false; list(); note();
-      if (matchMedia('(max-width: 1099px)').matches) $('#sessView', view).scrollIntoView({ behavior: ctx.reduced ? 'auto' : 'smooth', block: 'start' });
+    const box = $('#sessView', view);
+    const n = notes.find((x) => x.id === cur) || sorted()[0];
+    if (!n) {
+      box.innerHTML = `<div class="lb-empty"><span class="oc2">${icon('note', 'i sm')}</span><div><b>No session notes yet</b><p class="cap" style="font-weight:400">Write one at your next meeting: who came, what you tried, the numbers and what is next.</p></div></div>`;
       return;
     }
-    if (e.target.closest('#sessNew')) { editing = true; list(); form(); if (matchMedia('(max-width: 1099px)').matches) $('#sessView', view).scrollIntoView({ behavior: ctx.reduced ? 'auto' : 'smooth', block: 'start' }); return; }
+    cur = n.id;
+    const d = n.data, date = pd(d.date) || new Date(n.created_at);
+    const came = d.came || [], did = d.did || [], tests = d.tests || [], probs = d.problems || [], photos = (d.photos || []).map(safeUrl).filter(Boolean), next = d.next || [];
+    const refl = [['I like', d.like], ['I wonder', d.wonder], ['What if', d.whatif]].filter(([, t]) => t);
+    const total = names().length;
+    box.innerHTML = `<div class="card-head"><h3 class="card-title">${esc(d.title || 'Session note')}</h3>${isMine(n) ? tag('Yours', 'volt') : ''}</div>
+      <div class="row wrap between"><span class="cap">${fmtFull.format(date)}</span>${n.updated_at && n.updated_at !== n.created_at && d.editedBy ? `<span class="cap">Last changed by ${esc(d.editedBy)}</span>` : ''}</div>
+      <div class="row wrap lb-who"><span class="row">${avStack(came, 26)}<span class="cap">${came.length}${total ? ` of ${total}` : ''} came</span></span>${d.scribe ? `<span class="row">${av(d.scribe, 22)}<span class="cap">Notes by ${esc(d.scribe)}</span></span>` : ''}</div>
+      ${d.goal ? `<div class="note-sec"><h4>Goal for the day</h4><p class="lb-p">${esc(d.goal)}</p></div>` : ''}
+      <div class="note-sec"><h4>What we did</h4>${did.length ? `<div>${did.map(([s, t]) => `<div class="did"><b>${dot(sysC(s), 8)}${esc(sysName(s))}</b><span>${esc(t)}</span></div>`).join('')}</div>` : '<p class="cap" style="font-weight:400">Nothing written yet.</p>'}</div>
+      ${tests.length ? `<div class="note-sec"><h4>Tests</h4><div class="items">${tests.map(([t, r]) => `<div class="it"><span class="oc2">${icon('sliders', 'i sm')}</span><div class="grow"><div class="t">${esc(t)}</div><div class="meta cap"><b class="lb-res">${esc(r || 'Result not written')}</b></div></div></div>`).join('')}</div></div>` : ''}
+      <div class="note-sec"><h4>Problems</h4>${probs.length ? `<ul class="checks">${probs.map((t) => `<li><span class="ci warn">${icon('alert')}</span><span>${esc(t)}</span></li>`).join('')}</ul>` : '<p class="cap" style="font-weight:400">No problems written down this time.</p>'}</div>
+      <div class="note-sec"><h4>Photos</h4>${photos.length ? `<div class="kc-photos">${photos.map((p) => `<a class="btn soft pill sm" href="${esc(p)}" target="_blank" rel="noopener noreferrer">${icon('camera', 'i sm')}${esc(new URL(p).hostname.replace(/^www\./, ''))}</a>`).join('')}</div>` : '<p class="cap" style="font-weight:400">No photo links yet. Add links to photos of parts and tests, never of faces.</p>'}</div>
+      ${refl.length ? `<div class="note-sec"><h4>Reflections</h4><div class="refl">${refl.map(([k, t]) => `<div>${av(d.scribe || n.author, 26)}<span><b>${k}</b><br>${esc(t)}</span></div>`).join('')}</div></div>` : ''}
+      ${next.length ? `<div class="note-sec"><h4>Next steps</h4><div class="items">${next.map(([t, who]) => `<div class="it"><span class="oc2">${icon('check', 'i sm')}</span><div class="grow"><div class="t">${esc(t)}</div><div class="meta cap">${esc((who || []).join(' and '))}</div></div><span class="end">${avStack(who || [], 24)}</span></div>`).join('')}</div></div>` : ''}
+      <div class="card-foot"><span class="cap">Notes like this one feed the Portfolio.</span><div class="row wrap"><button class="btn soft pill sm" type="button" id="sessEdit">${icon('note', 'i sm')}Edit</button><button class="btn soft pill sm" type="button" id="sessCopy">${icon('note', 'i sm')}Copy as text</button>${isMine(n) || isMentor() ? `<button class="btn ghost pill sm kc-danger" type="button" id="sessDel">${icon('x', 'i sm')}Delete</button>` : ''}</div></div>`;
+    $('#sessCopy', view).addEventListener('click', () => copyText(asText(n.data, sysName), ctx.toast));
+  };
+  const form = async (rec) => {
+    const d = rec ? rec.data : {};
+    const now = new Date();
+    let came = d.came;
+    if (!rec) {
+      came = [];
+      try { const info = await api.checkinInfo(); came = (info.here || []).map((h) => h.name); } catch (err) { /* nobody listed */ }
+    }
+    const people = allNames();
+    for (const n of came || []) if (!people.includes(n)) people.push(n);
+    const opts = (v) => ['', ...(ctx.SYS_ORDER || [])].map((k) => `<option value="${k}"${k === v ? ' selected' : ''}>${k ? esc(sysName(k)) : 'Pick a subsystem'}</option>`).join('');
+    const did = [...(d.did || [])];
+    while (did.length < 3) did.push(['', '']);
+    const scribe = d.scribe || me();
+    $('#sessView', view).innerHTML = `<div class="card-head"><h3 class="card-title">${rec ? 'Edit the note' : "Today's note"}</h3>${tag(fmtShort.format(rec ? pd(d.date) || now : now))}</div>
+      <p class="lead">${rec ? 'Fix or add anything. Everyone on the team can edit notes.' : 'Fill this in during the meeting.'} Write what happened in your own words, with numbers.</p>
+      <div class="note-sec"><h4>Who came</h4>${!rec ? '<p class="cap" style="font-weight:400">Everyone who checked in today is picked already.</p>' : ''}<div class="chips" id="sessCame">${people.map((k) => `<button class="chip" type="button" data-came="${esc(k)}" aria-pressed="${(came || []).includes(k)}">${av(k, 20)}${esc(k)}</button>`).join('')}</div></div>
+      <div class="form-grid">
+        <label class="field"><span>Date</span><input class="inp" type="date" id="sessDate" value="${esc(d.date || ymd(now))}"></label>
+        <label class="field"><span>Who is taking notes</span><select class="inp" id="sessScribe">${people.map((k) => `<option${k === scribe ? ' selected' : ''}>${esc(k)}</option>`).join('')}</select></label>
+        <label class="field full"><span>Title</span><input class="inp" id="sessTitle" maxlength="80" value="${esc(d.title || '')}" placeholder="Like: Gecko wheels 6 mm closer"></label>
+        <label class="field full"><span>Goal for the day</span><textarea class="inp" id="sessGoal" rows="2" placeholder="What do we want to find out or finish today?">${esc(d.goal || '')}</textarea></label>
+      </div>
+      <div class="note-sec"><h4>What we did</h4><div id="sessDid">${did.map(([s, t], i) => `<div class="lb-didf"><select class="inp" data-dsys="${i}" aria-label="Subsystem for row ${i + 1}">${opts(s)}</select><input class="inp" data-dtxt="${i}" value="${esc(t)}" aria-label="What happened, row ${i + 1}" placeholder="What happened, with a number"></div>`).join('')}</div>
+        <button class="btn ghost pill sm" type="button" id="sessMore">${icon('plus', 'i sm')}Another row</button></div>
+      <div class="form-grid">
+        <label class="field"><span>Tests and results</span><textarea class="inp" id="sessTests" rows="3" placeholder="One per line, like: Pile pickup, 6 mm: 8 of 10">${esc((d.tests || []).map(([a, b]) => (b ? `${a}: ${b}` : a)).join('\n'))}</textarea></label>
+        <label class="field"><span>Problems</span><textarea class="inp" id="sessProb" rows="3" placeholder="One per line">${esc((d.problems || []).join('\n'))}</textarea></label>
+        <label class="field"><span>I like</span><textarea class="inp" id="sessLike" rows="2">${esc(d.like || '')}</textarea></label>
+        <label class="field"><span>I wonder</span><textarea class="inp" id="sessWonder" rows="2">${esc(d.wonder || '')}</textarea></label>
+        <label class="field"><span>What if</span><textarea class="inp" id="sessWhatif" rows="2">${esc(d.whatif || '')}</textarea></label>
+        <label class="field"><span>Next steps</span><textarea class="inp" id="sessNext" rows="2" placeholder="One per line, like: Print the hubs (Nova)">${esc((d.next || []).map(([t, w]) => (w && w.length ? `${t} (${w.join(', ')})` : t)).join('\n'))}</textarea><small>Put a name in brackets so everyone knows who owns it.</small></label>
+        <label class="field full"><span>Photo links</span><textarea class="inp" id="sessPhotos" rows="2" placeholder="One link per line, from the team photo folder">${esc((d.photos || []).join('\n'))}</textarea><small>Photos of parts and tests only, never of faces.</small></label>
+      </div>
+      <span class="ferr" id="sessErr" aria-live="polite"></span>
+      <div class="card-foot"><button class="btn ghost pill" type="button" id="sessCancel">Cancel</button><button class="btn primary pill" type="button" id="sessSave">${icon('check', 'i sm')}Save note</button></div>`;
+    $('#sessMore', view).addEventListener('click', () => {
+      const i = $$('[data-dtxt]', view).length;
+      $('#sessDid', view).insertAdjacentHTML('beforeend', `<div class="lb-didf"><select class="inp" data-dsys="${i}" aria-label="Subsystem for row ${i + 1}">${opts('')}</select><input class="inp" data-dtxt="${i}" aria-label="What happened, row ${i + 1}" placeholder="What happened, with a number"></div>`);
+      $(`[data-dtxt="${i}"]`, view).focus();
+    });
+    $('#sessGoal', view).focus({ preventScroll: true });
+  };
+  const save = async () => {
+    const v = (id) => $(id, view).value.trim();
+    const goal = v('#sessGoal');
+    const did = $$('[data-dtxt]', view).map((inp) => [$(`[data-dsys="${inp.dataset.dtxt}"]`, view).value, inp.value.trim()]).filter(([, t]) => t);
+    if (!goal && !did.length && !v('#sessTitle')) { $('#sessErr', view).textContent = 'Write a title, the goal or one thing you did first.'; $('#sessGoal', view).focus(); return; }
+    const scribe = $('#sessScribe', view).value;
+    const people = allNames();
+    const photos = lines(v('#sessPhotos')).map(safeUrl);
+    if (photos.some((p) => !p)) { $('#sessErr', view).textContent = 'Each photo link should start with https://'; $('#sessPhotos', view).focus(); return; }
+    const data = {
+      date: v('#sessDate') || ymd(new Date()), title: v('#sessTitle') || 'Team meeting', goal, did, scribe,
+      came: $$('[data-came][aria-pressed="true"]', view).map((b) => b.dataset.came),
+      tests: lines(v('#sessTests')).map((t) => { const [a, ...b] = t.split(':'); return [a.trim(), b.join(':').trim()]; }),
+      problems: lines(v('#sessProb')),
+      like: v('#sessLike'), wonder: v('#sessWonder'), whatif: v('#sessWhatif'), photos,
+      next: lines(v('#sessNext')).map((t) => { const m = t.match(/^(.*?)\s*\(([^)]+)\)\s*$/); const who = m ? m[2].split(/,| and /).map((s) => s.trim()).filter((s) => people.includes(s)) : []; return [m ? m[1] : t, who]; }),
+      editedBy: me(),
+    };
+    const btn = $('#sessSave', view);
+    btn.disabled = true;
+    try {
+      if (editing === 'new') { const n = await api.create('session', data); notes = [n, ...notes]; cur = n.id; }
+      else { const u = await api.update('session', editing.id, data); Object.assign(editing, { data: u.data, updated_at: u.updated_at }); cur = editing.id; }
+      editing = null; list(); note();
+      ctx.toast('Saved. The whole team can see it now.');
+    } catch (err) { $('#sessErr', view).textContent = errMsg(err); btn.disabled = false; }
+  };
+  const toView = () => { if (matchMedia('(max-width: 1099px)').matches) $('#sessView', view).scrollIntoView({ behavior: ctx.reduced ? 'auto' : 'smooth', block: 'start' }); };
+  (async () => {
+    try { notes = await api.list('session'); list(); note(); }
+    catch (err) { $('#sessList', view).innerHTML = empty(`Notes did not load. ${esc(errMsg(err))}`); $('#sessView', view).innerHTML = ''; }
+  })();
+  view.addEventListener('click', async (e) => {
+    const b = e.target.closest('[data-n]');
+    if (b) { cur = b.dataset.n; editing = null; list(); note(); toView(); return; }
+    if (e.target.closest('#sessNew')) {
+      const todays = notes.find((n) => n.data.date === ymd(new Date()));
+      if (todays && !confirm('There is already a note for today. Start another one anyway? Press Cancel to edit today\'s note instead.')) { editing = todays; cur = todays.id; list(); await form(todays); toView(); return; }
+      editing = 'new'; list(); await form(null); toView(); return;
+    }
+    if (e.target.closest('#sessEdit')) { editing = notes.find((n) => n.id === cur); list(); await form(editing); toView(); return; }
+    if (e.target.closest('#sessDel')) {
+      const n = notes.find((x) => x.id === cur);
+      if (!n || !confirm('Delete this session note for everyone?')) return;
+      try { await api.remove('session', n.id); notes = notes.filter((x) => x !== n); cur = null; list(); note(); ctx.toast('Note deleted.'); }
+      catch (err) { ctx.toast(errMsg(err)); }
+      return;
+    }
     const c = e.target.closest('[data-came]');
     if (c) { c.setAttribute('aria-pressed', String(c.getAttribute('aria-pressed') !== 'true')); return; }
-    if (e.target.closest('#sessCancel')) { editing = false; list(); note(); return; }
+    if (e.target.closest('#sessCancel')) { editing = null; list(); note(); return; }
     if (e.target.closest('#sessSave')) save();
   });
 }
-function asText(n, sysName) {
-  return [`${n.title} (${fmtLong.format(n.d)})`, `Came: ${n.came.join(', ')}. Notes by ${n.scribe}.`, `Goal: ${n.goal}`, 'What we did:', ...n.did.map(([s, t]) => `- ${sysName(s)}: ${t}`),
-    ...(n.tests.length ? ['Tests:', ...n.tests.map(([t, r]) => `- ${t}: ${r}`)] : []), ...(n.problems.length ? ['Problems:', ...n.problems.map(([t, w]) => `- ${t} (${w})`)] : []),
-    'Reflections:', ...n.refl.map(([k, w, t]) => `- ${k} (${w}): ${t}`), 'Next steps:', ...n.next.map(([t, who]) => `- ${t} (${who.join(' and ')})`)].join('\n');
+function asText(d, sysName) {
+  const date = pd(d.date);
+  return [`${d.title || 'Session note'}${date ? ` (${fmtLong.format(date)})` : ''}`, `Came: ${(d.came || []).join(', ') || 'not written'}.${d.scribe ? ` Notes by ${d.scribe}.` : ''}`,
+    ...(d.goal ? [`Goal: ${d.goal}`] : []), ...((d.did || []).length ? ['What we did:', ...d.did.map(([s, t]) => `- ${sysName(s)}: ${t}`)] : []),
+    ...((d.tests || []).length ? ['Tests:', ...d.tests.map(([t, r]) => `- ${t}: ${r}`)] : []), ...((d.problems || []).length ? ['Problems:', ...d.problems.map((t) => `- ${t}`)] : []),
+    ...([d.like, d.wonder, d.whatif].some(Boolean) ? ['Reflections:', ...[['I like', d.like], ['I wonder', d.wonder], ['What if', d.whatif]].filter(([, t]) => t).map(([k, t]) => `- ${k}: ${t}`)] : []),
+    ...((d.next || []).length ? ['Next steps:', ...d.next.map(([t, who]) => `- ${t}${who && who.length ? ` (${who.join(' and ')})` : ''}`)] : []),
+    ...((d.photos || []).length ? ['Photos:', ...d.photos.map((p) => `- ${p}`)] : [])].join('\n');
 }
 
 // ================================================================= Portfolio sections (shared with Progress)
 const SECS = [
-  { id: 'team', t: 'Team', ic: 'users', st: 'Drafted', by: 'Echo' },
-  { id: 'outreach', t: 'Outreach', ic: 'chat', st: 'Started', by: 'Nova' },
-  { id: 'design', t: 'Design process', ic: 'bulb', st: 'Started', by: 'Pixel' },
-  { id: 'robot', t: 'Robot overview', ic: 'bot', st: 'Drafted', by: 'Echo' },
-  { id: 'intake', t: 'Intake', ic: 'wrench', st: 'Drafted', by: 'Pixel' },
-  { id: 'launcher', t: 'Launcher', ic: 'zap', st: 'Started', by: 'Sparky' },
-  { id: 'code', t: 'Code', ic: 'code', st: 'Empty', by: 'Byte' },
+  { id: 'team', t: 'Team', ic: 'users', kick: 'Our team', title: 'Meet Kilowattchaos' },
+  { id: 'outreach', t: 'Outreach', ic: 'chat', kick: 'Outreach', title: 'Sharing robotics' },
+  { id: 'design', t: 'Design process', ic: 'bulb', kick: 'Design process', title: 'How we choose' },
+  { id: 'robot', t: 'Robot overview', ic: 'bot', kick: 'Robot overview', title: 'Our robot', img: true },
+  { id: 'intake', t: 'Intake', ic: 'wrench', kick: 'Subsystem', title: 'Intake', sys: 'intake' },
+  { id: 'launcher', t: 'Launcher', ic: 'zap', kick: 'Subsystem', title: 'Launcher', sys: 'launcher' },
+  { id: 'code', t: 'Code', ic: 'code', kick: 'Subsystem', title: 'Code' },
 ];
+const pfStatus = (rec) => (rec && rec.data.status) || (rec && rec.data.text ? 'Started' : 'Empty');
+const pfLatest = (recs, id) => recs.filter((r) => r.data.sec === id).sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))[0];
 
 // ================================================================= Progress
-function meetingsHeld(until) {
-  let n = 0;
-  for (let d = D(2026, 8, 13); d < until; d = D(d.getFullYear(), d.getMonth(), d.getDate() + 1)) if (eventsOn(d).some((e) => e.meeting)) n++;
-  return n;
-}
+const isDone = (r) => { const d = r.data || {}; return d.done === true || ['done', 'shipped', 'finished', 'picked'].includes(String(d.status || d.st || d.col || '').toLowerCase()); };
 function progress(view, ctx) {
-  const { SYS, SYS_ORDER } = ctx;
-  const drafted = SECS.filter((s) => s.st === 'Drafted').length;
-  const GOALS = [
-    ['Intake: pick up from a pile', 7, 8, 'of 10 balls', 'intake'],
-    ['Launcher: shots in the target box from 4 ft', 6, 8, 'of 10 shots', 'launcher'],
-    ['Drive-forward autonomous works 5 runs in a row', 2, 5, 'runs', 'drivetrain'],
-    ['Portfolio sections drafted', drafted, SECS.length, 'sections', null],
-    ['Outreach hours', 6, 20, 'hours', null],
-  ];
-  const held = meetingsHeld(dayStart(new Date()));
-  const avgAtt = (NOTES.reduce((a, n) => a + n.came.length, 0) / NOTES.length).toFixed(1);
+  const { SYS } = ctx;
   view.innerHTML = `<div class="zv">
-    ${strip('How far the team has come this season, and how far is left. Goals are set together with Coach, and the numbers come from session notes and tests.', [SAMPLE])}
-    <article class="card c7">
-      <div class="card-head"><h3 class="card-title">Season goals</h3>${tag('Sample goals')}</div>
-      <div class="goals">${GOALS.map(([t, v, g, u, s]) => `<div class="goal"><div class="row"><span class="t row" style="gap:8px">${s ? dot(SYS[s].c, 8) : dot('var(--stone)', 8)}${t}</span><span class="v">${v} <span class="cap">${u.startsWith('of') ? `${u}, goal ${g}` : `of ${g} ${u}`}</span></span></div>${bar((v / g) * 100, `${t}: ${v} of ${g}`)}</div>`).join('')}</div>
-    </article>
-    <article class="card c5">
-      <div class="card-head"><h3 class="card-title">Subsystem status</h3>${tag('Sample')}</div>
-      <div class="board lb-board">${STAGES.map((s, i) => `<div class="col"><h5>${s}</h5>${SYS_ORDER.filter((k) => SUBSYS[k].status === i).map((k) => `<button class="sbtn" type="button" data-sys="${k}" aria-label="${SYS[k].name}: ${s}. Open its page.">${dot(SYS[k].c, 8)}${SYS[k].name}</button>`).join('')}</div>`).join('')}</div>
-      <p class="cap" style="font-weight:400">Pick a subsystem to open its page in Robot, Subsystems.</p>
-    </article>
-    <article class="card c7">
-      <div class="card-head"><h3 class="card-title">Intake: balls picked up from a pile</h3>${tag('Sample tests')}</div>
-      ${lineChart({ points: [5, 7, 8], max: 10, w: matchMedia('(max-width: 759px)').matches ? 340 : 560, h: matchMedia('(max-width: 759px)').matches ? 220 : 200, labels: ['Oct 22 · stock', 'Nov 5 · 4 mm', '6 mm goal'], unit: '/10', highlight: 1, dashedFrom: 1, ariaLabel: 'Intake pile pickup: 5 of 10 with stock spacing on October 22, 7 of 10 with the gecko wheels 4 mm closer on November 5. The goal for the 6 mm test is 8 of 10.' })}
-      <p class="cap" style="font-weight:400">Solid points are measured. The dashed point is the goal for the 6 mm test on Tuesday, not a result yet.</p>
-    </article>
-    <article class="card c5">
-      <div class="card-head"><h3 class="card-title">Season so far</h3>${tag('Sample')}</div>
-      <div class="kpis lb-kpis">
-        <div class="kpi"><div class="lab">Meetings held</div><div class="val">${held}</div></div>
-        <div class="kpi"><div class="lab">Average attendance</div><div class="val">${avgAtt}<small>of 7</small></div></div>
-        <div class="kpi"><div class="lab">Ideas</div><div class="val">23</div></div>
-        <div class="kpi"><div class="lab">Prints</div><div class="val">14</div></div>
-        <div class="kpi"><div class="lab">Commits</div><div class="val">31</div></div>
-        <div class="kpi"><div class="lab">Season week</div><div class="val">${ctx.seasonWeek ? ctx.seasonWeek(new Date()) : ''}</div></div>
-      </div>
-      <p class="cap" style="font-weight:400">Meetings are counted from the sample calendar. Attendance is the average of the last ${NOTES.length} session notes.</p>
-    </article>
+    ${strip('How far the team has come this season. Every number here is counted from what the team saved in the Hub: session notes, tasks, prints, check-ins and the portfolio.', [])}
+    <article class="card c7" id="pgStand">${loading()}</article>
+    <article class="card c5" id="pgSys">${loading()}</article>
+    <article class="card c7" id="pgChart">${loading()}</article>
+    <article class="card c5" id="pgKpi">${loading()}</article>
   </div>`;
+  const safeList = async (k) => { try { return await api.list(k); } catch (e) { return []; } };
+  (async () => {
+    const [sess, tasks, prints, ideas, pf] = await Promise.all(['session', 'task', 'print', 'idea', 'portfolio'].map(safeList));
+    const students = names().length;
+    const hereToday = (session.roster || []).filter((p) => p.here && p.role === 'student').length;
+    const tDone = tasks.filter(isDone).length, pDone = prints.filter(isDone).length;
+    const drafted = SECS.filter((s) => pfStatus(pfLatest(pf, s.id)) === 'Drafted').length;
+    const rows = [
+      ['Checked in today', hereToday, students, 'students', 'var(--ok)'],
+      ['Tasks finished', tDone, tasks.length, 'tasks', 'var(--sys-drivetrain)'],
+      ['Prints done', pDone, prints.length, 'prints', 'var(--sys-intake)'],
+      ['Portfolio sections drafted', drafted, SECS.length, 'sections', 'var(--volt)'],
+    ];
+    $('#pgStand', view).innerHTML = `<div class="card-head"><h3 class="card-title">Where things stand</h3></div>
+      <div class="goals">${rows.map(([t, v, g, u, c]) => `<div class="goal"><div class="row"><span class="t row" style="gap:8px">${dot(c, 8)}${t}</span><span class="v">${v} <span class="cap">of ${g} ${u}</span></span></div>${bar(g ? (v / g) * 100 : 0, `${t}: ${v} of ${g}`)}</div>`).join('')}</div>
+      ${!tasks.length && !prints.length ? '<p class="cap" style="font-weight:400">No tasks or prints yet. Add them in Build, and they count here.</p>' : ''}`;
+    // Which subsystems the notes talk about most.
+    const sysCount = {};
+    for (const n of sess) for (const [s] of n.data.did || []) if (s) sysCount[s] = (sysCount[s] || 0) + 1;
+    const top = Object.entries(sysCount).sort((a, b) => b[1] - a[1]);
+    const maxS = top.length ? top[0][1] : 1;
+    $('#pgSys', view).innerHTML = `<div class="card-head"><h3 class="card-title">Work by subsystem</h3></div>
+      ${top.length ? `<div class="goals">${top.map(([k, n]) => `<button class="goal kc-sysrow" type="button" data-sys="${esc(k)}"><div class="row"><span class="t row" style="gap:8px">${dot(SYS[k] ? SYS[k].c : 'var(--stone)', 8)}${esc(SYS[k] ? SYS[k].name : k)}</span><span class="v">${n} <span class="cap">note row${n === 1 ? '' : 's'}</span></span></div>${bar((n / maxS) * 100, `${n} rows`)}</button>`).join('')}</div><p class="cap" style="font-weight:400">Counted from What we did in the session notes. Pick one to open its page.</p>`
+        : empty('Nothing yet. When session notes say which subsystem you worked on, it shows up here.')}`;
+    const byDate = [...sess].filter((n) => pd(n.data.date)).sort((a, b) => String(a.data.date).localeCompare(String(b.data.date))).slice(-8);
+    const small = matchMedia('(max-width: 759px)').matches;
+    $('#pgChart', view).innerHTML = `<div class="card-head"><h3 class="card-title">Attendance at each meeting</h3></div>
+      ${byDate.length >= 2 ? `${lineChart({ points: byDate.map((n) => (n.data.came || []).length), max: Math.max(students, ...byDate.map((n) => (n.data.came || []).length), 1), w: small ? 340 : 560, h: small ? 220 : 200, labels: byDate.map((n) => fmtMD.format(pd(n.data.date))), highlight: byDate.length - 1, ariaLabel: `Attendance at the last ${byDate.length} meetings: ${byDate.map((n) => `${fmtMD.format(pd(n.data.date))}, ${(n.data.came || []).length}`).join('; ')}.` })}<p class="cap" style="font-weight:400">From Who came in the last ${byDate.length} session notes.</p>`
+        : empty(byDate.length ? 'One note so far. After the next meeting, a chart of who came shows up here.' : 'No session notes yet. After two meetings with notes, a chart of who came shows up here.')}`;
+    const avg = sess.length ? (sess.reduce((a, n) => a + (n.data.came || []).length, 0) / sess.length).toFixed(1) : '0';
+    const tests = sess.reduce((a, n) => a + (n.data.tests || []).length, 0);
+    $('#pgKpi', view).innerHTML = `<div class="card-head"><h3 class="card-title">Season so far</h3></div>
+      <div class="kpis lb-kpis">
+        <div class="kpi"><div class="lab">Session notes</div><div class="val">${sess.length}</div></div>
+        <div class="kpi"><div class="lab">Average attendance</div><div class="val">${avg}${students ? `<small>of ${students}</small>` : ''}</div></div>
+        <div class="kpi"><div class="lab">Tests written down</div><div class="val">${tests}</div></div>
+        <div class="kpi"><div class="lab">Ideas</div><div class="val">${ideas.length}</div></div>
+        <div class="kpi"><div class="lab">Prints</div><div class="val">${prints.length}</div></div>
+        <div class="kpi"><div class="lab">Season week</div><div class="val">${ctx.seasonWeek ? ctx.seasonWeek(new Date()) : ''}</div></div>
+      </div>`;
+  })();
   view.addEventListener('click', (e) => {
     const b = e.target.closest('[data-sys]');
     if (b) { ctx.state.sys = b.dataset.sys; ctx.go('robot', 'Subsystems'); }
@@ -360,7 +491,7 @@ function progress(view, ctx) {
 }
 
 // ================================================================= Competitions
-const MEET1 = new Date(2027, 0, 16, 7, 30);
+// A competition record: { name, date: 'YYYY-MM-DD', time, place, results, awards, learned }.
 const PACK = [
   ['Robot', ['The robot', 'Three charged batteries', 'Battery charger', 'Driver Station phone and cable', 'Two gamepads', 'Spare servo and spare gecko wheels']],
   ['Tools', ['Hex keys and screwdrivers', 'Zip ties and tape', 'Spare screws and nuts', 'Safety glasses for everyone', 'Power strip and extension cord']],
@@ -370,20 +501,17 @@ const INSPECT = ['Robot fits inside the starting size', 'Battery is held down ti
 function competitions(view, ctx) {
   let packed = [];
   try { packed = JSON.parse(ctx.local.get('kwc-pack') || '[]'); if (!Array.isArray(packed)) packed = []; } catch (e) { packed = []; }
+  let comps = [];
+  let editing = null;
   const total = PACK.reduce((a, [, l]) => a + l.length, 0);
   const tick = (id, label, on, kind) => `<button class="tick" type="button" role="checkbox" aria-checked="${on}" data-${kind}="${esc(id)}"><span class="bx">${icon('check')}</span><span>${esc(label)}</span></button>`;
   view.innerHTML = `<div class="zv">
-    ${strip('Everything for meet day: how long is left, the plan for the day, what to pack and a practice inspection. The event date and schedule are samples until the league posts the real ones.', [tag('Phase 2 · Dec 7–18'), SAMPLE])}
-    <article class="card c7">
-      <div class="card-head"><h3 class="card-title">League meet 1</h3>${tag('Sample date')}</div>
-      <div class="countdown" id="compCount" role="timer" aria-label="Time until League meet 1"></div>
-      <p class="lead">Saturday, January 16, 2027. Load-in at 7:30 AM. The venue is announced by the league.</p>
-      <div class="row wrap"><button class="btn soft pill sm" type="button" id="compCal">${icon('calendar', 'i sm')}See it on the calendar</button><button class="btn soft pill sm" type="button" data-goto="logbook|Portfolio">${icon('book', 'i sm')}Get the portfolio ready</button></div>
-    </article>
+    ${strip('Everything for competition day: how long is left, what to pack, a practice inspection, and our results.', [], isMentor() ? `<button class="btn primary pill sm" type="button" id="compAdd">${icon('plus', 'i sm')}Add a competition</button>` : '')}
+    <article class="card c7" id="compNext">${loading()}</article>
     <article class="card c5">
-      <div class="card-head"><h3 class="card-title">The day</h3>${tag('Sample schedule')}</div>
-      <div class="sched">${[['7:30', 'Load-in and set up the pit'], ['8:00', 'Robot inspection'], ['9:00', 'Judging interview'], ['10:00', 'Qualification matches start'], ['12:00', 'Lunch'], ['1:00', 'More matches'], ['3:30', 'Awards']].map(([t, w]) => `<div><time>${t}</time><span>${w}</span></div>`).join('')}</div>
-      <p class="cap" style="font-weight:400">The real schedule comes from the event, usually about a week before.</p>
+      <div class="card-head"><h3 class="card-title">A typical meet day</h3></div>
+      <div class="sched">${[['Morning', 'Load-in and set up the pit'], ['Then', 'Robot inspection'], ['During the day', 'Judging interview'], ['Most of the day', 'Qualification matches'], ['End', 'Awards']].map(([t, w]) => `<div><time>${t}</time><span>${w}</span></div>`).join('')}</div>
+      <p class="cap" style="font-weight:400">The real schedule comes from the event, usually about a week before. In an FTC league, the team plays at league meets during the season, and the league tournament at the end decides who moves on.</p>
     </article>
     <article class="card c6">
       <div class="card-head"><h3 class="card-title">Packing list</h3><span class="tag" id="packCount"></span><button class="btn ghost pill sm" type="button" id="packReset">${icon('reset', 'i sm')}Reset</button></div>
@@ -396,15 +524,85 @@ function competitions(view, ctx) {
       <div class="callout lb-soft">${icon('alert')}<div><b>Practice only.</b> These are reminders, not the rules. The official inspection checklist is in FIRST's <a href="https://ftc.game/manual/" target="_blank" rel="noopener">Competition Manual</a>.</div></div>
       <div class="pack" id="inspList">${INSPECT.map((t, i) => tick(String(i), t, false, 'ins')).join('')}</div>
     </article>
-    <article class="card">
-      <div class="card-head"><h3 class="card-title">Results</h3></div>
-      <div class="lb-empty"><span class="oc2">${icon('trophy', 'i sm')}</span><div><b>No results yet</b><p class="cap" style="font-weight:400">After League meet 1, match scores, awards and what we learned show up here.</p></div></div>
-    </article>
+    <article class="card" id="compAll">${loading()}</article>
   </div>`;
+  const dateOf = (c) => { const d = pd(c.data.date); if (!d) return null; if (c.data.time) { const [h, m] = c.data.time.split(':').map(Number); d.setHours(h, m); } return d; };
+  const upcoming = () => comps.filter((c) => dateOf(c) && dayStart(dateOf(c)) >= dayStart(new Date())).sort((a, b) => dateOf(a) - dateOf(b))[0];
   const count = () => {
-    const ms = Math.max(0, MEET1 - Date.now());
+    const el = $('#compCount', view);
+    const c = upcoming();
+    if (!el || !c) return;
+    const ms = Math.max(0, dateOf(c) - Date.now());
     const d = Math.floor(ms / 864e5), h = Math.floor((ms % 864e5) / 36e5), m = Math.floor((ms % 36e5) / 6e4);
-    $('#compCount', view).innerHTML = ms ? `<span><b>${d}</b> <span class="cap">days</span></span><span><b>${h}</b> <span class="cap">hours</span></span><span><b>${m}</b> <span class="cap">min</span></span>` : '<b>Today!</b>';
+    el.innerHTML = ms ? `<span><b>${d}</b> <span class="cap">days</span></span><span><b>${h}</b> <span class="cap">hours</span></span><span><b>${m}</b> <span class="cap">min</span></span>` : '<b>Today!</b>';
+  };
+  const nextCard = () => {
+    const c = upcoming();
+    const box = $('#compNext', view);
+    if (!c) {
+      box.innerHTML = `<div class="card-head"><h3 class="card-title">Next competition</h3></div>
+        <div class="lb-empty"><span class="oc2">${icon('trophy', 'i sm')}</span><div><b>No competition on the list yet</b><p class="cap" style="font-weight:400">${isMentor() ? 'When the league posts the dates, press Add a competition. The countdown starts right away.' : 'A mentor adds competitions here when the league posts the dates. Then a countdown appears.'}</p></div></div>`;
+      return;
+    }
+    const d = dateOf(c);
+    box.innerHTML = `<div class="card-head"><h3 class="card-title">${esc(c.data.name || 'Competition')}</h3></div>
+      <div class="countdown" id="compCount" role="timer" aria-label="Time until ${esc(c.data.name || 'the competition')}"></div>
+      <p class="lead">${fmtFull.format(d)}${c.data.time ? `. Starts at ${hm(c.data.time)}` : ''}.${c.data.place ? ` ${esc(c.data.place)}.` : ''}</p>
+      <div class="row wrap"><button class="btn soft pill sm" type="button" data-cal="${esc(c.data.date)}">${icon('calendar', 'i sm')}See it on the calendar</button><button class="btn soft pill sm" type="button" data-goto="logbook|Portfolio">${icon('book', 'i sm')}Get the portfolio ready</button></div>`;
+    count();
+  };
+  const compForm = (c) => {
+    const d = c ? c.data : {};
+    return `<div class="card-head"><h3 class="card-title">${c ? 'Change competition' : 'Add a competition'}</h3></div>
+      <form class="form-grid" id="compForm" novalidate>
+        <label class="field"><span>Event name</span><input class="inp" name="name" maxlength="80" value="${esc(d.name || '')}" placeholder="League meet 1"></label>
+        <label class="field"><span>Place</span><input class="inp" name="place" maxlength="100" value="${esc(d.place || '')}" placeholder="The school or venue"></label>
+        <label class="field"><span>Date</span><input class="inp" type="date" name="date" value="${esc(d.date || '')}"></label>
+        <label class="field"><span>Start time</span><input class="inp" type="time" name="time" value="${esc(d.time || '')}"></label>
+        <label class="field full"><span>Results</span><textarea class="inp" name="results" rows="2" maxlength="600" placeholder="Match scores and our ranking">${esc(d.results || '')}</textarea></label>
+        <label class="field"><span>Awards</span><textarea class="inp" name="awards" rows="2" maxlength="300">${esc(d.awards || '')}</textarea></label>
+        <label class="field"><span>What we learned</span><textarea class="inp" name="learned" rows="2" maxlength="600">${esc(d.learned || '')}</textarea></label>
+        <span class="ferr full" id="compErr" aria-live="polite"></span>
+        <div class="card-foot full">${c ? `<button class="btn ghost pill sm kc-danger" type="button" id="compDel">${icon('x', 'i sm')}Delete</button>` : ''}<button class="btn ghost pill sm" type="button" id="compCancel">Cancel</button><button class="btn primary pill sm" type="submit">${icon('check', 'i sm')}Save</button></div>
+      </form>`;
+  };
+  const allCard = () => {
+    const box = $('#compAll', view);
+    if (editing) {
+      box.innerHTML = compForm(editing === 'new' ? null : editing);
+      const f = $('#compForm', box);
+      $('[name="name"]', f).focus();
+      $('#compCancel', box).addEventListener('click', () => { editing = null; allCard(); });
+      const del = $('#compDel', box);
+      if (del) del.addEventListener('click', async () => {
+        if (!confirm('Delete this competition and its results?')) return;
+        try { await api.remove('competition', editing.id); comps = comps.filter((x) => x !== editing); editing = null; allCard(); nextCard(); ctx.toast('Deleted.'); } catch (err) { ctx.toast(errMsg(err)); }
+      });
+      f.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const v = (n) => $(`[name="${n}"]`, f).value.trim();
+        if (!v('name')) { $('#compErr', box).textContent = 'Give the event a name.'; return; }
+        if (!v('date')) { $('#compErr', box).textContent = 'Pick the date.'; return; }
+        const data = { name: v('name'), place: v('place'), date: v('date'), time: v('time'), results: v('results'), awards: v('awards'), learned: v('learned') };
+        try {
+          if (editing === 'new') comps = [await api.create('competition', data), ...comps];
+          else { const u = await api.update('competition', editing.id, data); editing.data = u.data; }
+          editing = null; allCard(); nextCard(); ctx.toast('Saved.');
+        } catch (err) { $('#compErr', box).textContent = errMsg(err); }
+      });
+      box.scrollIntoView({ behavior: ctx.reduced ? 'auto' : 'smooth', block: 'start' });
+      return;
+    }
+    const list = [...comps].sort((a, b) => String(a.data.date).localeCompare(String(b.data.date)));
+    box.innerHTML = `<div class="card-head"><h3 class="card-title">Our competitions and results</h3>${list.length ? tag(String(list.length)) : ''}</div>
+      ${list.length ? `<div class="items">${list.map((c) => {
+        const d = pd(c.data.date), past = d && d < dayStart(new Date());
+        return `<div class="it kc-comp"><span class="oc2">${icon('trophy', 'i sm')}</span><div class="grow"><div class="t">${esc(c.data.name || 'Competition')}</div><div class="meta cap">${d ? fmtFull.format(d) : ''}${c.data.place ? ` · ${esc(c.data.place)}` : ''}</div>
+          ${c.data.results ? `<p class="lb-p kc-res"><b>Results:</b> ${esc(c.data.results)}</p>` : past ? '<p class="cap" style="font-weight:400">Results not added yet.</p>' : ''}
+          ${c.data.awards ? `<p class="lb-p kc-res"><b>Awards:</b> ${esc(c.data.awards)}</p>` : ''}
+          ${c.data.learned ? `<p class="lb-p kc-res"><b>What we learned:</b> ${esc(c.data.learned)}</p>` : ''}</div>
+          ${isMentor() ? `<button class="btn ghost pill sm" type="button" data-cedit="${esc(c.id)}">${past ? 'Add results' : 'Change'}</button>` : ''}</div>`;
+      }).join('')}</div>` : `<div class="lb-empty"><span class="oc2">${icon('trophy', 'i sm')}</span><div><b>No results yet</b><p class="cap" style="font-weight:400">After each competition, match scores, awards and what we learned show up here.</p></div></div>`}`;
   };
   const packUI = () => {
     $('#packCount', view).textContent = `${packed.length} of ${total} packed`;
@@ -412,9 +610,16 @@ function competitions(view, ctx) {
     $('.prog', view).setAttribute('aria-label', `${packed.length} of ${total} packed`);
   };
   const inspUI = () => { const n = $$('[data-ins][aria-checked="true"]', view).length; $('#inspCount', view).textContent = `${n} of ${INSPECT.length}`; };
-  count(); packUI(); inspUI();
+  packUI(); inspUI();
+  (async () => {
+    try { comps = await api.list('competition'); nextCard(); allCard(); }
+    catch (err) { $('#compNext', view).innerHTML = empty(`Competitions did not load. ${esc(errMsg(err))}`); $('#compAll', view).innerHTML = ''; }
+  })();
   const timer = setInterval(count, 10000);
   view.addEventListener('click', (e) => {
+    if (e.target.closest('#compAdd')) { editing = 'new'; allCard(); return; }
+    const ce = e.target.closest('[data-cedit]');
+    if (ce) { editing = comps.find((c) => c.id === ce.dataset.cedit); allCard(); return; }
     const p = e.target.closest('[data-pk]');
     if (p) {
       const id = p.dataset.pk, on = !packed.includes(id);
@@ -422,7 +627,7 @@ function competitions(view, ctx) {
       p.setAttribute('aria-checked', String(on));
       ctx.local.set('kwc-pack', JSON.stringify(packed));
       packUI();
-      if (on && packed.length === total) ctx.toast('Everything is packed. Have a great meet!');
+      if (on && packed.length === total) ctx.toast('Everything is packed. Have a great competition!');
       return;
     }
     if (e.target.closest('#packReset')) {
@@ -433,48 +638,21 @@ function competitions(view, ctx) {
     }
     const i = e.target.closest('[data-ins]');
     if (i) { i.setAttribute('aria-checked', String(i.getAttribute('aria-checked') !== 'true')); inspUI(); return; }
-    if (e.target.closest('#compCal')) { ctx.state.calMonth = +D(2027, 0, 1); ctx.state.calSel = +D(2027, 0, 16); ctx.go('logbook', 'Calendar'); }
+    const cal = e.target.closest('[data-cal]');
+    if (cal) { const d = pd(cal.dataset.cal); ctx.state.calMonth = +D(d.getFullYear(), d.getMonth(), 1); ctx.state.calSel = +d; ctx.go('logbook', 'Calendar'); }
   });
   return () => clearInterval(timer);
 }
 
 // ================================================================= Portfolio
-const NOTE = (id) => NOTES.find((n) => n.id === id);
-const PF = {
-  team: { kick: 'Our team', title: 'Meet Kilowattchaos', lines: [92, 100, 84, 96, 60],
-    facts: [['Who we are', '7 students in 7th grade and our mentor, Coach. Each of us owns at least one subsystem.'], ['How we work', `We meet on Tuesdays and Thursdays. Average attendance is ${(NOTES.reduce((a, n) => a + n.came.length, 0) / NOTES.length).toFixed(1)} of 7 over the last ${NOTES.length} sessions.`]],
-    src: [['People', 'crew|People', 'users'], ['5 session notes', 'notes', 'note']], built: 'Built from: People, 5 session notes' },
-  outreach: { kick: 'Outreach', title: 'Sharing robotics', lines: [88, 70],
-    facts: [['Planned', "Nova's robot demo at the library in December."], ['So far', '6 outreach hours logged (sample).']],
-    src: [['Calendar: Library robot demo', 'logbook|Calendar', 'calendar']], built: 'Built from: 1 calendar event' },
-  design: { kick: 'Design process', title: 'How we choose', lines: [96, 88, 72],
-    facts: [['Test, measure, change one thing', 'Intake: stock spacing picked up 5 of 10. Moving the gecko wheels 4 mm closer made it 7 of 10.'], ['Counting failures', 'Servo gate: two balls slipped through together 3 of 10 times, so next we try a longer pause.']],
-    src: [['Ideas board', 'build|Ideas', 'bulb'], ['Decision matrix', 'build|Mechanism Lab', 'sliders'], ['Session notes Oct 22, Nov 3, Nov 5', 'notes', 'note']], built: 'Built from: 3 session notes, 2 tests, Ideas', matrix: true },
-  robot: { kick: 'Robot overview', title: 'Our robot', lines: [90, 76], img: true,
-    facts: [['Starting point', 'The goBILDA StarterBot: 418 parts in seven subsystems.'], ['Changed so far', 'Gecko wheels 4 mm closer, a printed gate arm, and a brace planned for the launcher mount.']],
-    src: [['Robot, Versions', 'robot|Versions', 'commit'], ['Robot, Subsystems', 'robot|Subsystems', 'bot']], built: 'Built from: StarterBot CAD, 7 subsystem pages' },
-  intake: { kick: 'Subsystem', title: 'Intake', lines: [94, 100, 66],
-    facts: [['Oct 22', 'Stock gecko wheel spacing: 5 of 10 balls from a pile.'], ['Nov 5', 'Gecko wheels 4 mm closer: 7 of 10 balls.'], ['Next', 'Try 6 mm closer. Goal: 8 of 10.']],
-    src: [['Session note Oct 22', 'n1022', 'note'], ['Session note Oct 27', 'n1027', 'note'], ['Session note Nov 5', 'n1105', 'note']], built: 'Built from: 3 session notes, 2 tests' },
-  launcher: { kick: 'Subsystem', title: 'Launcher', lines: [86, 74],
-    facts: [['Oct 27', 'Flywheel spin-up: 1.4 s to full speed on a fresh battery.'], ['Oct 29', 'The mount wobbles at full speed. We are adding a brace.'], ['Nov 5', 'Ten shots from 4 ft: 6 of 10 in the target box.']],
-    src: [['Session note Oct 27', 'n1027', 'note'], ['Session note Oct 29', 'n1029', 'note'], ['Session note Nov 5', 'n1105', 'note']], built: 'Built from: 3 session notes, 3 tests' },
-  code: { kick: 'Subsystem', title: 'Code', lines: [],
-    facts: [['Facts waiting for you', 'Oct 20: a 1.1 strafe factor fixed a 3 in. drift over 6 ft. Nov 5: the drive-forward autonomous ran on the floor.']],
-    src: [['Code, Our code', 'code|Our code', 'code'], ['Session note Nov 5', 'n1105', 'note']], built: 'Built from: 1 session note, commits', empty: true },
-};
-function matrixHtml() {
-  const tot = MATRIX.s.map((row) => row.reduce((a, v, j) => a + v * MATRIX.crit[j][1], 0));
-  const best = Math.max(...tot), max = MATRIX.crit.reduce((a, c) => a + 5 * c[1], 0);
-  return `<table class="pmx"><caption>Decision matrix · Launcher (score 1 to 5, times the weight)</caption><thead><tr><th>Option</th>${MATRIX.crit.map(([c, w]) => `<th>${esc(c)}<small>×${w}</small></th>`).join('')}<th>Total</th></tr></thead>
-    <tbody>${MATRIX.opts.map((o, i) => `<tr class="${tot[i] === best ? 'win' : ''}"><th>${esc(o)}</th>${MATRIX.s[i].map((v) => `<td>${v}</td>`).join('')}<td><b>${tot[i]}</b><small>/${max}</small></td></tr>`).join('')}</tbody></table>`;
-}
+// A portfolio record: { sec, text, status: 'Started' | 'Drafted', by }. One per section; anyone can edit.
 function portfolio(view, ctx) {
   let cur = ctx.state.pfSec || 'robot';
-  const status = (s) => (s.id === 'design' && ctx.state.matrixSaved ? 'Drafted' : s.st);
+  let recs = [], notes = [], events = [];
+  const sysName = (k) => (ctx.SYS && ctx.SYS[k] ? ctx.SYS[k].name : 'Note');
   view.innerHTML = `<div class="zv">
-    ${strip("A helper for FIRST's Engineering Portfolio. It gathers the facts from session notes, tests and decisions, and you write the story in your own words, because judges want to hear from you.", [tag('Phase 2 · Dec 7–18'), SAMPLE],
-      `<button class="btn soft pill sm" type="button" data-toast="Export arrives in Phase 7, March 22 to April 30. Until then, copy the facts and write in a doc.">${icon('printer', 'i sm')}Export PDF</button><button class="btn soft pill sm" type="button" data-toast="Export to Google Docs arrives in Phase 7, March 22 to April 30.">${icon('note', 'i sm')}Google Docs</button>`)}
+    ${strip("A helper for FIRST's Engineering Portfolio. It gathers facts from the session notes, and you write the story in your own words, because judges want to hear from you. Anyone on the team can write any section.", [],
+      `<button class="btn soft pill sm" type="button" id="pfPrint">${icon('printer', 'i sm')}Print or save as PDF</button><button class="btn soft pill sm" type="button" id="pfCopyAll">${icon('note', 'i sm')}Copy everything</button>`)}
     <article class="card c4">
       <div class="card-head"><h3 class="card-title">Sections</h3><span class="tag" id="pfCount"></span></div>
       <div class="secs" id="pfSecs"></div>
@@ -482,41 +660,86 @@ function portfolio(view, ctx) {
     </article>
     <article class="card c8">
       <div class="card-head"><h3 class="card-title" id="pfTitle"></h3><span class="tag" id="pfBy"></span></div>
-      <div class="lb-pf"><div class="paper" id="pfPaper" aria-label="Page preview"></div><div class="stack-v lb-pfside" id="pfSide"></div></div>
+      <div class="lb-pf"><div class="paper" id="pfPaper" aria-label="Page preview">${loading()}</div><div class="stack-v lb-pfside" id="pfSide"></div></div>
     </article>
   </div>`;
+  const factsFor = (s) => {
+    const out = [];
+    const sorted = [...notes].sort((a, b) => String(a.data.date).localeCompare(String(b.data.date)));
+    const when = (n) => (pd(n.data.date) ? fmtMD.format(pd(n.data.date)) : 'Note');
+    if (s.id === 'team') {
+      const st = names().length;
+      out.push(['Who we are', `${st} student${st === 1 ? '' : 's'} on the team, with ${(session.roster || []).filter((p) => p.role === 'mentor').length} mentor${(session.roster || []).filter((p) => p.role === 'mentor').length === 1 ? '' : 's'}.`]);
+      if (notes.length) out.push(['How we work', `${notes.length} meeting${notes.length === 1 ? '' : 's'} written up so far, with an average of ${(notes.reduce((a, n) => a + (n.data.came || []).length, 0) / notes.length).toFixed(1)} people at each.`]);
+    } else if (s.id === 'outreach') {
+      for (const e of events.filter((x) => x.data.kind === 'out')) out.push([pd(e.data.start) ? fmtMD.format(pd(e.data.start)) : 'Event', `${e.data.title}${e.data.place ? ` at ${e.data.place}` : ''}.`]);
+    } else if (s.id === 'design') {
+      for (const n of sorted) for (const [t, r] of n.data.tests || []) out.push([when(n), `${t}${r ? `: ${r}` : ''}.`]);
+    } else if (s.id === 'robot') {
+      out.push(['Starting point', 'The goBILDA StarterBot, in seven subsystems.']);
+      for (const n of sorted.slice(-3)) for (const [k, t] of (n.data.did || []).slice(0, 1)) out.push([when(n), `${k ? `${sysName(k)}: ` : ''}${t}`]);
+    } else if (s.sys) {
+      for (const n of sorted) {
+        for (const [k, t] of n.data.did || []) if (k === s.sys) out.push([when(n), t]);
+        for (const [t, r] of n.data.tests || []) if (new RegExp(s.sys, 'i').test(t)) out.push([when(n), `${t}${r ? `: ${r}` : ''}.`]);
+      }
+    } else if (s.id === 'code') {
+      for (const n of sorted) for (const [, t] of n.data.did || []) if (/code|auto|opmode|java|telemetry|program/i.test(t)) out.push([when(n), t]);
+    }
+    return out.slice(-6);
+  };
   const secs = () => {
-    $('#pfCount', view).textContent = `${SECS.filter((s) => status(s) === 'Drafted').length} of ${SECS.length} drafted`;
-    $('#pfSecs', view).innerHTML = SECS.map((s) => { const st = status(s); return `<button type="button" data-sec="${s.id}" aria-pressed="${s.id === cur}"><span class="oc2 lb-oc">${icon(s.ic, 'i sm')}</span><span><span class="t">${s.t}</span><span class="cap" style="display:block">${s.by}</span></span><span class="st${st === 'Drafted' ? ' solid' : ''}">${st === 'Empty' ? '' : dot(st === 'Drafted' ? 'var(--volt)' : 'var(--warn)', 8)}${st}</span></button>`; }).join('');
+    $('#pfCount', view).textContent = `${SECS.filter((s) => pfStatus(pfLatest(recs, s.id)) === 'Drafted').length} of ${SECS.length} drafted`;
+    $('#pfSecs', view).innerHTML = SECS.map((s) => {
+      const r = pfLatest(recs, s.id), st = pfStatus(r);
+      return `<button type="button" data-sec="${s.id}" aria-pressed="${s.id === cur}"><span class="oc2 lb-oc">${icon(s.ic, 'i sm')}</span><span><span class="t">${s.t}</span><span class="cap" style="display:block">${r && r.data.by ? esc(r.data.by) : 'Nobody yet'}</span></span><span class="st${st === 'Drafted' ? ' solid' : ''}">${st === 'Empty' ? '' : dot(st === 'Drafted' ? 'var(--volt)' : 'var(--warn)', 8)}${st}</span></button>`;
+    }).join('');
   };
+  const paras = (t) => String(t || '').split(/\n{2,}|\n/).map((p) => p.trim()).filter(Boolean);
   const page = () => {
-    const s = SECS.find((x) => x.id === cur), p = PF[cur];
-    const mx = p.matrix && ctx.state.matrixSaved;
+    const s = SECS.find((x) => x.id === cur) || SECS[0];
+    const r = pfLatest(recs, s.id), st = pfStatus(r), facts = factsFor(s);
     $('#pfTitle', view).textContent = s.t;
-    $('#pfBy', view).textContent = `${status(s)} · ${s.by}`;
-    const ln = (w) => `<div class="ln" style="width:${w}%"></div>`;
-    $('#pfPaper', view).innerHTML = `<div class="pk">Kilowattchaos · ${esc(p.kick)}</div><div class="ph1">${esc(p.title)}</div>
-      ${p.empty ? `<div class="blk lb-dash"><b>Nothing written yet</b><span>${esc(p.facts[0][1])}</span></div>` : ''}
-      ${p.img ? `<div class="img" style="aspect-ratio:16/10"><img src="/hub/assets/poster.webp" alt="The team's StarterBot robot, a render from the CAD model"></div>` : ''}
-      ${p.lines.slice(0, 3).map(ln).join('')}
-      ${p.empty ? '' : p.facts.slice(0, mx ? 1 : 3).map(([k, v]) => `<div class="blk"><b>${esc(k)}</b><span>${esc(v)}</span></div>`).join('')}
-      ${p.matrix ? (mx ? matrixHtml() : '<div class="blk lb-dash"><b>Decision matrix goes here</b><span>Save the launcher matrix in Build, Mechanism Lab to add it.</span></div>') : ''}
-      ${p.lines.slice(3).map(ln).join('')}
-      <div class="src">${esc(mx ? p.built.replace('Ideas', 'Ideas, the decision matrix') : p.built)}</div>`;
-    $('#pfSide', view).innerHTML = `<h4 class="sub">Hub sources</h4>
-      <div class="items">${p.src.map(([t, to, ic]) => {
-        const attr = to === 'notes' ? 'data-pnote="n1105"' : /^n\d/.test(to) ? `data-pnote="${to}"` : `data-goto="${to}"`;
-        return `<button class="it" type="button" ${attr}><span class="oc2">${icon(ic, 'i sm')}</span><div class="grow"><div class="t">${esc(t)}</div></div>${icon('arrow', 'i sm')}</button>`;
-      }).join('')}</div>
-      ${p.matrix && !mx ? `<div class="callout lb-soft">${icon('sliders')}<div>The launcher decision matrix is not saved yet. Score it together in the Mechanism Lab and press Save to Portfolio.<div style="margin-top:8px"><button class="btn primary pill sm" type="button" data-goto="build|Mechanism Lab">${icon('arrow', 'i sm')}Open the decision matrix</button></div></div></div>` : ''}
-      ${mx ? `<p class="cap" style="font-weight:400">The matrix is live: change a score in the Mechanism Lab and it changes here too.</p>` : ''}
+    $('#pfBy', view).textContent = r && r.data.by ? `${st} · ${r.data.by}` : st;
+    const text = r ? r.data.text : '';
+    $('#pfPaper', view).innerHTML = `<div class="pk">Kilowattchaos · ${esc(s.kick)}</div><div class="ph1">${esc(s.title)}</div>
+      ${s.img ? `<div class="img" style="aspect-ratio:16/10"><img src="/hub/assets/poster.webp" alt="The team's StarterBot robot, a render from the CAD model"></div>` : ''}
+      ${text ? paras(text).map((p) => `<p class="kc-pp">${esc(p)}</p>`).join('') : `<div class="blk lb-dash"><b>Nothing written yet</b><span>Write this section on the right. The facts below can help you start.</span></div>`}
+      ${facts.slice(0, 3).map(([k, v]) => `<div class="blk"><b>${esc(k)}</b><span>${esc(v)}</span></div>`).join('')}
+      <div class="src">Built from: ${notes.length} session note${notes.length === 1 ? '' : 's'}</div>`;
+    $('#pfSide', view).innerHTML = `<h4 class="sub">Write it</h4>
+      <label class="sr" for="pfText">Text for ${esc(s.t)}</label>
+      <textarea class="inp kc-pftext" id="pfText" rows="8" maxlength="6000" placeholder="What did we try, why, and what did we learn? Write it like you would explain it to a judge.">${esc(text || '')}</textarea>
+      ${seg('pfst', [['Started', 'Started'], ['Drafted', 'Drafted']], st === 'Drafted' ? 'Drafted' : 'Started', 'How done is it')}
+      <div class="row wrap"><button class="btn primary pill sm" type="button" id="pfSave">${icon('check', 'i sm')}Save section</button>${r ? `<span class="cap">Last saved ${fmtMD.format(new Date(r.updated_at))}${r.data.by ? ` by ${esc(r.data.by)}` : ''}</span>` : ''}</div>
       <h4 class="sub">Facts to use</h4>
-      <ul class="bul">${p.facts.map(([k, v]) => `<li><b>${esc(k)}:</b> ${esc(v)}</li>`).join('')}</ul>
-      <div class="row wrap"><button class="btn soft pill sm" type="button" id="pfCopy">${icon('note', 'i sm')}Copy the facts</button></div>
-      <p class="cap" style="font-weight:400">Use the facts as a starting point, then explain them your way: what you tried, why, and what you learned.</p>`;
-    $('#pfCopy', view).addEventListener('click', () => copyText(`${s.t}\n${p.facts.map(([k, v]) => `- ${k}: ${v}`).join('\n')}`, ctx.toast));
+      ${facts.length ? `<ul class="bul">${facts.map(([k, v]) => `<li><b>${esc(k)}:</b> ${esc(v)}</li>`).join('')}</ul><div class="row wrap"><button class="btn soft pill sm" type="button" id="pfCopy">${icon('note', 'i sm')}Copy the facts</button></div>` : `<p class="cap" style="font-weight:400">No facts for this section yet. They come from the session notes: what you did, tests and results.</p>`}
+      <div class="items"><button class="it" type="button" data-goto="logbook|Sessions"><span class="oc2">${icon('note', 'i sm')}</span><div class="grow"><div class="t">Session notes</div></div>${icon('arrow', 'i sm')}</button>${s.id === 'design' ? `<button class="it" type="button" data-goto="build|Mechanism Lab"><span class="oc2">${icon('sliders', 'i sm')}</span><div class="grow"><div class="t">Decision matrix</div></div>${icon('arrow', 'i sm')}</button>` : ''}${s.id === 'robot' ? `<button class="it" type="button" data-goto="robot|Versions"><span class="oc2">${icon('commit', 'i sm')}</span><div class="grow"><div class="t">Robot versions</div></div>${icon('arrow', 'i sm')}</button>` : ''}</div>`;
+    let pick = st === 'Drafted' ? 'Drafted' : 'Started';
+    wireSeg($('#pfSide', view), 'pfst', (v) => { pick = v; });
+    const cp = $('#pfCopy', view);
+    if (cp) cp.addEventListener('click', () => copyText(`${s.t}\n${facts.map(([k, v]) => `- ${k}: ${v}`).join('\n')}`, ctx.toast));
+    $('#pfSave', view).addEventListener('click', async (e) => {
+      const btn = e.currentTarget;
+      const t = $('#pfText', view).value.trim();
+      const data = { sec: s.id, text: t, status: t ? pick : 'Empty', by: me() };
+      btn.disabled = true;
+      try {
+        const latest = pfLatest(recs, s.id);
+        if (latest) { const u = await api.update('portfolio', latest.id, data); Object.assign(latest, { data: u.data, updated_at: u.updated_at }); }
+        else recs = [await api.create('portfolio', data), ...recs];
+        secs(); page();
+        ctx.toast(`Saved ${s.t}.`);
+      } catch (err) { ctx.toast(errMsg(err)); btn.disabled = false; }
+    });
   };
-  secs(); page();
+  const allText = () => SECS.map((s) => { const r = pfLatest(recs, s.id); return `${s.title}\n\n${r && r.data.text ? r.data.text : '(not written yet)'}`; }).join('\n\n\n');
+  (async () => {
+    const safeList = async (k) => { try { return await api.list(k); } catch (e) { return []; } };
+    [recs, notes, events] = await Promise.all([safeList('portfolio'), safeList('session'), safeList('event')]);
+    secs(); page();
+  })();
+  secs();
   view.addEventListener('click', (e) => {
     const b = e.target.closest('[data-sec]');
     if (b) {
@@ -526,8 +749,15 @@ function portfolio(view, ctx) {
       if (matchMedia('(max-width: 1099px)').matches) $('#pfTitle', view).scrollIntoView({ behavior: ctx.reduced ? 'auto' : 'smooth', block: 'start' });
       return;
     }
-    const n = e.target.closest('[data-pnote]');
-    if (n) { ctx.state.note = n.dataset.pnote; ctx.go('logbook', 'Sessions'); }
+    if (e.target.closest('#pfCopyAll')) { copyText(allText(), ctx.toast); return; }
+    if (e.target.closest('#pfPrint')) {
+      const w = window.open('', '_blank');
+      if (!w) { ctx.toast('Your browser blocked the print window. Use Copy everything instead.'); return; }
+      w.document.write(`<!doctype html><meta charset="utf-8"><title>Kilowattchaos Engineering Portfolio</title><style>body{font:15px/1.5 Georgia,serif;max-width:720px;margin:40px auto;padding:0 20px;color:#222}h1{font:600 28px Inter,sans-serif}h2{font:600 20px Inter,sans-serif;margin-top:32px;page-break-before:auto}.k{font:500 12px Inter,sans-serif;text-transform:uppercase;letter-spacing:.08em;color:#777}</style><h1>Kilowattchaos</h1>${SECS.map((s) => { const r = pfLatest(recs, s.id); return `<div class="k">${esc(s.kick)}</div><h2>${esc(s.title)}</h2>${r && r.data.text ? paras(r.data.text).map((p) => `<p>${esc(p)}</p>`).join('') : '<p><i>Not written yet.</i></p>'}`; }).join('')}`);
+      w.document.close();
+      w.focus();
+      setTimeout(() => w.print(), 300);
+    }
   });
 }
 

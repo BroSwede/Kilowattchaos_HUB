@@ -1,1 +1,17 @@
 /* Live-site styles for the learn agent's zones. */
+.lv-wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.card-head.lv-wrap { row-gap: 8px; }
+.lv-form { margin: 4px 0 12px; padding: 14px; border-radius: 18px; background: var(--raised); }
+.lv-form .inp { background: var(--card); }
+.lv-awards { display: flex; flex-wrap: wrap; gap: 6px; margin: -2px 0 6px 52px; }
+.lv-awards .st { padding-right: 4px; }
+.lv-x { display: inline-grid; place-items: center; width: 20px; height: 20px; border: 0; border-radius: 50%; background: transparent; color: var(--muted); cursor: pointer; padding: 0; }
+.lv-x:hover { background: var(--divider); color: var(--text); }
+.lv-sug { align-items: flex-start; flex-wrap: wrap; }
+.lv-sug .end { justify-content: flex-end; }
+.lv-lbempty { display: block !important; padding: 12px 14px !important; color: var(--muted); font-weight: 400 !important; background: transparent !important; border: 1.5px dashed var(--divider); }
+.lv-chips { margin-bottom: 12px; flex-wrap: wrap; }
+@media (max-width: 759px) {
+  .lv-sug .end { margin-left: 40px; width: 100%; justify-content: flex-start; }
+  .lv-awards { margin-left: 0; }
+}

@@ -12,9 +12,11 @@ export const SYSTEM_COLORS = {
 };
 const VOLT = '#E8F542';
 // The GLB is gzipped and split into 4 binary files of at most 28 MB, so each stays under GitHub's file limit.
-const MODEL_BASE = window.KWC_MODEL_BASE || '/hub/model/';
-const MODEL_PARTS = Array.from({ length: 4 }, (_, i) => `${MODEL_BASE}starterbot-full.glb.gz.part${i}.bin`);
-const MODEL_TEXT_BYTES = 107308093; // total size of the gzipped parts, used for the progress bar
+// A host with a smaller file limit can set window.KWC_MODEL = { parts, bytes, base64: true } to load base64 text parts instead.
+const MODEL_CFG = window.KWC_MODEL || null;
+const MODEL_PARTS = MODEL_CFG ? MODEL_CFG.parts : Array.from({ length: 4 }, (_, i) => `/hub/model/starterbot-full.glb.gz.part${i}.bin`);
+const MODEL_TEXT_BYTES = MODEL_CFG ? MODEL_CFG.bytes : 107308093; // total download size, used for the progress bar
+const unpack = (bytes) => (MODEL_CFG && MODEL_CFG.base64 ? decodeBase64(bytes) : bytes);
 const GLB_BYTES = 186775304; // size of the unpacked float32 GLB
 const EXPLODE = new THREE.Vector3(1.25, 1.0, 1.25);
 const GHOSTED_BY_XRAY = new Set(['structure', 'hardware']);
@@ -91,7 +93,7 @@ async function loadModel(onProgress) {
     })();
     reading.catch(() => {});
     for (const url of MODEL_PARTS) {
-      const bytes = await fetchText(url, onBytes);
+      const bytes = unpack(await fetchText(url, onBytes));
       await writer.ready;
       await writer.write(bytes);
     }
@@ -101,7 +103,7 @@ async function loadModel(onProgress) {
     return out.subarray(0, len);
   }
   const zipped = [];
-  for (const url of MODEL_PARTS) zipped.push(await fetchText(url, onBytes));
+  for (const url of MODEL_PARTS) zipped.push(unpack(await fetchText(url, onBytes)));
   const all = new Uint8Array(zipped.reduce((n, z) => n + z.length, 0));
   let o = 0;
   for (const z of zipped) { all.set(z, o); o += z.length; }

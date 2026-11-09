@@ -1,1 +1,35 @@
-/* Live-site styles for the crew agent's zones. */
+/* Live-site styles for the crew agent's zones (Crew and Logbook). */
+.kc-mem-empty { margin: 4px 4px 8px; font-weight: 400; }
+.msg-acts button[data-del] { color: var(--muted); }
+.kc-thumb { display: block; border-radius: inherit; color: inherit; text-decoration: none; }
+.ipost .icon-btn.sm { flex: none; }
+.ridea .row:first-child { justify-content: space-between; }
+.kc-fdel { width: 28px; height: 28px; }
+.kc-status { display: flex; flex-direction: row; align-items: center; justify-content: flex-start; gap: 8px; margin-top: 4px; text-align: left; }
+.kc-status .inp { height: 32px; padding: 0 10px; font-size: 13px; flex: 1; min-width: 0; }
+.kc-give { gap: 8px; margin-top: 4px; }
+.kc-give .inp { flex: 1 1 180px; min-width: 0; }
+.medal2 { position: relative; }
+.kc-unbadge { position: absolute; top: -6px; right: -6px; width: 22px; height: 22px; background: var(--raised); }
+
+/* Logbook */
+.kc-evform { gap: 10px; }
+.kc-two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.kc-hint { margin: -4px 0 0; font-weight: 400; }
+.kc-check { display: flex; flex-direction: row; justify-content: flex-start; text-align: left; align-items: center; gap: 8px; font: 500 13px/18px Inter, sans-serif; }
+.kc-check input { width: 18px; height: 18px; accent-color: var(--volt-ink, #222624); }
+.kc-danger { color: var(--negative); margin-right: auto; }
+.card-foot .kc-danger { margin-right: auto; }
+.kc-going { gap: 8px; margin-top: 6px; }
+.kc-photos { display: flex; flex-wrap: wrap; gap: 8px; }
+.kc-sysrow { display: block; width: 100%; text-align: left; background: transparent; border: 0; padding: 0; color: inherit; font: inherit; cursor: pointer; border-radius: 10px; }
+.kc-sysrow:hover .t { text-decoration: underline; }
+.kc-comp { align-items: flex-start; }
+.kc-res { margin: 6px 0 0; }
+.kc-pftext { min-height: 160px; resize: vertical; font: 400 14px/20px Inter, sans-serif; }
+.paper .kc-pp { margin: 0 0 8px; font: 400 11px/16px Georgia, serif; color: #222624; }
+.form-grid .ferr, .form-grid .card-foot { grid-column: 1 / -1; }
+@media (max-width: 759px) {
+  .kc-two { grid-template-columns: 1fr; }
+}
+#sessDid .lb-didf { margin-bottom: 10px; }

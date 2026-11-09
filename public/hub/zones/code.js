@@ -1,13 +1,15 @@
 // Code zone: BioBuzz Arena (a drivable practice field), Our code, Snippets, Challenges.
-// The Arena is a practice drill on a plain 12 ft field, not the real BIOBUZZ field. Code and commits are samples.
-import { $, $$, esc, clamp, icon, tag, SAMPLE, strip, av, avStack, sw, seg, wireSeg, copyText, codeBlock } from './common.js';
+// The Arena is a practice drill on a plain 12 ft field, not the real BIOBUZZ field. Our code shows starter files until
+// a mentor connects the team's GitHub repo. Arena times, challenges and submissions are saved team data.
+import { $, $$, esc, clamp, icon, tag, strip, av, avStack, sw, seg, wireSeg, copyText, codeBlock } from './common.js';
+import { api, session, isMentor, me } from '../api.js';
+import { myProgress, saveProgress } from './learn.js';
 
 // ================================================================= BioBuzz Arena
 const FIELD = 3.6576, TILE = FIELD / 6, H = 0.226, BALL = 0.045;
 const VMAX = 1.7, STRAFE = 0.85, WMAX = 4.4;
 const START = { x: TILE / 2, y: TILE / 2, th: Math.PI / 2 };
 const POLLEN = [[1.2, 0.9], [2.1, 0.5], [3.1, 1.0], [0.7, 1.9], [1.8, 1.8], [2.9, 2.2], [0.5, 3.0], [1.5, 2.8], [2.4, 3.0], [3.2, 3.0]];
-const BOARD = [['Byte', 18.6], ['Pixel', 21.2], ['Gizmo', 24.9], ['Nova', 27.5], ['Rivet', 29.8]];
 const SNIP_NOTE = {
   field: ['Field-centric drive', 'Push up on the stick and the robot goes up the field, whichever way it faces.'],
   slow: ['Slow mode toggle', 'Slow mode is on. Press Space or RB once to switch it; holding it down does nothing extra.'],
@@ -15,19 +17,39 @@ const SNIP_NOTE = {
   auto: ['Go to the nearest pollen', 'The robot turns toward the closest ball, drives to it, and repeats.'],
   robot: ['Robot-centric mecanum drive', 'Up on the stick always means "the way the robot is facing".'],
 };
-let optIn = false;
 const KEYS = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyQ', 'KeyE', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'KeyR']);
 const turnSvg = (cw) => `<svg class="i lg" viewBox="0 0 24 24" aria-hidden="true"${cw ? ' style="transform:scaleX(-1)"' : ''}><path d="M9 4H4v5"/><path d="M4.6 9A8 8 0 1 1 4 13"/></svg>`;
+
+// ---------------------------------------------------------------- Arena records: one per person { best, fieldBest, show }
+let arenaItems = null, arenaChain = Promise.resolve();
+async function loadArena() { arenaItems = await api.list('arena'); return arenaItems; }
+const myArena = () => (arenaItems || []).find((r) => r.user_id === session.user?.id) || null;
+function saveArena(patch) {
+  const run = async () => {
+    if (!arenaItems) await loadArena();
+    const rec = myArena();
+    const next = rec ? await api.update('arena', rec.id, patch) : await api.create('arena', { best: null, fieldBest: null, show: false, ...patch });
+    const row = { ...(rec || {}), ...next, author: me() };
+    arenaItems = [row, ...arenaItems.filter((r) => r.id !== row.id)];
+    return row;
+  };
+  const p = arenaChain.then(run, run);
+  arenaChain = p.catch(() => {});
+  return p;
+}
+const num = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : null);
 
 function arena(view, ctx) {
   const mode0 = ctx.state.arenaMode || '';
   ctx.state.arenaMode = '';
   let fieldCentric = mode0 === 'field';
   let slow = mode0 === 'slow';
-  const best = () => { const v = parseFloat(ctx.local.get('kwc-arena-best')); return Number.isFinite(v) ? v : null; };
+  let dead = false, loaded = false;
+  const best = () => num(myArena()?.data?.best);
+  const optIn = () => !!myArena()?.data?.show;
   const note = SNIP_NOTE[mode0];
   view.innerHTML = `<div class="zv">
-    ${strip('Drive a twin of the StarterBot with a keyboard, a gamepad or touch, and practice before you touch the real robot. This is a practice drill on a plain 12 ft field, not the real BIOBUZZ field.', [tag('Arena v0 · opens Dec 1'), tag('Practice drill, not the real field', 'line')])}
+    ${strip('Drive a twin of the StarterBot with a keyboard, a gamepad or touch, and practice before you touch the real robot. This is a practice drill on a plain 12 ft field, not the real BIOBUZZ field.', [tag('Your best time saves to your account'), tag('Practice drill, not the real field', 'line')])}
     ${note ? `<div class="robot-note" id="snipNote">${icon('code')}<span class="grow"><b>Running the "${note[0]}" snippet.</b> ${note[1]}</span><button class="icon-btn sm" type="button" id="snipX" aria-label="Dismiss">${icon('x')}</button></div>` : ''}
     <div class="arena">
       <div class="stack-v" style="gap:12px">
@@ -67,7 +89,7 @@ function arena(view, ctx) {
         <article class="card">
           <div class="card-head"><h3 class="card-title">Team board</h3><span class="tag">Opt-in</span></div>
           <ol class="lb" id="lb"></ol>
-          <div class="row between"><span class="cap">Show my best time</span>${sw('optIn', optIn, 'Show my best time on the team board')}</div>
+          <div class="row between"><span class="cap">Show my best time</span>${sw('optIn', false, 'Show my best time on the team board')}</div>
           <p class="cap" style="font-weight:400" id="lbNote"></p>
         </article>
       </div>
@@ -94,13 +116,15 @@ function arena(view, ctx) {
   };
   const hudBest = () => { const b = best(); $('#hB').textContent = b === null ? 'Best: none yet' : `Best ${b.toFixed(1)} s`; };
   const board = () => {
-    const b = best();
-    const rows = BOARD.map(([n, t]) => [n, t, false]);
-    if (optIn && b !== null) rows.push(['Sparky', b, true]);
-    rows.sort((a, c) => a[1] - c[1]);
-    $('#lb').innerHTML = rows.map(([n, t, me], i) => `<li class="${me ? 'me' : ''}"><span class="r">${i + 1}</span>${av(n, 28)}<span>${n}${me ? ' (you)' : ''}</span><span class="sc">${t.toFixed(1)} s</span></li>`).join('');
-    $('#lbNote').textContent = optIn ? (b === null ? 'Finish the drill once and your time shows up here.' : 'Your best time shows with your display name only.')
-      : b === null ? 'Only teammates who switch this on show up. Times are samples.' : `Your best: ${b.toFixed(1)} s. Only you can see it until you switch this on.`;
+    if (!loaded) { $('#lb').innerHTML = '<li class="lv-lbempty">Loading the board…</li>'; return; }
+    const b = best(), on = optIn();
+    $('#optIn').setAttribute('aria-checked', String(on));
+    const rows = (arenaItems || []).filter((r) => r.data?.show && num(r.data?.best) !== null)
+      .map((r) => [r.author, r.data.best, r.user_id === session.user?.id]).sort((a, c) => a[1] - c[1]);
+    $('#lb').innerHTML = rows.length ? rows.map(([n, t, mine], i) => `<li class="${mine ? 'me' : ''}"><span class="r">${i + 1}</span>${av(n, 28)}<span>${esc(n)}${mine ? ' (you)' : ''}</span><span class="sc">${t.toFixed(1)} s</span></li>`).join('')
+      : '<li class="lv-lbempty">Nobody is on the board yet. Finish the drill and switch on "Show my best time" to be first.</li>';
+    $('#lbNote').textContent = on ? (b === null ? 'Finish the drill once and your time shows up here.' : 'Your best time shows with your display name only.')
+      : b === null ? 'Only teammates who switch this on show up.' : `Your best: ${b.toFixed(1)} s. Only you can see it until you switch this on.`;
   };
   const gpStatus = () => {
     const T = $('#gpT'), S = $('#gpS'), I = $('#gpIc');
@@ -138,8 +162,12 @@ function arena(view, ctx) {
       return;
     }
     const b = best();
-    const isBest = b === null || t < b;
-    if (isBest) ctx.local.set('kwc-arena-best', t.toFixed(2));
+    const isBest = loaded && (b === null || t < b);
+    const fb = num(myArena()?.data?.fieldBest);
+    const patch = {};
+    if (isBest) patch.best = Math.round(t * 100) / 100;
+    if (loaded && fieldCentric && (fb === null || t < fb)) patch.fieldBest = Math.round(t * 100) / 100;
+    if (Object.keys(patch).length) saveArena(patch).then(() => { if (!dead) { hudBest(); board(); } }).catch((err) => ctx.toast(err.message));
     msg(`<h4>10 of 10 in ${t.toFixed(1)} s</h4><p>${isBest ? (b === null ? 'Your first time. Now try to beat it.' : `New best, ${(b - t).toFixed(1)} s faster than before.`) : `Your best is ${b.toFixed(1)} s.`}</p>${again}`);
     hudBest(); board();
   };
@@ -305,7 +333,14 @@ function arena(view, ctx) {
   $('#aAuto').addEventListener('click', () => begin(true));
   $('#aSlow').addEventListener('click', toggleSlow);
   wireSeg(view, 'dm', (v) => { fieldCentric = v === 'field'; hudMode(); cv.focus({ preventScroll: true }); });
-  $('#optIn').addEventListener('click', (e) => { optIn = !optIn; e.currentTarget.setAttribute('aria-checked', String(optIn)); board(); });
+  $('#optIn').addEventListener('click', async (e) => {
+    const el = e.currentTarget;
+    if (!loaded) return;
+    const on = !optIn();
+    el.setAttribute('aria-checked', String(on));
+    try { await saveArena({ show: on }); if (!dead) board(); ctx.toast(on ? 'Your best time is on the team board.' : 'Your time is hidden from the board.'); }
+    catch (err) { el.setAttribute('aria-checked', String(!on)); ctx.toast(err.message); }
+  });
   const snipX = $('#snipX');
   if (snipX) snipX.addEventListener('click', () => $('#snipNote').remove());
   const jEl = $('#joy'), knob = $('#joy i');
@@ -332,9 +367,12 @@ function arena(view, ctx) {
   addEventListener('gamepaddisconnected', onPad);
 
   hudMode(); hudBest(); board(); gpStatus(); pad(); telemetry(0);
+  loadArena().then(() => { if (dead) return; loaded = true; hudBest(); board(); })
+    .catch((err) => { if (!dead) { $('#lb').innerHTML = `<li class="lv-lbempty">Could not load the board. ${esc(err.message)}</li>`; ctx.toast(err.message); } });
   if (mode0 === 'auto') begin(true);
   raf = requestAnimationFrame(loop);
   return () => {
+    dead = true;
     cancelAnimationFrame(raf);
     ro.disconnect();
     removeEventListener('gamepadconnected', onPad);
@@ -342,7 +380,7 @@ function arena(view, ctx) {
   };
 }
 
-// ================================================================= Our code (sample until the team repo is connected)
+// ================================================================= Our code (starter files until a mentor connects the team repo)
 const FILES = {
   'opmodes/DriveTeleOp.java': {
     about: 'The driver-controlled program. Gamepad 1 drives the mecanum wheels; gamepad 2 runs the intake, launcher and ball path.',
@@ -358,7 +396,7 @@ import org.firstinspires.ftc.teamcode.subsystems.Launcher;
 
 @TeleOp(name = "Drive TeleOp", group = "Kilowattchaos")
 public class DriveTeleOp extends LinearOpMode {
-    // Mecanum wheels strafe a little slower than they drive. 1.1 came from our strafe test.
+    // Mecanum wheels strafe a little slower than they drive. Tune 1.1 with a strafe test.
     static final double STRAFE_FIX = 1.1;
 
     @Override
@@ -406,7 +444,7 @@ public class DriveTeleOp extends LinearOpMode {
 }`,
   },
   'opmodes/AutoDriveForward.java': {
-    about: 'The first autonomous: drive forward 24 inches using the wheel encoders, then stop. Byte is tuning it.',
+    about: 'The first autonomous: drive forward 24 inches using the wheel encoders, then stop. A good first auto to tune.',
     src: `package org.firstinspires.ftc.teamcode.opmodes;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
@@ -494,7 +532,7 @@ public class Launcher {
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
-/** The intake. Pixel and Nova own the hardware; this file just spins it. */
+/** The intake. This file just spins it. */
 public class Intake {
     private final DcMotor motor;
 
@@ -522,7 +560,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 public class BallPath {
     static final double CLOSED = 0.15, OPEN = 0.55;
     public static double OPEN_TIME = 0.25;   // seconds the gate stays open
-    public static double PAUSE = 0.35;       // Gizmo: longer pause so two balls don't go together
+    public static double PAUSE = 0.35;       // longer pause so two balls don't go together
 
     private final Servo gate;
     private final ElapsedTime timer = new ElapsedTime();
@@ -574,22 +612,12 @@ hopperServo                                   ball gate servo
 3. One idea per commit, with a message anyone can read.`,
   },
 };
-const COMMITS = [
-  ['Gizmo', 'Launcher: wait until at speed before feeding', 'Nov 5', '9b41e07', 'opmodes/DriveTeleOp.java', 3, 1, true],
-  ['Gizmo', 'BallPath: longer pause between balls (0.25 to 0.35 s)', 'Nov 5', '3f9c2a1', 'subsystems/BallPath.java', 2, 2, false],
-  ['Byte', 'Auto: drive forward 24 inches with the encoders', 'Nov 3', 'c07d5e4', 'opmodes/AutoDriveForward.java', 46, 0, false],
-  ['Sparky', 'Launcher: hold speed with setVelocity', 'Oct 29', '51aa9f0', 'subsystems/Launcher.java', 12, 6, false],
-  ['Pixel', 'Intake: spit balls out with the left trigger', 'Oct 29', 'e2b8c13', 'opmodes/DriveTeleOp.java', 1, 1, false],
-  ['Byte', 'Drive: strafe fix of 1.1 after the strafe test', 'Oct 20', '7d3f0b8', 'opmodes/DriveTeleOp.java', 2, 1, false],
-  ['Nova', 'Intake: add a stop() method', 'Oct 20', 'a4c61d2', 'subsystems/Intake.java', 2, 0, false],
-  ['Coach', 'Start from the FTC SDK and add the README', 'Oct 13', '0f1e2d3', 'README.md', 21, 0, false],
-];
 const TREE = [['dir', 'TeamCode', 0], ['dir', 'opmodes', 1], ['file', 'opmodes/DriveTeleOp.java', 2], ['file', 'opmodes/AutoDriveForward.java', 2], ['dir', 'subsystems', 1], ['file', 'subsystems/BallPath.java', 2], ['file', 'subsystems/Intake.java', 2], ['file', 'subsystems/Launcher.java', 2], ['file', 'README.md', 1]];
 const folder = '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>';
 function ourcode(view, ctx) {
   let cur = FILES[ctx.state.file] ? ctx.state.file : 'opmodes/DriveTeleOp.java';
   view.innerHTML = `<div class="zv">
-    ${strip("The robot's code, read-only here and copied from the team's code repository after every change. Write code in OnBot Java or Android Studio; read it, and see who changed what, here.", [tag('Phase 4 · Jan 25–Feb 12'), tag('Sample until the team repo is connected')])}
+    ${strip("Starter code. This page will show the team's GitHub repo once a mentor connects it. Until then, these example FTC files show how a robot program is put together. Write code in OnBot Java or Android Studio.", [tag('Starter code'), tag('No repo connected yet', 'line')])}
     <article class="card">
       <div class="repo">
         <ul class="tree" id="tree" aria-label="Files">${TREE.map(([k, p, d]) => (k === 'dir' ? `<li class="dir" style="padding-left:${8 + d * 14}px">${folder}${p}/</li>` : `<li style="padding:0;padding-left:${d * 14}px"><button type="button" data-file="${p}" aria-current="${p === cur}">${icon(p.endsWith('.md') ? 'note' : 'code', 'i')}${p.split('/').pop()}</button></li>`)).join('')}</ul>
@@ -597,27 +625,21 @@ function ourcode(view, ctx) {
       </div>
     </article>
     <article class="card c7">
-      <div class="card-head"><h3 class="card-title">Recent changes</h3>${SAMPLE}</div>
-      <div class="commits" id="commits">${COMMITS.map(([who, m, d, h, f, add, del, ai]) => `<div class="commit">${av(who, 32)}<div style="min-width:0"><div class="m">${esc(m)}${ai ? ' <span class="tag line" style="margin-left:4px">AI-assisted</span>' : ''}</div><div class="h">${who} · ${d} · ${h} · <button class="btn ghost pill sm" type="button" data-file="${f}" style="height:26px;padding:0 9px;font:500 12px/16px Inter,sans-serif">${f.split('/').pop()}</button></div></div><span class="cap num" style="white-space:nowrap"><span style="color:var(--ok)">+${add}</span> <span style="color:var(--negative)">−${del}</span></span></div>`).join('')}</div>
+      <div class="card-head"><span class="oc2">${icon('code', 'i sm')}</span><h3 class="card-title">How code will get here</h3></div>
+      <ol class="bul"><li>A mentor connects the team's GitHub repo to the Hub.</li><li>You change code in OnBot Java or Android Studio.</li><li>A mentor helps you commit it with a clear message.</li><li>The new code, and who changed what, shows up on this page.</li></ol>
+      <p class="cap" style="font-weight:400">Until then, the files above are examples, not the code on our robot.</p>
     </article>
     <article class="card c5">
-      <div class="card-head"><h3 class="card-title">Who changed this file</h3></div>
-      <div id="who"></div>
-      <hr class="hr">
-      <h4 class="sub">How code gets here</h4>
-      <ol class="bul"><li>You change code in OnBot Java or Android Studio.</li><li>A mentor helps you commit it to the team repository with a clear message.</li><li>The Hub's GitHub app hears about the change and shows it here within a minute.</li></ol>
+      <div class="card-head"><span class="oc2 volt">${icon('bulb', 'i sm')}</span><h3 class="card-title">Use the starter code</h3></div>
+      <p>Copy a file into OnBot Java to get going, then make it yours. Check that the hardware names in README.md match your robot configuration.</p>
+      <div class="row wrap"><button class="btn soft pill" type="button" data-goto="code|Snippets">${icon('code', 'i sm')}Snippets</button><button class="btn ghost pill" type="button" data-goto="learn|Setup and FAQ">${icon('book', 'i sm')}Set up OnBot Java</button></div>
     </article>
   </div>`;
   const draw = () => {
     const f = FILES[cur];
-    const last = COMMITS.find((c) => c[4] === cur);
-    $('#fileView').innerHTML = `<div class="code-head"><span class="path">${cur}</span>${last ? `<span class="cap row" style="gap:6px">${av(last[0], 18)}${last[0]} · ${last[2]}</span>` : ''}<span class="row" style="margin-left:auto;gap:6px"><button class="btn ghost pill sm" type="button" id="copyFile">Copy</button><button class="btn soft pill sm" type="button" data-toast="On the robot's Wi-Fi, OnBot Java has this same file in its TeamCode folder.">${icon('arrow', 'i sm')}OnBot Java</button></span></div>
+    $('#fileView').innerHTML = `<div class="code-head"><span class="path">${cur}</span><span class="tag line">Starter code</span><span class="row" style="margin-left:auto;gap:6px"><button class="btn ghost pill sm" type="button" id="copyFile">Copy</button><button class="btn soft pill sm" type="button" data-toast="On the robot's Wi-Fi, open OnBot Java and paste this into a new file in the TeamCode folder.">${icon('arrow', 'i sm')}OnBot Java</button></span></div>
       <div class="callout" style="background:var(--raised);color:var(--text)">${icon('book')}<div><b>What this file does:</b> ${f.about}</div></div>
       ${codeBlock(f.src, f.lang || 'java')}`;
-    const by = {};
-    COMMITS.filter((c) => c[4] === cur).forEach((c) => { by[c[0]] = (by[c[0]] || 0) + 1; });
-    const names = Object.keys(by);
-    $('#who').innerHTML = `<div class="items">${names.map((n) => `<div class="it">${av(n, 28)}<div class="grow"><div class="t">${n}</div><div class="meta cap">${by[n]} change${by[n] === 1 ? '' : 's'}</div></div></div>`).join('')}</div>${last ? `<p class="cap" style="font-weight:400">Last change: "${esc(last[1])}"</p>` : ''}`;
     $$('#tree [data-file]').forEach((b) => b.setAttribute('aria-current', String(b.dataset.file === cur)));
     $('#copyFile').addEventListener('click', () => copyText(f.src, ctx.toast));
   };
@@ -626,7 +648,6 @@ function ourcode(view, ctx) {
     const b = e.target.closest('[data-file]');
     if (!b) return;
     cur = b.dataset.file; ctx.state.file = cur; draw();
-    if (b.closest('#commits')) $('#fileView').scrollIntoView({ behavior: ctx.reduced ? 'auto' : 'smooth', block: 'start' });
   });
 }
 
@@ -676,7 +697,7 @@ double drive = Math.abs(error) < 0.6
 ];
 function snippets(view, ctx) {
   view.innerHTML = `<div class="zv">
-    ${strip('Small pieces of robot code you can copy into OnBot Java. "Run in Arena" shows what each one does on the practice field first.', [tag('Phase 4 · Jan 25–Feb 12'), tag(`${SNIPS.length} snippets`)])}
+    ${strip('Small pieces of robot code you can copy into OnBot Java. "Run in Arena" shows what each one does on the practice field first.', [tag(`${SNIPS.length} snippets`)])}
     <div class="snips">${SNIPS.map((s, i) => `<article class="snip">
       <div class="row between"><h4>${s.t}</h4><span class="tag${s.lvl === 'Challenge' ? ' dark' : ''}">${s.lvl}</span></div>
       <p class="lead" style="font-size:13px;line-height:19px">${s.d}</p>
@@ -684,7 +705,7 @@ function snippets(view, ctx) {
       <div class="row wrap"><button class="btn primary pill sm" type="button" data-run="${i}">${icon('play', 'i sm')}Run in Arena</button><button class="btn ghost pill sm" type="button" data-copy="${i}">Copy</button></div>
     </article>`).join('')}</div>
     <article class="card">
-      <div class="row wrap"><span class="oc2 volt">${icon('plus', 'i sm')}</span><div class="grow"><div style="font:500 15px/20px Inter,sans-serif">Made something useful?</div><div class="cap" style="font-weight:400">Students add snippets in Student Dev Mode. A mentor checks each one before it shows up here.</div></div><button class="btn soft pill" type="button" data-toast="Student Dev Mode opens in Phase 7. New snippets go to a mentor first.">Add a snippet</button></div>
+      <div class="row wrap"><span class="oc2 volt">${icon('plus', 'i sm')}</span><div class="grow"><div style="font:500 15px/20px Inter,sans-serif">Made something useful?</div><div class="cap" style="font-weight:400">Show it to a mentor. They check each one before it shows up here.</div></div><button class="btn soft pill" type="button" data-toast="Show it to a mentor at the next meeting. They check it and add it here.">Add a snippet</button></div>
     </article>
   </div>`;
   view.addEventListener('click', (e) => {
@@ -696,61 +717,218 @@ function snippets(view, ctx) {
 }
 
 // ================================================================= Challenges
-const CHECKS = ['Press A once to start the intake, and again to stop it', 'Holding A down does not make it flicker (use a lastA variable)', 'Telemetry shows "Intake: on" or "Intake: off"', 'The intake stops when the OpMode ends', 'You tested it on the robot or a spare motor'];
-const POINTS = [['Byte', 34], ['Pixel', 22], ['Sparky', 19], ['Gizmo', 15], ['Nova', 12], ['Rivet', 7]];
-const PAST = [
-  ['Make the robot say hello', 'Oct 19–25', 6, 'Byte', '"telemetry.update() or nothing shows"'],
-  ['Drive a motor with a stick', 'Oct 26–Nov 1', 5, 'Pixel', 'Up on the stick is negative'],
-  ['Write the drive-forward auto', 'Nov 2–8', 4, 'Byte', 'Ticks per inch, from the wheel size'],
-];
-const ticked = new Set();
-let submitted = false;
+// challenge (mentor): { title, brief, checks: [text], points, due: 'YYYY-MM-DD' }
+// submission (student): { challenge: id, notes, link, accepted, points }. Ticks live in the person's progress record.
+const ARENA_BONUS = 3, ARENA_BONUS_S = 25;
+const isoDay = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const dueLabel = (iso) => { const [y, m, d] = String(iso || '').split('-').map(Number); if (!y) return 'No due date'; return new Date(y, m - 1, d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); };
+const multiline = (t) => esc(t || '').replace(/\n/g, '<br>');
+const safeLink = (u) => (/^https?:\/\/[^\s]+$/i.test(u || '') ? u : '');
+
 function challenges(view, ctx) {
+  const mentor = isMentor(), meId = session.user?.id;
+  let chs = [], subs = [], ticks = {}, loaded = false, dead = false, sel = ctx.state.challenge || null;
   view.innerHTML = `<div class="zv">
-    ${strip('A small coding challenge every week, sized for one meeting. Finishing earns points; helping someone else finish earns more.', [tag('Phase 4 · Jan 25–Feb 12'), SAMPLE])}
-    <article class="card c7 stretch">
-      <div class="card-head"><span class="oc2 volt">${icon('trophy', 'i sm')}</span><h3 class="card-title">This week: toggle the intake</h3><span class="tag">Nov 9–15</span></div>
-      <p>Right now the intake only runs while you hold the trigger. Make <b>A</b> a toggle: press once to start, press again to stop.</p>
-      <div class="row wrap"><span class="st">${icon('clock', 'i sm')}About 30 minutes</span><span class="st">5 points</span><span class="st">${avStack(['Byte', 'Pixel', 'Gizmo'], 20)}3 finished</span></div>
-      <h4 class="sub">Check your work</h4>
-      <div class="pack" id="checks">${CHECKS.map((c, i) => `<button class="tick" type="button" role="checkbox" data-tick="${i}" aria-checked="${ticked.has(i)}"><span class="bx">${icon('check')}</span><span>${c}</span></button>`).join('')}</div>
-      <div class="card-foot" style="flex-wrap:wrap"><button class="btn ghost pill" type="button" data-goto="code|Snippets">${icon('bulb', 'i sm')}Hint: see the slow mode snippet</button><button class="btn primary pill" type="button" id="submitCh"></button></div>
-    </article>
+    ${strip('A small coding challenge, sized for one meeting. Tick each check, send in your work, and a mentor accepts it for points.', [tag('Points for accepted work')], mentor ? `<button class="btn primary pill" type="button" id="newCh">${icon('plus', 'i sm')}New challenge</button>` : '')}
+    ${mentor ? '<article class="card" id="chForm" hidden></article>' : ''}
+    <article class="card c7 stretch" id="chNow"><div class="live-empty">Loading challenges…</div></article>
     <article class="card c5 stretch">
-      <div class="card-head"><h3 class="card-title">Season points</h3><span class="tag">Opt-in</span></div>
-      <ol class="lb">${POINTS.map(([n, p], i) => `<li class="${n === 'Sparky' ? 'me' : ''}"><span class="r">${i + 1}</span>${av(n, 28)}<span>${n}${n === 'Sparky' ? ' (you)' : ''}</span><span class="sc">${p}</span></li>`).join('')}</ol>
-      <p class="cap" style="font-weight:400">5 points for finishing, 3 more for the clearest code (the team votes), and 2 for helping a teammate finish. Echo has the board switched off, which is fine.</p>
+      <div class="card-head"><h3 class="card-title">Season points</h3><span class="tag">Team</span></div>
+      <ol class="lb" id="pts"></ol>
+      <p class="cap" style="font-weight:400">Each accepted challenge earns its points. The Arena bonus adds ${ARENA_BONUS} more.</p>
     </article>
+    ${mentor ? `<article class="card" id="reviewCard">
+      <div class="card-head"><span class="oc2 volt">${icon('check', 'i sm')}</span><h3 class="card-title">Submissions to review</h3><span class="tag" id="revN"></span></div>
+      <div class="items" id="review"></div>
+    </article>` : ''}
     <article class="card c6">
-      <div class="card-head"><span class="oc2">${icon('gamepad', 'i sm')}</span><h3 class="card-title">Arena bonus</h3><span class="tag">Any time</span></div>
-      <p>Collect all 10 pollen in under 25 seconds using <b>field-centric</b> drive. It feels strange at first, then much easier.</p>
+      <div class="card-head"><span class="oc2">${icon('gamepad', 'i sm')}</span><h3 class="card-title">Arena bonus</h3><span class="tag">Any time · ${ARENA_BONUS} points</span></div>
+      <p>Collect all 10 pollen in under ${ARENA_BONUS_S} seconds using <b>field-centric</b> drive. It feels strange at first, then much easier.</p>
+      <div id="bonusMe" class="cap" style="font-weight:400;margin-bottom:10px"></div>
       <button class="btn soft pill" type="button" id="arenaBonus">${icon('play', 'i sm')}Try it in the Arena</button>
     </article>
     <article class="card c6">
       <div class="card-head"><h3 class="card-title">Past challenges</h3></div>
-      <div class="items">${PAST.map(([t, d, n, w, l]) => `<div class="it"><span class="oc2">${icon('flag', 'i sm')}</span><div class="grow"><div class="t">${t}</div><div class="meta cap" style="font-weight:400">${d} · ${n} of 7 finished · learned: ${l}</div></div><span class="end">${av(w, 24)}</span></div>`).join('')}</div>
+      <div class="items" id="past"></div>
     </article>
   </div>`;
-  const btn = () => {
-    const all = ticked.size === CHECKS.length, b = $('#submitCh');
-    b.disabled = !all && !submitted;
-    b.innerHTML = submitted ? `${icon('check', 'i sm')}Submitted` : all ? 'Submit for review' : `${ticked.size} of ${CHECKS.length} checked`;
+
+  const today = () => isoDay();
+  const open = () => chs.filter((c) => !c.data?.due || c.data.due >= today()).sort((a, b) => String(a.data.due || '9').localeCompare(String(b.data.due || '9')));
+  const past = () => chs.filter((c) => c.data?.due && c.data.due < today()).sort((a, b) => b.data.due.localeCompare(a.data.due));
+  const subsFor = (cid) => subs.filter((s) => s.data?.challenge === cid);
+  const accepted = (cid) => subsFor(cid).filter((s) => s.data?.accepted);
+  const mySub = (cid) => subs.find((s) => s.data?.challenge === cid && s.user_id === meId) || null;
+  const chById = (id) => chs.find((c) => c.id === id);
+  const bonusHas = (r) => { const v = r?.data?.fieldBest; return typeof v === 'number' && v < ARENA_BONUS_S; };
+
+  const drawNow = () => {
+    const el = $('#chNow', view);
+    const list = open();
+    if (!list.length) {
+      el.innerHTML = `<div class="card-head"><span class="oc2 volt">${icon('trophy', 'i sm')}</span><h3 class="card-title">This week</h3></div>
+        <div class="live-empty">${mentor ? 'No open challenge yet. Make one with "New challenge" and the team sees it right away.' : 'No challenge right now. A mentor posts the next one soon. Try the Arena bonus or a snippet meanwhile.'}</div>`;
+      return;
+    }
+    if (!list.some((c) => c.id === sel)) sel = list[0].id;
+    const c = list.find((x) => x.id === sel), d = c.data || {};
+    const checks = Array.isArray(d.checks) ? d.checks : [];
+    const t = new Set(ticks[c.id] || []);
+    const sub = mySub(c.id), acc = accepted(c.id);
+    const allTicked = checks.every((_, i) => t.has(i));
+    el.innerHTML = `${list.length > 1 ? `<div class="chips lv-chips" role="tablist" aria-label="Open challenges">${list.map((x) => `<button class="chip" type="button" data-sel="${esc(x.id)}" aria-pressed="${x.id === c.id}">${esc(x.data.title || 'Challenge')}</button>`).join('')}</div>` : ''}
+      <div class="card-head lv-wrap"><span class="oc2 volt">${icon('trophy', 'i sm')}</span><h3 class="card-title">${esc(d.title || 'Challenge')}</h3><span class="tag">Due ${dueLabel(d.due)}</span></div>
+      ${d.brief ? `<p>${multiline(d.brief)}</p>` : ''}
+      <div class="row wrap"><span class="st">${Number(d.points) || 0} points</span><span class="st">${acc.length ? avStack(acc.map((s) => s.author).slice(0, 5), 20) : ''}${acc.length} finished</span>${mentor ? `<span class="row" style="margin-left:auto;gap:6px"><button class="btn ghost pill sm" type="button" data-edit="${esc(c.id)}">Edit</button><button class="btn ghost pill sm" type="button" data-del="${esc(c.id)}">Delete</button></span>` : ''}</div>
+      ${checks.length ? `<h4 class="sub">Check your work</h4>
+      <div class="pack" id="checks">${checks.map((x, i) => `<button class="tick" type="button" role="checkbox" data-tick="${i}" aria-checked="${t.has(i)}"${sub ? ' disabled' : ''}><span class="bx">${icon('check')}</span><span>${esc(x)}</span></button>`).join('')}</div>` : ''}
+      <div id="subBox">${sub ? subStatus(sub, d) : mentor ? '<p class="cap" style="font-weight:400">Students tick the checks and send their work here. You review it below.</p>' : `
+        <div class="form-grid lv-form">
+          <label class="field full"><span>What did you do? (optional)</span><textarea class="inp" id="subNotes" maxlength="1000" placeholder="I used a lastA variable so holding A doesn't flicker."></textarea></label>
+          <label class="field full"><span>Link (optional)</span><input class="inp" id="subLink" type="url" maxlength="300" placeholder="https://… (a GitHub file or a video of the robot)"><small>No photos of faces, and nothing with your real name.</small></label>
+        </div>
+        <div class="card-foot" style="flex-wrap:wrap"><button class="btn ghost pill" type="button" data-goto="code|Snippets">${icon('bulb', 'i sm')}Need a hint? See Snippets</button><button class="btn primary pill" type="button" id="submitCh"${allTicked ? '' : ' disabled'}>${allTicked ? 'Submit for review' : `${t.size} of ${checks.length} checked`}</button></div>`}</div>`;
   };
-  btn();
-  $('#checks').addEventListener('click', (e) => {
+  const subStatus = (sub, d) => `<div class="verdict${sub.data.accepted ? ' good' : ''}">${icon(sub.data.accepted ? 'check' : 'clock')}<div><b>${sub.data.accepted ? `Accepted. +${Number(sub.data.points ?? d.points) || 0} points` : 'Submitted. A mentor reviews it soon.'}</b>${sub.data.notes ? `<br>${esc(sub.data.notes)}` : ''}${safeLink(sub.data.link) ? ` <a href="${esc(safeLink(sub.data.link))}" target="_blank" rel="noopener noreferrer">Your link</a>` : ''}</div></div>
+    ${sub.data.accepted ? '' : `<div class="card-foot"><span class="cap">Want to change it?</span><button class="btn ghost pill sm" type="button" data-unsub="${esc(sub.id)}">Take it back</button></div>`}`;
+
+  const drawPoints = (arena) => {
+    const tally = new Map();
+    const add = (uid, name, n) => { const r = tally.get(uid) || { name, n: 0 }; r.n += n; tally.set(uid, r); };
+    for (const s of subs) if (s.data?.accepted && chById(s.data.challenge)) add(s.user_id, s.author, Number(s.data.points ?? chById(s.data.challenge)?.data?.points) || 0);
+    for (const r of arena || []) if (bonusHas(r)) add(r.user_id, r.author, ARENA_BONUS);
+    const rows = [...tally.entries()].filter(([, r]) => r.n > 0).sort((a, b) => b[1].n - a[1].n);
+    $('#pts', view).innerHTML = rows.length ? rows.map(([uid, r], i) => `<li class="${uid === meId ? 'me' : ''}"><span class="r">${i + 1}</span>${av(r.name, 28)}<span>${esc(r.name)}${uid === meId ? ' (you)' : ''}</span><span class="sc">${r.n}</span></li>`).join('')
+      : '<li class="lv-lbempty">No points yet. The first accepted challenge puts someone on the board.</li>';
+    const mine = (arena || []).find((r) => r.user_id === meId);
+    const fb = mine?.data?.fieldBest;
+    $('#bonusMe', view).textContent = bonusHas(mine) ? `You have it: ${fb.toFixed(1)} s field-centric. +${ARENA_BONUS} points.` : typeof fb === 'number' ? `Your best field-centric time: ${fb.toFixed(1)} s. Get under ${ARENA_BONUS_S}!` : 'You have not tried it in field-centric yet.';
+  };
+  const drawPast = () => {
+    const list = past();
+    $('#past', view).innerHTML = list.length ? list.map((c) => {
+      const acc = accepted(c.id), mine = mySub(c.id);
+      return `<div class="it"><span class="oc2${mine?.data?.accepted ? ' solid' : ''}">${icon('flag', 'i sm')}</span><div class="grow"><div class="t">${esc(c.data.title || 'Challenge')}</div><div class="meta cap" style="font-weight:400">Due ${dueLabel(c.data.due)} · ${Number(c.data.points) || 0} points · ${acc.length} finished${mine ? (mine.data.accepted ? ' · you finished it' : ' · yours is waiting') : ''}</div></div><span class="end">${acc.length ? avStack(acc.map((s) => s.author).slice(0, 4), 22) : ''}${mentor ? `<button class="btn ghost pill sm" type="button" data-del="${esc(c.id)}">Delete</button>` : ''}</span></div>`;
+    }).join('') : '<div class="live-empty">Finished challenges show up here after their due date.</div>';
+  };
+  const drawReview = () => {
+    if (!mentor) return;
+    const list = [...subs].sort((a, b) => Number(!!a.data?.accepted) - Number(!!b.data?.accepted));
+    const waiting = subs.filter((s) => !s.data?.accepted).length;
+    $('#revN', view).textContent = `${waiting} waiting`;
+    $('#review', view).innerHTML = list.length ? list.map((s) => {
+      const c = chById(s.data?.challenge), link = safeLink(s.data?.link);
+      return `<div class="it lv-sug">${av(s.author, 28)}<div class="grow"><div class="t">${esc(s.author)} · ${esc(c?.data?.title || 'A deleted challenge')}</div>${s.data?.notes ? `<div class="meta cap" style="font-weight:400">${esc(s.data.notes)}</div>` : ''}${link ? `<div class="meta cap"><a href="${esc(link)}" target="_blank" rel="noopener noreferrer">${esc(link.length > 60 ? `${link.slice(0, 57)}…` : link)}</a></div>` : ''}</div>
+        <span class="end lv-wrap">${s.data?.accepted ? `<span class="st volt">${icon('check', 'i sm')}+${Number(s.data.points) || 0}</span><button class="btn ghost pill sm" type="button" data-acc="${esc(s.id)}">Undo</button>` : `<button class="btn primary pill sm" type="button" data-acc="${esc(s.id)}">Accept${c ? ` · ${Number(c.data.points) || 0}` : ''}</button>`}</span></div>`;
+    }).join('') : '<div class="live-empty">Nothing to review yet. Submissions show up here as soon as someone sends one.</div>';
+  };
+  let arenaCache = [];
+  const drawAll = () => { drawNow(); drawPoints(arenaCache); drawPast(); drawReview(); };
+
+  Promise.all([api.list('challenge'), api.list('submission'), myProgress(), loadArena().catch(() => [])]).then(([c, s, prog, ar]) => {
+    if (dead) return;
+    chs = c; subs = s; ticks = { ...(prog?.data?.ticks || {}) }; arenaCache = ar || []; loaded = true;
+    drawAll();
+  }).catch((err) => { if (!dead) { $('#chNow', view).innerHTML = `<div class="live-empty">Could not load challenges. ${esc(err.message)}</div>`; ctx.toast(err.message); } });
+
+  // ---- Mentor: new or edit challenge
+  const form = (rec) => {
+    const f = $('#chForm', view);
+    if (!f) return;
+    const d = rec?.data || {};
+    const due = d.due || isoDay(new Date(Date.now() + 6 * 864e5));
+    f.hidden = false;
+    f.innerHTML = `<div class="card-head"><h3 class="card-title">${rec ? 'Edit challenge' : 'New challenge'}</h3><button class="icon-btn sm" type="button" id="chX" aria-label="Close" style="margin-left:auto">${icon('x')}</button></div>
+      <div class="form-grid">
+        <label class="field full"><span>Title</span><input class="inp" id="chT" maxlength="80" placeholder="Toggle the intake" value="${esc(d.title || '')}"></label>
+        <label class="field full"><span>The brief</span><textarea class="inp" id="chB" maxlength="1200" placeholder="Right now the intake only runs while you hold the trigger. Make A a toggle.">${esc(d.brief || '')}</textarea></label>
+        <label class="field full"><span>Checks, one per line</span><textarea class="inp" id="chC" maxlength="1500" placeholder="Press A once to start, again to stop&#10;Telemetry shows Intake: on or off">${esc((d.checks || []).join('\n'))}</textarea></label>
+        <label class="field"><span>Points</span><input class="inp" id="chP" type="number" min="0" max="50" value="${Number(d.points ?? 5)}"></label>
+        <label class="field"><span>Due</span><input class="inp" id="chD" type="date" value="${esc(due)}"></label>
+      </div>
+      <div class="card-foot"><span class="cap">The whole team sees it right away.</span><button class="btn primary pill" type="button" id="chSave">${rec ? 'Save changes' : 'Post challenge'}</button></div>`;
+    $('#chX', f).addEventListener('click', () => { f.hidden = true; });
+    $('#chT', f).focus();
+    f.scrollIntoView({ behavior: ctx.reduced ? 'auto' : 'smooth', block: 'start' });
+    $('#chSave', f).addEventListener('click', async (e) => {
+      const btn = e.currentTarget;
+      const data = {
+        title: $('#chT', f).value.trim(), brief: $('#chB', f).value.trim(),
+        checks: $('#chC', f).value.split('\n').map((x) => x.trim()).filter(Boolean).slice(0, 12),
+        points: clamp(Math.round(Number($('#chP', f).value) || 0), 0, 50), due: $('#chD', f).value,
+      };
+      if (!data.title) { ctx.toast('Give the challenge a title.'); $('#chT', f).focus(); return; }
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(data.due)) { ctx.toast('Pick a due date.'); $('#chD', f).focus(); return; }
+      btn.disabled = true;
+      try {
+        if (rec) { const r = await api.update('challenge', rec.id, data); rec.data = r.data; }
+        else { const r = await api.create('challenge', data); chs.unshift({ ...r, author: me() }); sel = r.id; }
+        f.hidden = true; drawAll();
+        ctx.toast(rec ? 'Challenge saved.' : 'Challenge posted.');
+      } catch (err) { ctx.toast(err.message); btn.disabled = false; }
+    });
+  };
+  const nb = $('#newCh', view);
+  if (nb) nb.addEventListener('click', () => form(null));
+
+  view.addEventListener('click', async (e) => {
+    if (!loaded) return;
+    const s = e.target.closest('[data-sel]');
+    if (s) { sel = s.dataset.sel; ctx.state.challenge = sel; drawNow(); return; }
     const t = e.target.closest('[data-tick]');
-    if (!t) return;
-    const i = +t.dataset.tick;
-    if (ticked.has(i)) ticked.delete(i); else ticked.add(i);
-    t.setAttribute('aria-checked', String(ticked.has(i)));
-    btn();
+    if (t && !t.disabled) {
+      const i = +t.dataset.tick, cur = new Set(ticks[sel] || []);
+      if (cur.has(i)) cur.delete(i); else cur.add(i);
+      const prev = ticks;
+      ticks = { ...ticks, [sel]: [...cur].sort((a, b) => a - b) };
+      const notes = $('#subNotes', view)?.value, link = $('#subLink', view)?.value;
+      drawNow();
+      if (notes != null && $('#subNotes', view)) { $('#subNotes', view).value = notes; $('#subLink', view).value = link; }
+      $(`[data-tick="${i}"]`, view)?.focus({ preventScroll: true });
+      try { await saveProgress({ ticks }); } catch (err) { ticks = prev; drawNow(); ctx.toast(err.message); }
+      return;
+    }
+    if (e.target.closest('#submitCh')) {
+      const btn = e.target.closest('#submitCh');
+      const c = chById(sel); if (!c || mySub(c.id)) return;
+      const link = $('#subLink', view).value.trim();
+      if (link && !safeLink(link)) { ctx.toast('Links need to start with https://'); $('#subLink', view).focus(); return; }
+      btn.disabled = true;
+      try {
+        const r = await api.create('submission', { challenge: c.id, notes: $('#subNotes', view).value.trim(), link, accepted: false });
+        subs.unshift({ ...r, author: me() });
+        drawAll();
+        ctx.toast('Submitted. A mentor reviews it soon.');
+      } catch (err) { ctx.toast(err.message); btn.disabled = false; }
+      return;
+    }
+    const un = e.target.closest('[data-unsub]');
+    if (un) {
+      try { await api.remove('submission', un.dataset.unsub); subs = subs.filter((x) => x.id !== un.dataset.unsub); drawAll(); ctx.toast('Taken back. You can change it and send it again.'); }
+      catch (err) { ctx.toast(err.message); }
+      return;
+    }
+    const a = e.target.closest('[data-acc]');
+    if (a && mentor) {
+      const sub = subs.find((x) => x.id === a.dataset.acc); if (!sub) return;
+      const on = !sub.data.accepted, pts = Number(chById(sub.data.challenge)?.data?.points) || 0;
+      a.disabled = true;
+      try { const r = await api.update('submission', sub.id, { accepted: on, points: on ? pts : 0 }); sub.data = r.data; drawAll(); ctx.toast(on ? `Accepted. ${sub.author} gets ${pts} points.` : 'Accept undone.'); }
+      catch (err) { ctx.toast(err.message); a.disabled = false; }
+      return;
+    }
+    const ed = e.target.closest('[data-edit]');
+    if (ed && mentor) { form(chById(ed.dataset.edit)); return; }
+    const del = e.target.closest('[data-del]');
+    if (del && mentor) {
+      const c = chById(del.dataset.del); if (!c) return;
+      if (!confirm(`Delete "${c.data.title}"? Its submissions stay, but they will not count for points.`)) return;
+      try { await api.remove('challenge', c.id); chs = chs.filter((x) => x.id !== c.id); drawAll(); ctx.toast('Challenge deleted.'); }
+      catch (err) { ctx.toast(err.message); }
+    }
   });
-  $('#submitCh').addEventListener('click', () => {
-    if (submitted || ticked.size < CHECKS.length) return;
-    submitted = true; btn();
-    ctx.toast('Submitted. Byte or a mentor reviews it at the next meeting.');
-  });
-  $('#arenaBonus').addEventListener('click', () => { ctx.state.arenaMode = 'field'; ctx.go('code', 'BioBuzz Arena'); });
+  $('#arenaBonus', view).addEventListener('click', () => { ctx.state.arenaMode = 'field'; ctx.go('code', 'BioBuzz Arena'); });
+  return () => { dead = true; };
 }
 
 export const CODE = { 'BioBuzz Arena': arena, 'Our code': ourcode, Snippets: snippets, Challenges: challenges };
