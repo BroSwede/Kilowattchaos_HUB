@@ -1,0 +1,69 @@
+/* Crew zone additions (Chat, Inspiration, People, Feedback). Builds on the Crew section of zones.css. */
+.safety-bar .sb-txt { flex: 1 1 380px; min-width: 0; }
+.ch-side-note { margin: auto 10px 2px; padding-top: 10px; }
+.chn .cn { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chn.thread .i { color: var(--stone); }
+.ch-head .hash-lg { color: var(--stone); font: 600 18px/22px Outfit, sans-serif; display: inline-flex; }
+.ch-head b { flex: none; }
+.ch-head .topic { flex: 1; }
+.ch-head .ch-tv { flex: none; }
+.msg .mcol { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; }
+.msg .mcol > * { max-width: 100%; }
+.msg .mcol .code { width: 100%; max-width: 560px; overflow: auto; }
+.msg .who { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0 4px; }
+.msg .who .role { align-self: center; padding: 1px 8px; }
+.msg .local-note { display: inline-flex; align-items: center; gap: 4px; margin-top: 2px; }
+.msg.local { background: color-mix(in srgb, var(--raised) 60%, transparent); }
+button.live-card { width: 100%; border: 0; color: var(--text); font: inherit; text-align: left; cursor: pointer; transition: box-shadow var(--t-quick) var(--ease); }
+button.live-card:hover { box-shadow: inset 0 0 0 1.5px var(--stone); }
+.live-card .grow b { display: block; font: 500 14px/20px Inter, sans-serif; }
+.live-card .grow .cap { display: block; }
+.react.add { color: var(--muted); padding: 0 6px; }
+.react:hover { box-shadow: inset 0 0 0 1px var(--divider); }
+.epick { display: inline-flex; gap: 2px; padding: 2px; border-radius: var(--r-pill); background: var(--raised); box-shadow: 0 0 0 1px var(--divider); }
+.epick button { width: 30px; height: 26px; border: 0; border-radius: var(--r-pill); background: transparent; font-size: 15px; line-height: 1; padding: 0; }
+.epick button:hover { background: var(--well); }
+.typing.warn { color: var(--negative); font-weight: 500; }
+.composer .inp:disabled { opacity: 0.6; cursor: not-allowed; }
+.composer .icon-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.ch-mem h5 { margin-top: 12px; }
+.ch-mem h5:first-child { margin-top: 6px; }
+.mem .tag { padding: 1px 8px; }
+.mem-note { display: flex; gap: 8px; align-items: flex-start; margin: 12px 4px 0; padding: 10px 12px; border-radius: 14px; box-shadow: inset 0 0 0 1.5px var(--divider); color: var(--muted); font: 400 12.5px/18px Inter, sans-serif; }
+.mem-note .i { margin-top: 1px; }
+
+/* Inspiration */
+.ithumb .ours { position: absolute; right: 10px; top: 10px; }
+.ithumb > .i { width: 36px; height: 36px; opacity: 0.9; }
+.ipost .row .btn { flex: none; }
+.insp-empty { padding: 20px 4px; }
+.coll { cursor: pointer; }
+.fl { display: flex; flex-direction: column; gap: 4px; }
+.ferr { min-height: 0; color: var(--negative); font: 500 12px/16px Inter, sans-serif; }
+.ferr:empty { display: none; }
+.inp[aria-invalid="true"] { box-shadow: inset 0 0 0 1.5px var(--negative); }
+
+/* People */
+.person .lead { margin: 0; color: var(--muted); font: 400 13px/19px Inter, sans-serif; }
+.person.ghost .btn { white-space: normal; height: auto; min-height: 34px; padding: 7px 12px; text-align: left; }
+a.btn { text-decoration: none; }
+.person.ghost .btn { align-self: flex-start; }
+.pf-head { display: flex; align-items: center; gap: 16px; padding-right: 40px; }
+.pf-head h3 { padding-right: 0; }
+.work-box { padding: 10px 12px; border-radius: 14px; background: var(--raised); font: 400 14px/20px Inter, sans-serif; }
+.work-box .cap { display: block; margin-bottom: 2px; }
+
+/* Feedback */
+.rcol { display: flex; flex-direction: column; gap: 8px; padding: 10px; border-radius: 20px; background: var(--well); min-width: 0; }
+.rcol h4 { margin: 2px 4px 4px; font: 500 14px/20px Inter, sans-serif; }
+.ridea { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 16px; background: var(--raised); }
+.ridea.mine { box-shadow: inset 0 0 0 1.5px var(--stone); }
+.ridea .t { font: 500 14px/20px Inter, sans-serif; }
+.card .seg { flex-wrap: wrap; align-self: flex-start; max-width: 100%; border-radius: 22px; }
+@media (max-width: 759px) {
+  .road { grid-auto-columns: 82%; }
+  .ch-head .topic { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .ch-side-note { display: none; }
+}
+.insp-head { flex-wrap: wrap; row-gap: 8px; }
+.insp-head .card-title { flex: 1 0 auto; }

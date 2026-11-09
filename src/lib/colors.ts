@@ -1,0 +1,1 @@
+export const AVATAR_COLORS = ['#F07A2A', '#0E8F9E', '#B394FF', '#E8F542', '#C42D6B', '#9A968A', '#8FD3DC', '#2340A8', '#4FAE6B', '#F2B8C6'];

@@ -1,0 +1,23 @@
+/* Live-site additions on top of the preview styles. */
+
+/* Zone pills stay at the top on phones too: a second row under the title, scrolling sideways. */
+@media (max-width: 759px) {
+  .topbar { flex-wrap: wrap; row-gap: 0; }
+  .tab { order: 1; }
+  .actions { order: 2; }
+  .zones { order: 3; display: flex; flex: 1 0 100%; margin: 0; padding: 8px 4px 6px; gap: 6px; background: var(--app); border-radius: 0 22px 0 0; scroll-snap-type: x proximity; }
+  .zones .zone { height: 40px; padding: 0 14px 0 4px; scroll-snap-align: start; }
+  .zones .zone .ic { width: 30px; height: 30px; }
+  .zone-ind { top: 8px; height: 40px; }
+  .tab::after { display: none; }
+  .app { border-radius: 0 0 24px 24px; padding-top: 6px; }
+  .bottom-nav { display: none !important; }
+}
+
+.demo-banner { background: #222624; color: #E8F542; text-align: center; padding: 8px 12px; font: 500 13px/18px Inter, sans-serif; }
+.live-empty { padding: 18px; border-radius: 18px; border: 1.5px dashed var(--divider); color: var(--muted); font: 400 14px/20px Inter, sans-serif; }
+.save-err { color: var(--negative); font: 500 12px/16px Inter, sans-serif; }
+
+/* Every zone pill keeps its name at every width (the row scrolls sideways when it runs out of room). */
+.zone:not([aria-current="page"]) .lbl { display: inline; }
+.zone:not([aria-current="page"]) { padding-right: 14px; }

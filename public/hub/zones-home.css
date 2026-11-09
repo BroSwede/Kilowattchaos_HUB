@@ -1,0 +1,88 @@
+/* Home zone: Shop TV and Customize. Extends the Home section of zones.css. */
+
+/* ---------- Shop TV ---------- */
+/* index.html has a global .foot (page footer); keep it out of the TV. */
+.tv-wrap .tv .foot { margin: 0; color: inherit; font: inherit; }
+@media (min-width: 760px) {
+  .tv-wrap .tv .ag { grid-template-columns: 4.4cqw minmax(0, 1fr) auto; gap: 0.7cqw; padding: 0.4cqw 0; font-size: 1.25cqw; }
+  .tv-wrap .tv .ag.now { padding: 0.4cqw 0.7cqw; }
+  .tv-wrap .tv .ag .who { margin-left: 0; }
+  .tv-wrap .tv .tv-plan { gap: 0.6cqw; }
+}
+@media (min-width: 1100px) { .tv-wrap .tv { grid-template-columns: 1fr 1.2fr 0.8fr; } }
+.tv-wrap .tv .top { flex-wrap: wrap; }
+.tv-wrap .tv .top .tv-sample { padding: 0.3cqw 0.9cqw; border-radius: 999px; box-shadow: inset 0 0 0 1px rgba(237, 238, 232, 0.28); font-size: 1.15cqw; color: #C9CBC2; }
+.tv-wrap .tv .top .tv-date { margin-left: auto; }
+.tv-wrap .tv .top .clock { margin-left: 0; }
+.tv-wrap .tv .tv-meta { font: 400 1.25cqw/1.35 Inter, sans-serif; color: #A3A69C; }
+.tv-wrap .tv .tv-count { justify-content: center; }
+.tv-wrap .tv .tv-count .huge { margin: 0.4cqw 0; }
+.tv-wrap .tv .ag .who { display: inline-flex; gap: 0.25cqw; margin-left: 0.6cqw; vertical-align: -0.35em; }
+.tv-wrap .tv .ag .who .avt { width: 1.9cqw; height: 1.9cqw; }
+.tv-wrap .tv .checkin .tv-ci { display: flex; flex-direction: column; align-items: center; gap: 0.8cqw; }
+.tv-wrap .tv .checkin .sub { font-size: 1.4cqw; }
+.tv-wrap .tv .prt b { font-weight: 600; color: #EDEEE8; }
+.tv-wrap .tv .tv-sprint.is-done { background: #E8F542; color: #222624; }
+.tv-wrap .tv .tv-sprint.is-done .lbl { color: #3F4236; }
+.tv-wrap .tv .tv-sprint.is-done .sprint { font-size: 4.4cqw; }
+.tv-wrap .tv .shout small { display: flex; align-items: center; gap: 0.5cqw; }
+.tv-wrap .tv .shout small .avt { width: 1.7cqw; height: 1.7cqw; }
+.tv-wrap .tv .avt { display: inline-block; flex: none; }
+.tv-wrap .tv .avt svg { width: 100%; height: 100%; display: block; }
+
+/* In fullscreen the TV is its own container, so its cqw units follow the screen width. */
+.tv-wrap .tv:fullscreen { container-type: inline-size; width: 100vw; height: 100vh; aspect-ratio: auto; padding: 2.6vw; gap: 1.8vw; }
+.tv-wrap .tv:-webkit-full-screen { container-type: inline-size; width: 100vw; height: 100vh; aspect-ratio: auto; padding: 2.6vw; gap: 1.8vw; border-radius: 0; }
+
+.tv-how { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; font: 400 14px/20px Inter, sans-serif; }
+.zv > .card .tv-ctrls + h4.sub { margin-top: 2px; }
+
+/* ---------- Customize ---------- */
+#bento { grid-auto-flow: row dense; }
+.cw .nm { min-width: 0; }
+.cw .nm .cap { font-weight: 400; }
+.cw .sz .seg { flex-wrap: nowrap; }
+.cw .mv .icon-btn { background: var(--card); color: var(--text); }
+.cw .mv .icon-btn:disabled { opacity: 0.35; cursor: default; }
+.cw .sw-gap { width: 44px; }
+.cw.off .sz, .cw.off .mv { opacity: 0.55; }
+.extras button { cursor: pointer; }
+
+/* Extra widgets on the dashboard */
+.xw .big { color: var(--text); }
+.xw .big .unit { font-size: 18px; color: var(--muted); }
+.xw .t { font: 500 14px/20px Inter, sans-serif; }
+.xw-word { font-size: 28px; }
+.xw-def { margin: 6px 0 0; font: 400 14px/20px Inter, sans-serif; }
+.xw-shout { display: flex; gap: 12px; align-items: flex-start; }
+.xw-shout p { margin: 0; font: 500 16px/22px Outfit, sans-serif; }
+.xw-ring { position: relative; width: 48px; height: 48px; flex: none; display: inline-grid; place-items: center; }
+.xw-ring svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
+.xw-ring circle { fill: none; stroke-width: 5; }
+.xw-ring .track { stroke: var(--ring-track, var(--well)); }
+.xw-ring .val { stroke: var(--solid); stroke-linecap: round; }
+.xw-ring > span { position: relative; font: 500 12px/1 Outfit, sans-serif; font-variant-numeric: tabular-nums; }
+
+@media (max-width: 759px) {
+  .tv-wrap .tv .ag { grid-template-columns: 44px minmax(0, 1fr) auto; }
+  .tv-wrap .tv .ag .who { margin-left: 0; }
+  .tv-wrap .tv .top .tv-sample { font-size: 11px; padding: 2px 8px; }
+  .tv-wrap .tv .top .tv-date { display: none; }
+  .tv-wrap .tv .top .clock { margin-left: auto; }
+  .tv-wrap .tv .tv-meta { font-size: 12px; }
+  .tv-wrap .tv .ag .who .avt { width: 16px; height: 16px; }
+  .tv-wrap .tv .checkin .tv-ci { align-items: flex-start; gap: 6px; }
+  .tv-wrap .tv .checkin .sub { font-size: 14px; }
+  .tv-wrap .tv .tv-sprint.is-done .sprint { font-size: 34px; }
+  .tv-wrap .tv .shout small .avt { width: 16px; height: 16px; }
+  .cw .sw-gap { display: none; }
+  .cw .sz .seg { flex-wrap: nowrap; }
+  .cw .sz .seg button { padding: 0 9px; }
+  .tv-wrap .tv .checkin { flex-wrap: wrap; align-items: flex-start; gap: 12px; }
+  .tv-wrap .tv .checkin .lbl { flex-basis: 100%; }
+  .tv-wrap .tv .checkin .qr { flex: none; width: 104px; }
+  .tv-wrap .tv .checkin .tv-ci { flex: 1; min-width: 0; }
+}
+@media (max-width: 1099px) and (min-width: 760px) {
+  .tv-wrap .tv .checkin .tv-ci { align-items: flex-start; }
+}
