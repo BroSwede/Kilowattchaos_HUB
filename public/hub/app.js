@@ -4,6 +4,7 @@ import { api, session as S, isMentor } from './api.js';
 import { setRoster, esc, drawer } from './zones/common.js';
 import { buildSamples, SAMPLE_CREW, SAMPLE_MENTOR, isSample } from './sample.js';
 import { openPrintRequest, enhanceHomePrintCard } from './print-request.js';
+import { openDive, topicFor, DIVES, PART_FOR } from './dive/index.js';
 
 // Who is signed in, and the team. Everything below can rely on it.
 const BOOT = await api.me();
@@ -1194,10 +1195,39 @@ function onSelect(info) {
   $('#sheetSame').textContent = !info.sku ? 'One of many small bits' : info.same > 1 ? `${info.same} of this part` : 'Just this one';
   $('#sheetNote').textContent = info.note;
   sheetPart = info;
+  const dive = topicFor(info);
+  sheetDive.hidden = !dive;
+  if (dive) sheetDive.dataset.dive = dive;
   renderSheetIssue();
   sheet.classList.add('is-open');
   sheet.setAttribute('aria-hidden', 'false');
 }
+// "How it's made" deep dives: a button on the part sheet for parts that have one, plus shortcuts under the robot.
+const sheetDive = document.createElement('button');
+sheetDive.className = 'btn pill sheet-dive';
+sheetDive.type = 'button';
+sheetDive.hidden = true;
+sheetDive.innerHTML = '<svg class="i sm"><use href="#i-sparkle"/></svg>See how it\u2019s made<small>3D deep dive</small>';
+$('.sheet-actions', sheet).before(sheetDive);
+function startDive(key, info) {
+  if (viewer) viewer.stopAutoRotate();
+  const id = info && info.id;
+  openDive(key, { part: info || null, real: () => (viewer && id ? viewer.clonePart(id) : null) });
+}
+sheetDive.addEventListener('click', () => sheetPart && startDive(sheetDive.dataset.dive, sheetPart));
+const diveRow = document.createElement('div');
+diveRow.className = 'dive-row';
+diveRow.innerHTML = '<span class="cap">Click a part on the robot, or open one up:</span>' + DIVES.map((d) => `<button class="dive-chip" type="button" data-dive="${d.key}"><span class="oc"><svg class="i sm"><use href="#i-sparkle"/></svg></span>${d.name}<small>${d.blurb}</small></button>`).join('');
+$('#sysRow').after(diveRow);
+diveRow.addEventListener('click', (e) => {
+  const b = e.target.closest('.dive-chip');
+  if (!b) return;
+  const key = b.dataset.dive;
+  // With the robot loaded, pick the matching part first so the dive can start from the real CAD.
+  const id = viewer ? viewer.findPart(PART_FOR[key]) : null;
+  if (id) { viewer.select(id); startDive(key, sheetPart); } else startDive(key, null);
+});
+
 $('#sheetClose').addEventListener('click', () => { if (viewer) viewer.select(null); $('#robotCanvas').focus({ preventScroll: true }); });
 $('#sheetFocus').addEventListener('click', () => viewer && viewer.frameCurrent());
 // Problems pinned on a part are `issue` records {part, sys, text, status}, the same ones Robot and Build show.
