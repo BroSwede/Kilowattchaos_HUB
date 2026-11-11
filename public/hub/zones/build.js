@@ -2,6 +2,7 @@
 // Ideas, votes, matrix scores, prints and team stock are saved in the team database. Mechanism cards and sims are lessons.
 import { $, $$, esc, fmt, clamp, icon, tag, strip, av, dot, bar, ring, seg, wireSeg, sw, drawer, closeDrawer, gl } from './common.js';
 import { api, session, isMentor, me } from '../api.js';
+import { printSteps } from '../print-request.js';
 
 // ---------------------------------------------------------------- Small shared helpers
 const day = (s) => { if (!s) return ''; const d = new Date(s); return isNaN(d) ? '' : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); };
@@ -416,52 +417,23 @@ function matrix(el, ctx) {
 //   status: 'queued' | 'printing' | 'done' | 'failed', who, printer, pct, reason }.
 // Anyone can request. Mentors start, update and finish prints. The requester can cancel a queued one or try a failed one again.
 const ST = { queued: ['Queued', 'var(--sys-drivetrain)', 'clock'], printing: ['Printing', 'var(--sys-intake)', 'printer'], done: ['Done', 'var(--ok)', 'check'], failed: ['Failed', 'var(--negative)', 'x'] };
-const MATS = ['PLA', 'PETG', 'TPU'];
-const COLORS = ['Black', 'Gray', 'White', 'Orange', 'Yellow', 'Blue'];
 const REASONS = ['Warping', 'Bed adhesion', 'Spaghetti', 'Clogged nozzle', 'Ran out of filament', 'Something else'];
-const BED = [220, 220, 250];
-function parseSTL(buf) {
-  const dv = new DataView(buf);
-  const tris = [];
-  const bin = buf.byteLength >= 84 && 84 + dv.getUint32(80, true) * 50 === buf.byteLength;
-  if (bin) {
-    const n = dv.getUint32(80, true);
-    for (let i = 0; i < n; i++) { const o = 84 + i * 50 + 12; const t = new Float32Array(9); for (let k = 0; k < 9; k++) t[k] = dv.getFloat32(o + k * 4, true); tris.push(t); }
-  } else {
-    const txt = new TextDecoder().decode(buf);
-    const re = /vertex\s+([-+\d.eE]+)\s+([-+\d.eE]+)\s+([-+\d.eE]+)/g;
-    let m, cur = [];
-    while ((m = re.exec(txt))) { cur.push(+m[1], +m[2], +m[3]); if (cur.length === 9) { tris.push(cur); cur = []; } }
-  }
-  if (!tris.length) throw new Error('No triangles found');
-  const mn = [Infinity, Infinity, Infinity], mx = [-Infinity, -Infinity, -Infinity];
-  for (const t of tris) for (let k = 0; k < 9; k++) { const a = k % 3; if (t[k] < mn[a]) mn[a] = t[k]; if (t[k] > mx[a]) mx[a] = t[k]; }
-  let area = 0, over = 0, vol = 0;
-  for (const t of tris) {
-    const ux = t[3] - t[0], uy = t[4] - t[1], uz = t[5] - t[2], vx = t[6] - t[0], vy = t[7] - t[1], vz = t[8] - t[2];
-    const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx, len = Math.hypot(nx, ny, nz), a = len / 2;
-    area += a;
-    const onBed = Math.max(t[2], t[5], t[8]) - mn[2] < 0.2;
-    if (len > 0 && nz / len < -0.7071 && !onBed) over += a;
-    vol += (t[0] * (t[4] * t[8] - t[5] * t[7]) - t[1] * (t[3] * t[8] - t[5] * t[6]) + t[2] * (t[3] * t[7] - t[4] * t[6])) / 6;
-  }
-  return { tris: tris.length, size: mx.map((v, i) => v - mn[i]), overPct: area ? (over / area) * 100 : 0, vol: Math.abs(vol) / 1000 };
-}
 function printShop(view, ctx) {
   const { SYS, SYS_ORDER } = ctx;
   const mentor = isMentor();
-  let file = null, jobs = [], alive = true, loaded = false, show = mentor ? 'all' : 'mine';
-  const pre = { mat: 'PLA', color: 'Black', q: 'Standard', s: 'Standard', sup: false, n: 1 };
+  let jobs = [], alive = true, loaded = false, show = mentor ? 'all' : 'mine';
   view.innerHTML = `<div class="zv">
     ${strip(mentor ? 'Students send parts with a note. Start a print when it goes on a printer, update how far along it is, and mark it done or failed. Everyone sees the queue.' : "Send a part with a note. A mentor puts it on a printer, and you can follow it here until it's ready to pick up.", [tag('Team queue', 'volt')])}
-    <article class="card">
-      <div class="steps" aria-label="How a print request moves">${[['Request', 'you'], ['Queued', 'waiting for a printer'], ['Printing', 'a mentor starts it'], ['Done', 'you pick it up']].map(([s, w], i) => `<span class="step${i < 1 ? ' done' : i === 1 ? ' now' : ''}"><span class="n">${i + 1}</span>${s}<small>${w}</small></span>`).join('')}</div>
+    <article class="card pq-hero">
+      <span class="pq-cta-ic" aria-hidden="true">${icon('printer', 'i lg')}</span>
+      <div class="pq-hero-txt"><h3>Need a part printed?</h3><p>Add a link to the file and a short note. It takes about a minute.</p></div>
+      <button class="btn primary pill pq-hero-go" type="button" data-print-request>${icon('plus', 'i sm')}Request a print</button>
+      ${printSteps('pq-hero-steps')}
     </article>
-    <article class="card c7" id="psForm"></article>
+    <article class="card c7"><div class="card-head"><h3 class="card-title">Queue</h3><span class="tag" id="qCount"></span></div>
+      <div class="chips" id="qShow">${[['mine', 'My requests'], ['all', 'Everyone']].map(([v, t]) => `<button class="chip" type="button" data-show="${v}" aria-pressed="${v === show}">${t}</button>`).join('')}</div>
+      <div class="items" id="queue"></div></article>
     <div class="c5 stack-v" style="gap:16px">
-      <article class="card"><div class="card-head"><h3 class="card-title">Queue</h3><span class="tag" id="qCount"></span></div>
-        <div class="chips" id="qShow">${[['mine', 'My requests'], ['all', 'Everyone']].map(([v, t]) => `<button class="chip" type="button" data-show="${v}" aria-pressed="${v === show}">${t}</button>`).join('')}</div>
-        <div class="items" id="queue"></div></article>
       <article class="card"><div class="card-head"><h3 class="card-title">Printers</h3></div><div id="printers"></div></article>
       <article class="card"><div class="card-head"><h3 class="card-title">Why prints fail</h3>${tag('This season')}</div>
         <div id="fails"></div>
@@ -469,81 +441,14 @@ function printShop(view, ctx) {
       </article>
     </div>
   </div>`;
-  const est = () => {
-    const base = file && file.vol ? file.vol * 1.24 * ({ Light: 0.32, Standard: 0.45, Strong: 0.65 }[pre.s]) : 9 * ({ Light: 0.8, Standard: 1, Strong: 1.35 }[pre.s]);
-    const grams = base * (pre.sup ? 1.12 : 1) * pre.n;
-    const mins = (grams / ({ Draft: 18, Standard: 12, Fine: 7 }[pre.q])) * 60;
-    return { grams: Math.max(1, Math.round(grams)), time: mins >= 60 ? `${Math.floor(mins / 60)} h ${Math.round(mins % 60)} min` : `${Math.max(5, Math.round(mins))} min` };
+  // A request sent from the pop-up (here, Home, the Create menu or search) shows up in the queue right away.
+  const onSent = (e) => {
+    if (!alive || !e.detail) return;
+    if (!jobs.some((x) => x.id === e.detail.id)) jobs.unshift(e.detail);
+    if (!mentor) { show = 'mine'; $$('#qShow .chip').forEach((c) => c.setAttribute('aria-pressed', String(c.dataset.show === show))); }
+    queue();
   };
-  const checks = () => {
-    if (!file || !file.tris) return '';
-    const fits = file.size.every((v, i) => v <= BED[i]);
-    const sz = file.size.map((v) => (Math.round(v * 10) / 10).toFixed(1)).join(' × ');
-    return `<ul class="checks">
-      <li><span class="ci ${fits ? 'ok' : 'bad'}">${icon(fits ? 'check' : 'x')}</span><span>${fits ? 'Fits the bed' : 'Too big for the bed'}: ${sz} mm${fits ? '' : ` (bed is ${BED.join(' × ')} mm)`}</span></li>
-      <li><span class="ci ${file.overPct > 5 ? 'warn' : 'ok'}">${icon(file.overPct > 5 ? 'alert' : 'check')}</span><span>${file.overPct > 5 ? `${file.overPct.toFixed(0)}% of the surface hangs steeper than 45°. Supports are on.` : 'No steep overhangs'}</span></li>
-      <li><span class="ci ok">${icon('check')}</span><span>${fmt(file.tris)} triangles${file.vol ? ` · ${file.vol.toFixed(1)} cm³ of plastic if solid` : ''}</span></li></ul>`;
-  };
-  const keep = () => { const f = $('#psForm'); if (!f || !$('#psName', f)) return; pre.name = $('#psName').value; pre.link = $('#psLink').value; pre.why = $('#psWhy').value; pre.sys = $('#psSys').value; };
-  const form = () => {
-    const e = est();
-    $('#psForm').innerHTML = `<div class="card-head"><h3 class="card-title">New print request</h3></div>
-      <div class="form-grid">
-        <label class="field full"><span>What is the part?</span><input class="inp" id="psName" maxlength="80" placeholder="Intake roller hub" value="${esc(pre.name || '')}"></label>
-        <label class="field full"><span>File link <small>(Onshape, Google Drive or another link a mentor can open)</small></span><input class="inp" id="psLink" type="url" maxlength="400" placeholder="https://" value="${esc(pre.link || '')}"></label>
-      </div>
-      <label class="drop" id="drop">${icon('printer', 'i lg')}<b>${file ? esc(file.name) : 'Check an STL here first (optional)'}</b><span class="cap" style="font-weight:400">${file ? 'Checked right here in your browser. The file is not uploaded, so add a link above too.' : 'Drop an STL or choose one. It is checked in your browser: size, overhangs and a filament guess.'}</span><input type="file" id="psFile" accept=".stl"></label>
-      ${checks()}
-      <div class="form-grid">
-        <label class="field"><span>Material</span><select class="inp" id="psMat">${MATS.map((m) => `<option${m === pre.mat ? ' selected' : ''}>${m}</option>`).join('')}</select></label>
-        <label class="field"><span>Color</span><select class="inp" id="psColor">${COLORS.map((m) => `<option${m === pre.color ? ' selected' : ''}>${m}</option>`).join('')}</select></label>
-        <div class="field"><span>Quality</span>${seg('q', [['Draft', 'Draft'], ['Standard', 'Standard'], ['Fine', 'Fine']], pre.q, 'Quality')}</div>
-        <div class="field"><span>Strength</span>${seg('s', [['Light', 'Light'], ['Standard', 'Standard'], ['Strong', 'Strong']], pre.s, 'Strength')}</div>
-        <div class="field"><span>How many</span><span class="stepper"><button type="button" id="nMinus" aria-label="One fewer">${icon('min', 'i sm')}</button><output id="nOut">${pre.n}</output><button type="button" id="nPlus" aria-label="One more">${icon('plus', 'i sm')}</button></span></div>
-        <div class="field"><span>Supports</span><span class="row">${sw('psSup', pre.sup, 'Supports')}<span class="cap">${pre.sup ? 'On' : 'Off'}</span></span></div>
-        <label class="field full"><span>Which subsystem is it for?</span><select class="inp" id="psSys"><option value="">Not for the robot</option>${SYS_ORDER.map((k) => `<option value="${k}"${k === pre.sys ? ' selected' : ''}>${SYS[k].name}</option>`).join('')}</select></label>
-        <label class="field full"><span>Why do you need it?</span><textarea class="inp" id="psWhy" maxlength="400" placeholder="For the intake test on Tuesday">${esc(pre.why || '')}</textarea></label>
-      </div>
-      <div class="card-foot"><span class="cap">About <b>${e.time}</b> and <b>${e.grams} g</b> of filament · a rough guess, the slicer gives the real one. Mentors set the printer settings, so you never touch temperatures.</span><button class="btn primary pill" type="button" id="psGo">${icon('printer', 'i sm')}Send to mentors</button></div>`;
-    const f = $('#psForm');
-    wireSeg(f, 'q', (v) => { keep(); pre.q = v; form(); });
-    wireSeg(f, 's', (v) => { keep(); pre.s = v; form(); });
-    $('#psMat').addEventListener('change', (ev) => { pre.mat = ev.target.value; });
-    $('#psColor').addEventListener('change', (ev) => { pre.color = ev.target.value; });
-    $('#psSup').addEventListener('click', () => { keep(); pre.sup = !pre.sup; form(); });
-    $('#nMinus').addEventListener('click', () => { keep(); pre.n = clamp(pre.n - 1, 1, 12); form(); });
-    $('#nPlus').addEventListener('click', () => { keep(); pre.n = clamp(pre.n + 1, 1, 12); form(); });
-    const drop = $('#drop'), inp = $('#psFile');
-    const take = async (fl) => {
-      if (!fl) return;
-      keep();
-      const ext = fl.name.split('.').pop().toLowerCase();
-      if (ext !== 'stl') { ctx.toast('Only STL files can be checked here. Add a link to the file above instead.'); return; }
-      if (fl.size > 80e6) { ctx.toast('That file is over 80 MB. Try exporting it with fewer details from Onshape.'); return; }
-      try { const r = parseSTL(await fl.arrayBuffer()); file = { name: fl.name, ...r }; pre.sup = r.overPct > 5; if (!pre.name) pre.name = fl.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' '); form(); }
-      catch (err) { ctx.toast("That STL couldn't be read. Try exporting it again from Onshape."); }
-    };
-    inp.addEventListener('change', () => take(inp.files[0]));
-    ['dragenter', 'dragover'].forEach((t) => drop.addEventListener(t, (ev) => { ev.preventDefault(); drop.classList.add('is-over'); }));
-    ['dragleave', 'drop'].forEach((t) => drop.addEventListener(t, (ev) => { ev.preventDefault(); drop.classList.remove('is-over'); }));
-    drop.addEventListener('drop', (ev) => take(ev.dataTransfer && ev.dataTransfer.files[0]));
-    $('#psGo').addEventListener('click', async (ev) => {
-      keep();
-      const name = (pre.name || '').trim(), link = (pre.link || '').trim(), why = (pre.why || '').trim();
-      if (!name) { $('#psName').focus(); ctx.toast('Give the part a name first.'); return; }
-      if (link && !safeUrl(link)) { $('#psLink').focus(); ctx.toast('Links start with https://'); return; }
-      if (!link) { $('#psLink').focus(); ctx.toast('Add a link to the file, so a mentor can open it.'); return; }
-      if (!why) { $('#psWhy').focus(); ctx.toast('Tell the mentors why you need it. It helps them decide what prints first.'); return; }
-      const e2 = est(), btn = ev.currentTarget; btn.disabled = true;
-      try {
-        const rec = await api.create('print', { name, file: link, material: pre.mat, color: pre.color, qty: pre.n, notes: why, sys: pre.sys || '', quality: pre.q, strength: pre.s, supports: pre.sup, grams: e2.grams, time: e2.time, status: 'queued', who: me(), printer: '', pct: 0 });
-        jobs.unshift(rec);
-        file = null; Object.assign(pre, { n: 1, sup: false, name: '', link: '', why: '' });
-        form(); queue();
-        ctx.toast('Sent. It is in the queue, and you can follow it here.');
-      } catch (err) { fail(ctx, err); btn.disabled = false; }
-    });
-  };
+  document.addEventListener('kwc:print-sent', onSent);
   const jobRow = (r) => {
     const j = r.data, [lbl, c, ic] = ST[j.status] || ST.queued;
     const pct = clamp(Math.round(+j.pct || 0), 0, 100);
@@ -567,7 +472,7 @@ function printShop(view, ctx) {
     const order = { printing: 0, queued: 1, failed: 2, done: 3 };
     const list = jobs.filter((r) => show === 'all' || isMine(r)).sort((a, b) => (order[a.data.status] ?? 4) - (order[b.data.status] ?? 4) || (a.data.status === 'queued' ? (a.created_at < b.created_at ? -1 : 1) : (a.updated_at > b.updated_at ? -1 : 1)));
     $('#queue').innerHTML = !loaded ? '' : list.length ? list.slice(0, 30).map(jobRow).join('')
-      : empty(show === 'mine' ? (jobs.length ? 'You have no requests yet. Fill in the form to send your first part.' : 'No print requests yet. Fill in the form to send the first one.') : 'No print requests yet. Fill in the form to send the first one.');
+      : empty(show === 'mine' ? (jobs.length ? 'You have no requests yet. Press <b>Request a print</b> to send your first part.' : 'No print requests yet. Press <b>Request a print</b> to send the first one.') : 'No print requests yet. Press <b>Request a print</b> to send the first one.');
     const running = jobs.filter((r) => r.data.status === 'printing');
     $('#printers').innerHTML = running.length ? `<div class="printers">${running.map((r) => { const pct = clamp(Math.round(+r.data.pct || 0), 0, 100); return `<div class="printer"><span class="nm">${esc(r.data.printer || 'Printer')}</span><span class="spool"><i style="background:var(--stone)"></i>${esc(r.data.material || '')} · ${esc(r.data.color || '')}</span><span class="row">${ring(pct, `${pct}%`, 44)}<span class="cap">${esc(r.data.name || '')}${+r.data.qty > 1 ? ` ×${+r.data.qty}` : ''}</span></span></div>`; }).join('')}</div>`
       : empty(mentor ? 'Nothing printing right now. Tap <b>Start</b> on a queued part when it goes on a printer.' : 'Nothing printing right now.');
@@ -606,7 +511,7 @@ function printShop(view, ctx) {
       try { await api.remove('print', r.id); jobs = jobs.filter((x) => x.id !== r.id); queue(); closeDrawer(); ctx.toast('Removed.'); } catch (err) { fail(ctx, err); }
     });
   };
-  form(); queue();
+  queue();
   api.list('print').then((rs) => { if (!alive) return; jobs = rs; loaded = true; if (!mentor && !rs.some(isMine)) { show = 'all'; $$('#qShow .chip').forEach((c) => c.setAttribute('aria-pressed', String(c.dataset.show === show))); } queue(); }).catch((err) => { if (alive) fail(ctx, err); });
   $('#qShow').addEventListener('click', (e) => { const b = e.target.closest('[data-show]'); if (!b) return; show = b.dataset.show; $$('#qShow .chip').forEach((c) => c.setAttribute('aria-pressed', String(c === b))); queue(); });
   $('#queue').addEventListener('click', async (e) => {
@@ -620,7 +525,7 @@ function printShop(view, ctx) {
     }
   });
   view.addEventListener('click', (e) => { const g = e.target.closest('[data-go]'); if (g) { const [z, s] = g.dataset.go.split('/'); ctx.go(z, s); } });
-  return () => { alive = false; closeDrawer(); };
+  return () => { alive = false; document.removeEventListener('kwc:print-sent', onSent); closeDrawer(); };
 }
 
 // ================================================================= Parts and inventory
