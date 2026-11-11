@@ -697,3 +697,14 @@ details.acc .body b { color: var(--text); font-weight: 500; }
   .zv .seg { max-width: 100%; overflow-x: auto; scrollbar-width: none; }
   .zv .seg::-webkit-scrollbar { display: none; }
 }
+
+/* Code > BioBuzz XR: a big shot of the site next to one link per part. Links look like the zone's list rows. */
+.xr-hero { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 16px; align-items: stretch; }
+.xr-shot { display: block; overflow: hidden; border-radius: var(--r-nested, 16px); background: #0e1116; min-height: 220px; }
+.xr-shot img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform var(--t-base, 240ms) var(--ease, ease); }
+.xr-shot:hover img { transform: scale(1.02); }
+.xr-parts { display: flex; flex-direction: column; gap: 8px; }
+.zv a.it { color: inherit; text-decoration: none; }
+.zv a.it:hover .t { text-decoration: underline; text-underline-offset: 3px; }
+.xr-part .end { color: var(--muted); }
+@media (max-width: 900px) { .xr-hero { grid-template-columns: minmax(0, 1fr); } }

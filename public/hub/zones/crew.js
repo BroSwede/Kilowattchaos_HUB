@@ -38,7 +38,7 @@ const CHANS = [
   { id: 'announcements', name: 'announcements', topic: 'Mentors post here, and everyone can react.', ro: true },
   { id: 'general', name: 'general', topic: 'Anything about the team. Kind and on topic.' },
   { id: 'build', name: 'build', topic: 'Building, prototyping and testing the robot.' },
-  { id: 'code', name: 'code', topic: 'Java, OpModes and the BioBuzz Arena.' },
+  { id: 'code', name: 'code', topic: 'Java, OpModes and BioBuzz XR.' },
   { id: 'help', name: 'help', topic: 'Stuck? Ask here. No question is too small, and a mentor answers too.' },
   { id: 'shoutouts', name: 'shoutouts', topic: 'Thank a teammate for something they did.' },
 ];
@@ -441,7 +441,7 @@ function inspiration(view, ctx) {
 // ================================================================= People
 const BADGE_IC = {
   'Shop safety': 'alert', 'Onshape Basics': 'layers', 'CAD for FTC': 'bot', 'First print': 'printer', 'Mechanisms 101': 'wrench', Driver: 'gamepad', Helper: 'users',
-  'Java OpModes': 'code', 'First commit': 'commit', 'Arena drill': 'play', 'Challenge winner': 'trophy', 'Prototype pro': 'bulb', Wiring: 'zap', Outreach: 'sparkle',
+  'Java OpModes': 'code', 'First commit': 'commit', 'Academy drill': 'play', 'Challenge winner': 'trophy', 'Prototype pro': 'bulb', Wiring: 'zap', Outreach: 'sparkle',
   Builder: 'wrench', Portfolio: 'note', 'Battery care': 'zap',
 };
 const badgesOf = (badges, p) => badges.filter((b) => b.data && (b.data.to === p.id || (!b.data.to && b.data.toName === p.name)));

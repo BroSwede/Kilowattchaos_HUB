@@ -1,0 +1,8862 @@
+{
+ "model": "robot-mecanum",
+ "systems": [
+  {
+   "id": "launcher",
+   "name": "Launcher",
+   "color": "#ff6a3d",
+   "offset": [
+    0,
+    0.34,
+    -0.12
+   ],
+   "blurb": "A single spinning Hogback wheel flings POLLEN and NECTAR up into the raised cell. Spin-up speed sets how far the ball flies."
+  },
+  {
+   "id": "ballpath",
+   "name": "Ball path",
+   "color": "#58c7f3",
+   "offset": [
+    0,
+    0.2,
+    0.06
+   ],
+   "blurb": "Panels and a servo that carry each ball from the intake up the ramp to the flywheel, one at a time."
+  },
+  {
+   "id": "intake",
+   "name": "Intake",
+   "color": "#3fb950",
+   "offset": [
+    0,
+    0.02,
+    0.34
+   ],
+   "blurb": "Fast rollers and Gecko wheels grab balls from the floor. They have to be spinning to collect anything."
+  },
+  {
+   "id": "drivetrain",
+   "name": "Drivetrain",
+   "color": "#f2c200",
+   "offset": [
+    0,
+    -0.02,
+    0
+   ],
+   "blurb": "Two Yellow Jacket motors drive each side through plastic chain, so the robot steers like a tank."
+  },
+  {
+   "id": "structure",
+   "name": "Frame",
+   "color": "#9aa9bc",
+   "offset": [
+    0,
+    0.1,
+    -0.02
+   ],
+   "blurb": "U-channel rails and brackets. Every hole sits on the goBILDA 8 mm grid, so parts bolt on anywhere."
+  },
+  {
+   "id": "power",
+   "name": "Power",
+   "color": "#b388ff",
+   "offset": [
+    -0.3,
+    0.14,
+    -0.2
+   ],
+   "blurb": "The 12 V battery that runs every motor and servo."
+  },
+  {
+   "id": "hardware",
+   "name": "Screws & bits",
+   "color": "#6c7886",
+   "offset": [
+    0,
+    0.05,
+    0
+   ],
+   "blurb": "Shafts, hubs, bearings, spacers and every screw that holds it together."
+  }
+ ],
+ "parts": [
+  {
+   "id": "p000",
+   "meshes": 1,
+   "sku": "1120-0015-0384",
+   "cad": "1120-0015-0384:1",
+   "system": "structure",
+   "name": "15-Hole U-Channel",
+   "note": "Main side rails. The whole robot hangs off these two.",
+   "label": true,
+   "center": [
+    0.1559,
+    0.052,
+    -0.034
+   ],
+   "size": [
+    0.048,
+    0.048,
+    0.384
+   ],
+   "tris": 7532
+  },
+  {
+   "id": "p001",
+   "meshes": 1,
+   "sku": "1120-0015-0384",
+   "cad": "1120-0015-0384:2",
+   "system": "structure",
+   "name": "15-Hole U-Channel",
+   "note": "Main side rails. The whole robot hangs off these two.",
+   "label": true,
+   "center": [
+    -0.1561,
+    0.052,
+    -0.034
+   ],
+   "size": [
+    0.048,
+    0.048,
+    0.384
+   ],
+   "tris": 7532
+  },
+  {
+   "id": "p002",
+   "meshes": 1,
+   "sku": "1205-0001-0005",
+   "cad": "1205-0001-0005:1",
+   "system": "structure",
+   "name": "Dual Block Mount",
+   "note": "Small clamp block.",
+   "label": false,
+   "center": [
+    -0.1261,
+    0.052,
+    -0.2188
+   ],
+   "size": [
+    0.012,
+    0.043,
+    0.0095
+   ],
+   "tris": 3288
+  },
+  {
+   "id": "p003",
+   "meshes": 1,
+   "sku": "1205-0001-0005",
+   "cad": "1205-0001-0005:2",
+   "system": "structure",
+   "name": "Dual Block Mount",
+   "note": "Small clamp block.",
+   "label": false,
+   "center": [
+    0.1259,
+    0.052,
+    -0.2188
+   ],
+   "size": [
+    0.012,
+    0.043,
+    0.0095
+   ],
+   "tris": 3288
+  },
+  {
+   "id": "p004",
+   "meshes": 1,
+   "sku": "1205-0001-0005",
+   "cad": "1205-0001-0005:3",
+   "system": "structure",
+   "name": "Dual Block Mount",
+   "note": "Small clamp block.",
+   "label": false,
+   "center": [
+    -0.1261,
+    0.0367,
+    -0.122
+   ],
+   "size": [
+    0.012,
+    0.0095,
+    0.043
+   ],
+   "tris": 3288
+  },
+  {
+   "id": "p005",
+   "meshes": 1,
+   "sku": "1205-0001-0005",
+   "cad": "1205-0001-0005:4",
+   "system": "structure",
+   "name": "Dual Block Mount",
+   "note": "Small clamp block.",
+   "label": false,
+   "center": [
+    0.1259,
+    0.0367,
+    -0.122
+   ],
+   "size": [
+    0.012,
+    0.0095,
+    0.043
+   ],
+   "tris": 3288
+  },
+  {
+   "id": "p006",
+   "meshes": 1,
+   "sku": "1121-0010-0264",
+   "cad": "1121-0010-0264:1",
+   "system": "structure",
+   "name": "U-Channel",
+   "note": "Aluminium channel with the goBILDA hole pattern.",
+   "label": false,
+   "center": [
+    -0.0001,
+    0.038,
+    -0.122
+   ],
+   "size": [
+    0.264,
+    0.012,
+    0.048
+   ],
+   "tris": 3410
+  },
+  {
+   "id": "p007",
+   "meshes": 1,
+   "sku": "1121-0010-0264",
+   "cad": "1121-0010-0264:2",
+   "system": "structure",
+   "name": "U-Channel",
+   "note": "Aluminium channel with the goBILDA hole pattern.",
+   "label": false,
+   "center": [
+    -0.0001,
+    0.052,
+    -0.22
+   ],
+   "size": [
+    0.264,
+    0.048,
+    0.012
+   ],
+   "tris": 3410
+  },
+  {
+   "id": "p008",
+   "meshes": 1,
+   "sku": "1222-0001-0001",
+   "cad": "1222-0001-0001:1",
+   "system": "structure",
+   "name": "Standoff / Spacer",
+   "note": "Holds two parts a fixed distance apart.",
+   "label": false,
+   "center": [
+    0.1559,
+    0.079,
+    -0.154
+   ],
+   "size": [
+    0.04,
+    0.006,
+    0.04
+   ],
+   "tris": 1658
+  },
+  {
+   "id": "p009",
+   "meshes": 1,
+   "sku": "1222-0001-0001",
+   "cad": "1222-0001-0001:2",
+   "system": "structure",
+   "name": "Standoff / Spacer",
+   "note": "Holds two parts a fixed distance apart.",
+   "label": false,
+   "center": [
+    -0.1561,
+    0.079,
+    -0.154
+   ],
+   "size": [
+    0.04,
+    0.006,
+    0.04
+   ],
+   "tris": 1658
+  },
+  {
+   "id": "p010",
+   "meshes": 1,
+   "sku": "1201-0043-0002",
+   "cad": "1201-0043-0002:2",
+   "system": "structure",
+   "name": "Quad Block Mount",
+   "note": "Clamps a channel to a shaft or a motor.",
+   "label": false,
+   "center": [
+    -0.1561,
+    0.052,
+    0.08
+   ],
+   "size": [
+    0.043,
+    0.043,
+    0.012
+   ],
+   "tris": 5852
+  },
+  {
+   "id": "p011",
+   "meshes": 1,
+   "sku": "1201-0043-0002",
+   "cad": "1201-0043-0002:3",
+   "system": "structure",
+   "name": "Quad Block Mount",
+   "note": "Clamps a channel to a shaft or a motor.",
+   "label": false,
+   "center": [
+    0.1559,
+    0.052,
+    0.08
+   ],
+   "size": [
+    0.043,
+    0.043,
+    0.012
+   ],
+   "tris": 5852
+  },
+  {
+   "id": "p012",
+   "meshes": 10,
+   "sku": "5203-2402-0019",
+   "cad": "5203-2402-0019:1",
+   "system": "drivetrain",
+   "name": "Drive Motor",
+   "note": "19.2:1 Yellow Jacket motor. Trades speed for pushing power.",
+   "label": true,
+   "center": [
+    0.1559,
+    0.1295,
+    -0.1542
+   ],
+   "size": [
+    0.0376,
+    0.142,
+    0.0373
+   ],
+   "tris": 13103
+  },
+  {
+   "id": "p013",
+   "meshes": 10,
+   "sku": "5203-2402-0019",
+   "cad": "5203-2402-0019:2",
+   "system": "drivetrain",
+   "name": "Drive Motor",
+   "note": "19.2:1 Yellow Jacket motor. Trades speed for pushing power.",
+   "label": true,
+   "center": [
+    -0.1562,
+    0.1295,
+    -0.1538
+   ],
+   "size": [
+    0.0376,
+    0.142,
+    0.0373
+   ],
+   "tris": 13103
+  },
+  {
+   "id": "p014",
+   "meshes": 10,
+   "sku": "5203-2402-0019",
+   "cad": "5203-2402-0019:3",
+   "system": "drivetrain",
+   "name": "Drive Motor",
+   "note": "19.2:1 Yellow Jacket motor. Trades speed for pushing power.",
+   "label": true,
+   "center": [
+    -0.1562,
+    0.0521,
+    0.0345
+   ],
+   "size": [
+    0.0376,
+    0.0373,
+    0.142
+   ],
+   "tris": 13103
+  },
+  {
+   "id": "p015",
+   "meshes": 10,
+   "sku": "5203-2402-0019",
+   "cad": "5203-2402-0019:4",
+   "system": "drivetrain",
+   "name": "Drive Motor",
+   "note": "19.2:1 Yellow Jacket motor. Trades speed for pushing power.",
+   "label": true,
+   "center": [
+    0.1558,
+    0.0521,
+    0.0345
+   ],
+   "size": [
+    0.0376,
+    0.0373,
+    0.142
+   ],
+   "tris": 13103
+  },
+  {
+   "id": "p016",
+   "meshes": 2,
+   "sku": "1611-0514-0006",
+   "cad": "1611-0514-0006:1",
+   "system": "hardware",
+   "name": "Bearing / Collar",
+   "note": "Lets a shaft spin freely and keeps it in place.",
+   "label": false,
+   "center": [
+    -0.1336,
+    0.052,
+    -0.154
+   ],
+   "size": [
+    0.005,
+    0.0146,
+    0.015
+   ],
+   "tris": 905
+  },
+  {
+   "id": "p017",
+   "meshes": 2,
+   "sku": "1611-0514-0006",
+   "cad": "1611-0514-0006:2",
+   "system": "hardware",
+   "name": "Bearing / Collar",
+   "note": "Lets a shaft spin freely and keeps it in place.",
+   "label": false,
+   "center": [
+    0.1334,
+    0.052,
+    -0.154
+   ],
+   "size": [
+    0.005,
+    0.0146,
+    0.015
+   ],
+   "tris": 905
+  },
+  {
+   "id": "p018",
+   "meshes": 2,
+   "sku": "1611-0514-0006",
+   "cad": "1611-0514-0006:3",
+   "system": "hardware",
+   "name": "Bearing / Collar",
+   "note": "Lets a shaft spin freely and keeps it in place.",
+   "label": false,
+   "center": [
+    0.1334,
+    0.052,
+    0.11
+   ],
+   "size": [
+    0.005,
+    0.0146,
+    0.015
+   ],
+   "tris": 905
+  },
+  {
+   "id": "p019",
+   "meshes": 2,
+   "sku": "1611-0514-0006",
+   "cad": "1611-0514-0006:4",
+   "system": "hardware",
+   "name": "Bearing / Collar",
+   "note": "Lets a shaft spin freely and keeps it in place.",
+   "label": false,
+   "center": [
+    -0.1336,
+    0.052,
+    0.11
+   ],
+   "size": [
+    0.005,
+    0.0146,
+    0.015
+   ],
+   "tris": 905
+  },
+  {
+   "id": "p020",
+   "meshes": 2,
+   "sku": "1611-0514-0008",
+   "cad": "1611-0514-0008:1",
+   "system": "hardware",
+   "name": "Bearing / Collar",
+   "note": "Lets a shaft spin freely and keeps it in place.",
+   "label": false,
+   "center": [
+    0.1787,
+    0.052,
+    0.11
+   ],
+   "size": [
+    0.005,
+    0.0146,
+    0.015
+   ],
+   "tris": 985
+  },
+  {
+   "id": "p021",
+   "meshes": 2,
+   "sku": "1611-0514-0008",
+   "cad": "1611-0514-0008:2",
+   "system": "hardware",
+   "name": "Bearing / Collar",
+   "note": "Lets a shaft spin freely and keeps it in place.",
+   "label": false,
+   "center": [
+    0.1784,
+    0.052,
+    -0.154
+   ],
+   "size": [
+    0.005,
+    0.0146,
+    0.015
+   ],
+   "tris": 985
+  },
+  {
+   "id": "p022",
+   "meshes": 2,
+   "sku": "1611-0514-0008",
+   "cad": "1611-0514-0008:3",
+   "system": "hardware",
+   "name": "Bearing / Collar",
+   "note": "Lets a shaft spin freely and keeps it in place.",
+   "label": false,
+   "center": [
+    -0.1786,
+    0.052,
+    0.11
+   ],
+   "size": [
+    0.005,
+    0.0146,
+    0.015
+   ],
+   "tris": 986
+  },
+  {
+   "id": "p023",
+   "meshes": 2,
+   "sku": "1611-0514-0008",
+   "cad": "1611-0514-0008:4",
+   "system": "hardware",
+   "name": "Bearing / Collar",
+   "note": "Lets a shaft spin freely and keeps it in place.",
+   "label": false,
+   "center": [
+    -0.1786,
+    0.052,
+    -0.154
+   ],
+   "size": [
+    0.005,
+    0.0146,
+    0.015
+   ],
+   "tris": 986
+  },
+  {
+   "id": "p024",
+   "meshes": 2,
+   "sku": "2110-0608-0002",
+   "cad": "2110-0608-0002 w.Hardware (A):1",
+   "system": "hardware",
+   "name": "Hub",
+   "note": "Locks a wheel or gear onto a shaft.",
+   "label": false,
+   "center": [
+    0.1644,
+    0.052,
+    -0.154
+   ],
+   "size": [
+    0.077,
+    0.032,
+    0.0312
+   ],
+   "tris": 2834
+  },
+  {
+   "id": "p025",
+   "meshes": 2,
+   "sku": "2110-0608-0002",
+   "cad": "2110-0608-0002 w.Hardware (A):2",
+   "system": "hardware",
+   "name": "Hub",
+   "note": "Locks a wheel or gear onto a shaft.",
+   "label": false,
+   "center": [
+    0.1647,
+    0.052,
+    0.11
+   ],
+   "size": [
+    0.077,
+    0.032,
+    0.0312
+   ],
+   "tris": 2834
+  },
+  {
+   "id": "p026",
+   "meshes": 2,
+   "sku": "2110-0608-0002",
+   "cad": "2110-0608-0002 w.Hardware (A):3",
+   "system": "hardware",
+   "name": "Hub",
+   "note": "Locks a wheel or gear onto a shaft.",
+   "label": false,
+   "center": [
+    -0.1646,
+    0.052,
+    -0.154
+   ],
+   "size": [
+    0.077,
+    0.032,
+    0.0312
+   ],
+   "tris": 2834
+  },
+  {
+   "id": "p027",
+   "meshes": 2,
+   "sku": "2110-0608-0002",
+   "cad": "2110-0608-0002 w.Hardware (A):4",
+   "system": "hardware",
+   "name": "Hub",
+   "note": "Locks a wheel or gear onto a shaft.",
+   "label": false,
+   "center": [
+    -0.1646,
+    0.052,
+    0.11
+   ],
+   "size": [
+    0.077,
+    0.032,
+    0.0312
+   ],
+   "tris": 2834
+  },
+  {
+   "id": "p028",
+   "meshes": 1,
+   "sku": "1522-0010-0120",
+   "cad": "1522-0010-0120:10",
+   "system": "structure",
+   "name": "Standoff / Spacer",
+   "note": "Holds two parts a fixed distance apart.",
+   "label": false,
+   "center": [
+    0.1559,
+    0.078,
+    -0.154
+   ],
+   "size": [
+    0.0099,
+    0.012,
+    0.0099
+   ],
+   "tris": 200
+  },
+  {
+   "id": "p029",
+   "meshes": 1,
+   "sku": "1522-0010-0120",
+   "cad": "1522-0010-0120:11",
+   "system": "structure",
+   "name": "Standoff / Spacer",
+   "note": "Holds two parts a fixed distance apart.",
+   "label": false,
+   "center": [
+    -0.1561,
+    0.078,
+    -0.154
+   ],
+   "size": [
+    0.0099,
+    0.012,
+    0.0099
+   ],
+   "tris": 200
+  },
+  {
+   "id": "p030",
+   "meshes": 1,
+   "sku": "2807-0811-0500",
+   "cad": "2807-0811-0500:1",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1559,
+    0.052,
+    0.0803
+   ],
+   "size": [
+    0.011,
+    0.0109,
+    0.0005
+   ],
+   "tris": 112
+  },
+  {
+   "id": "p031",
+   "meshes": 1,
+   "sku": "2807-0811-0500",
+   "cad": "2807-0811-0500:2",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1559,
+    0.052,
+    0.0808
+   ],
+   "size": [
+    0.011,
+    0.0109,
+    0.0005
+   ],
+   "tris": 112
+  },
+  {
+   "id": "p032",
+   "meshes": 1,
+   "sku": "2807-0811-0500",
+   "cad": "2807-0811-0500:3",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1561,
+    0.052,
+    0.0803
+   ],
+   "size": [
+    0.011,
+    0.0109,
+    0.0005
+   ],
+   "tris": 112
+  },
+  {
+   "id": "p033",
+   "meshes": 1,
+   "sku": "2807-0811-0500",
+   "cad": "2807-0811-0500:4",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1561,
+    0.052,
+    0.0808
+   ],
+   "size": [
+    0.011,
+    0.0109,
+    0.0005
+   ],
+   "tris": 112
+  },
+  {
+   "id": "p034",
+   "meshes": 1,
+   "sku": "1522-0010-0090",
+   "cad": "1522-0010-0090:1",
+   "system": "structure",
+   "name": "Standoff / Spacer",
+   "note": "Holds two parts a fixed distance apart.",
+   "label": false,
+   "center": [
+    -0.1561,
+    0.052,
+    0.0855
+   ],
+   "size": [
+    0.0099,
+    0.0099,
+    0.009
+   ],
+   "tris": 200
+  },
+  {
+   "id": "p035",
+   "meshes": 1,
+   "sku": "1522-0010-0090",
+   "cad": "1522-0010-0090:2",
+   "system": "structure",
+   "name": "Standoff / Spacer",
+   "note": "Holds two parts a fixed distance apart.",
+   "label": false,
+   "center": [
+    0.1559,
+    0.052,
+    0.0855
+   ],
+   "size": [
+    0.0099,
+    0.0099,
+    0.009
+   ],
+   "tris": 200
+  },
+  {
+   "id": "p036",
+   "meshes": 2,
+   "sku": "2320-4008-0024",
+   "cad": "2320-4008-0024:1",
+   "system": "hardware",
+   "name": "Hub",
+   "note": "Locks a wheel or gear onto a shaft.",
+   "label": false,
+   "center": [
+    0.1689,
+    0.052,
+    -0.154
+   ],
+   "size": [
+    0.014,
+    0.0241,
+    0.0241
+   ],
+   "tris": 2900
+  },
+  {
+   "id": "p037",
+   "meshes": 2,
+   "sku": "2320-4008-0024",
+   "cad": "2320-4008-0024:2",
+   "system": "hardware",
+   "name": "Hub",
+   "note": "Locks a wheel or gear onto a shaft.",
+   "label": false,
+   "center": [
+    0.1559,
+    0.065,
+    -0.154
+   ],
+   "size": [
+    0.024,
+    0.014,
+    0.024
+   ],
+   "tris": 2900
+  },
+  {
+   "id": "p038",
+   "meshes": 2,
+   "sku": "2320-4008-0024",
+   "cad": "2320-4008-0024:3",
+   "system": "hardware",
+   "name": "Hub",
+   "note": "Locks a wheel or gear onto a shaft.",
+   "label": false,
+   "center": [
+    -0.1691,
+    0.052,
+    -0.154
+   ],
+   "size": [
+    0.014,
+    0.0241,
+    0.0241
+   ],
+   "tris": 2900
+  },
+  {
+   "id": "p039",
+   "meshes": 2,
+   "sku": "2320-4008-0024",
+   "cad": "2320-4008-0024:4",
+   "system": "hardware",
+   "name": "Hub",
+   "note": "Locks a wheel or gear onto a shaft.",
+   "label": false,
+   "center": [
+    -0.1561,
+    0.065,
+    -0.154
+   ],
+   "size": [
+    0.024,
+    0.014,
+    0.024
+   ],
+   "tris": 2900
+  },
+  {
+   "id": "p040",
+   "meshes": 2,
+   "sku": "2320-4008-0024",
+   "cad": "2320-4008-0024:5",
+   "system": "hardware",
+   "name": "Hub",
+   "note": "Locks a wheel or gear onto a shaft.",
+   "label": false,
+   "center": [
+    0.1692,
+    0.052,
+    0.11
+   ],
+   "size": [
+    0.014,
+    0.0241,
+    0.0241
+   ],
+   "tris": 2900
+  },
+  {
+   "id": "p041",
+   "meshes": 2,
+   "sku": "2320-4008-0024",
+   "cad": "2320-4008-0024:6",
+   "system": "hardware",
+   "name": "Hub",
+   "note": "Locks a wheel or gear onto a shaft.",
+   "label": false,
+   "center": [
+    0.1559,
+    0.052,
+    0.097
+   ],
+   "size": [
+    0.024,
+    0.024,
+    0.014
+   ],
+   "tris": 2900
+  },
+  {
+   "id": "p042",
+   "meshes": 2,
+   "sku": "2320-4008-0024",
+   "cad": "2320-4008-0024:7",
+   "system": "hardware",
+   "name": "Hub",
+   "note": "Locks a wheel or gear onto a shaft.",
+   "label": false,
+   "center": [
+    -0.1561,
+    0.052,
+    0.097
+   ],
+   "size": [
+    0.024,
+    0.024,
+    0.014
+   ],
+   "tris": 2900
+  },
+  {
+   "id": "p043",
+   "meshes": 2,
+   "sku": "2320-4008-0024",
+   "cad": "2320-4008-0024:8",
+   "system": "hardware",
+   "name": "Hub",
+   "note": "Locks a wheel or gear onto a shaft.",
+   "label": false,
+   "center": [
+    -0.1691,
+    0.052,
+    0.11
+   ],
+   "size": [
+    0.014,
+    0.0241,
+    0.0241
+   ],
+   "tris": 2900
+  },
+  {
+   "id": "p044",
+   "meshes": 8,
+   "sku": "3625-0100-0104",
+   "cad": "3625-0100-0104:1",
+   "system": "drivetrain",
+   "name": "Mecanum Wheel",
+   "note": "Angled rollers let the robot strafe sideways without turning.",
+   "label": true,
+   "center": [
+    0.2072,
+    0.052,
+    0.11
+   ],
+   "size": [
+    0.0378,
+    0.104,
+    0.104
+   ],
+   "tris": 38606
+  },
+  {
+   "id": "p045",
+   "meshes": 8,
+   "sku": "3625-0100-0104",
+   "cad": "3625-0100-0104:2",
+   "system": "drivetrain",
+   "name": "Mecanum Wheel",
+   "note": "Angled rollers let the robot strafe sideways without turning.",
+   "label": true,
+   "center": [
+    -0.2072,
+    0.052,
+    -0.154
+   ],
+   "size": [
+    0.0378,
+    0.104,
+    0.104
+   ],
+   "tris": 38606
+  },
+  {
+   "id": "p046",
+   "meshes": 7,
+   "sku": "3625-0001-0104",
+   "cad": "3625-0001-0104:1",
+   "system": "drivetrain",
+   "name": "Mecanum Wheel",
+   "note": "Angled rollers let the robot strafe sideways without turning.",
+   "label": true,
+   "center": [
+    -0.2072,
+    0.052,
+    0.11
+   ],
+   "size": [
+    0.0378,
+    0.104,
+    0.104
+   ],
+   "tris": 38620
+  },
+  {
+   "id": "p047",
+   "meshes": 7,
+   "sku": "3625-0001-0104",
+   "cad": "3625-0001-0104:2",
+   "system": "drivetrain",
+   "name": "Mecanum Wheel",
+   "note": "Angled rollers let the robot strafe sideways without turning.",
+   "label": true,
+   "center": [
+    0.2068,
+    0.052,
+    -0.154
+   ],
+   "size": [
+    0.0378,
+    0.104,
+    0.104
+   ],
+   "tris": 38620
+  },
+  {
+   "id": "p048",
+   "meshes": 2,
+   "sku": "2106-4008-2640",
+   "cad": "2106-4008-2640:1",
+   "system": "hardware",
+   "name": "8mm REX Shaft",
+   "note": "Hex shaft: the hex shape means wheels cannot slip.",
+   "label": false,
+   "center": [
+    -0.0001,
+    0.044,
+    0.093
+   ],
+   "size": [
+    0.264,
+    0.0121,
+    0.0104
+   ],
+   "tris": 1930
+  },
+  {
+   "id": "p049",
+   "meshes": 1,
+   "sku": "3618-4008-0016",
+   "cad": "3618-4008-0016 (Stretched over 8 REX):1",
+   "system": "intake",
+   "name": "Intake Roller",
+   "note": "Flexible rollers that sweep balls toward the middle.",
+   "label": true,
+   "center": [
+    0.1199,
+    0.044,
+    0.094
+   ],
+   "size": [
+    0.016,
+    0.0166,
+    0.017
+   ],
+   "tris": 152
+  },
+  {
+   "id": "p050",
+   "meshes": 1,
+   "sku": "3618-4008-0016",
+   "cad": "3618-4008-0016 (Stretched over 8 REX):2",
+   "system": "intake",
+   "name": "Intake Roller",
+   "note": "Flexible rollers that sweep balls toward the middle.",
+   "label": true,
+   "center": [
+    0.1039,
+    0.044,
+    0.094
+   ],
+   "size": [
+    0.016,
+    0.0166,
+    0.017
+   ],
+   "tris": 152
+  },
+  {
+   "id": "p051",
+   "meshes": 1,
+   "sku": "3618-4008-0016",
+   "cad": "3618-4008-0016 (Stretched over 8 REX):3",
+   "system": "intake",
+   "name": "Intake Roller",
+   "note": "Flexible rollers that sweep balls toward the middle.",
+   "label": true,
+   "center": [
+    0.0879,
+    0.044,
+    0.094
+   ],
+   "size": [
+    0.016,
+    0.0166,
+    0.017
+   ],
+   "tris": 152
+  },
+  {
+   "id": "p052",
+   "meshes": 1,
+   "sku": "3618-4008-0016",
+   "cad": "3618-4008-0016 (Stretched over 8 REX):4",
+   "system": "intake",
+   "name": "Intake Roller",
+   "note": "Flexible rollers that sweep balls toward the middle.",
+   "label": true,
+   "center": [
+    0.0719,
+    0.044,
+    0.094
+   ],
+   "size": [
+    0.016,
+    0.0166,
+    0.017
+   ],
+   "tris": 152
+  },
+  {
+   "id": "p053",
+   "meshes": 1,
+   "sku": "3618-4008-0016",
+   "cad": "3618-4008-0016 (Stretched over 8 REX):5",
+   "system": "intake",
+   "name": "Intake Roller",
+   "note": "Flexible rollers that sweep balls toward the middle.",
+   "label": true,
+   "center": [
+    0.0559,
+    0.044,
+    0.094
+   ],
+   "size": [
+    0.016,
+    0.0166,
+    0.017
+   ],
+   "tris": 152
+  },
+  {
+   "id": "p054",
+   "meshes": 1,
+   "sku": "3618-4008-0016",
+   "cad": "3618-4008-0016 (Stretched over 8 REX):6",
+   "system": "intake",
+   "name": "Intake Roller",
+   "note": "Flexible rollers that sweep balls toward the middle.",
+   "label": true,
+   "center": [
+    0.0399,
+    0.044,
+    0.094
+   ],
+   "size": [
+    0.016,
+    0.0166,
+    0.017
+   ],
+   "tris": 152
+  },
+  {
+   "id": "p055",
+   "meshes": 1,
+   "sku": "3618-4008-0016",
+   "cad": "3618-4008-0016 (Stretched over 8 REX):7",
+   "system": "intake",
+   "name": "Intake Roller",
+   "note": "Flexible rollers that sweep balls toward the middle.",
+   "label": true,
+   "center": [
+    0.0239,
+    0.044,
+    0.094
+   ],
+   "size": [
+    0.016,
+    0.0166,
+    0.017
+   ],
+   "tris": 152
+  },
+  {
+   "id": "p056",
+   "meshes": 1,
+   "sku": "3618-4008-0016",
+   "cad": "3618-4008-0016 (Stretched over 8 REX):8",
+   "system": "intake",
+   "name": "Intake Roller",
+   "note": "Flexible rollers that sweep balls toward the middle.",
+   "label": true,
+   "center": [
+    0.0079,
+    0.044,
+    0.094
+   ],
+   "size": [
+    0.016,
+    0.0166,
+    0.017
+   ],
+   "tris": 152
+  },
+  {
+   "id": "p057",
+   "meshes": 1,
+   "sku": "3618-4008-0016",
+   "cad": "3618-4008-0016 (Stretched over 8 REX):9",
+   "system": "intake",
+   "name": "Intake Roller",
+   "note": "Flexible rollers that sweep balls toward the middle.",
+   "label": true,
+   "center": [
+    -0.0081,
+    0.044,
+    0.094
+   ],
+   "size": [
+    0.016,
+    0.0166,
+    0.017
+   ],
+   "tris": 152
+  },
+  {
+   "id": "p058",
+   "meshes": 1,
+   "sku": "3618-4008-0016",
+   "cad": "3618-4008-0016 (Stretched over 8 REX):10",
+   "system": "intake",
+   "name": "Intake Roller",
+   "note": "Flexible rollers that sweep balls toward the middle.",
+   "label": true,
+   "center": [
+    -0.0241,
+    0.044,
+    0.094
+   ],
+   "size": [
+    0.016,
+    0.0166,
+    0.017
+   ],
+   "tris": 152
+  },
+  {
+   "id": "p059",
+   "meshes": 1,
+   "sku": "3618-4008-0016",
+   "cad": "3618-4008-0016 (Stretched over 8 REX):11",
+   "system": "intake",
+   "name": "Intake Roller",
+   "note": "Flexible rollers that sweep balls toward the middle.",
+   "label": true,
+   "center": [
+    -0.0401,
+    0.044,
+    0.094
+   ],
+   "size": [
+    0.016,
+    0.0166,
+    0.017
+   ],
+   "tris": 152
+  },
+  {
+   "id": "p060",
+   "meshes": 1,
+   "sku": "3618-4008-0016",
+   "cad": "3618-4008-0016 (Stretched over 8 REX):12",
+   "system": "intake",
+   "name": "Intake Roller",
+   "note": "Flexible rollers that sweep balls toward the middle.",
+   "label": true,
+   "center": [
+    -0.0561,
+    0.044,
+    0.094
+   ],
+   "size": [
+    0.016,
+    0.0166,
+    0.017
+   ],
+   "tris": 152
+  },
+  {
+   "id": "p061",
+   "meshes": 1,
+   "sku": "3618-4008-0016",
+   "cad": "3618-4008-0016 (Stretched over 8 REX):13",
+   "system": "intake",
+   "name": "Intake Roller",
+   "note": "Flexible rollers that sweep balls toward the middle.",
+   "label": true,
+   "center": [
+    -0.0721,
+    0.044,
+    0.094
+   ],
+   "size": [
+    0.016,
+    0.0166,
+    0.017
+   ],
+   "tris": 152
+  },
+  {
+   "id": "p062",
+   "meshes": 1,
+   "sku": "3618-4008-0016",
+   "cad": "3618-4008-0016 (Stretched over 8 REX):14",
+   "system": "intake",
+   "name": "Intake Roller",
+   "note": "Flexible rollers that sweep balls toward the middle.",
+   "label": true,
+   "center": [
+    -0.0881,
+    0.044,
+    0.094
+   ],
+   "size": [
+    0.016,
+    0.0166,
+    0.017
+   ],
+   "tris": 152
+  },
+  {
+   "id": "p063",
+   "meshes": 1,
+   "sku": "3618-4008-0016",
+   "cad": "3618-4008-0016 (Stretched over 8 REX):15",
+   "system": "intake",
+   "name": "Intake Roller",
+   "note": "Flexible rollers that sweep balls toward the middle.",
+   "label": true,
+   "center": [
+    -0.1041,
+    0.044,
+    0.094
+   ],
+   "size": [
+    0.016,
+    0.0166,
+    0.017
+   ],
+   "tris": 152
+  },
+  {
+   "id": "p064",
+   "meshes": 1,
+   "sku": "3618-4008-0016",
+   "cad": "3618-4008-0016 (Stretched over 8 REX):16",
+   "system": "intake",
+   "name": "Intake Roller",
+   "note": "Flexible rollers that sweep balls toward the middle.",
+   "label": true,
+   "center": [
+    -0.1201,
+    0.044,
+    0.094
+   ],
+   "size": [
+    0.016,
+    0.0166,
+    0.017
+   ],
+   "tris": 152
+  },
+  {
+   "id": "p065",
+   "meshes": 1,
+   "sku": "1120-0001-0048",
+   "cad": "1120-0001-0048:1",
+   "system": "structure",
+   "name": "U-Channel",
+   "note": "Aluminium channel with the goBILDA hole pattern.",
+   "label": false,
+   "center": [
+    -0.1561,
+    0.1,
+    0.11
+   ],
+   "size": [
+    0.048,
+    0.048,
+    0.048
+   ],
+   "tris": 1552
+  },
+  {
+   "id": "p066",
+   "meshes": 1,
+   "sku": "1120-0001-0048",
+   "cad": "1120-0001-0048:2",
+   "system": "structure",
+   "name": "U-Channel",
+   "note": "Aluminium channel with the goBILDA hole pattern.",
+   "label": false,
+   "center": [
+    0.1559,
+    0.1,
+    0.11
+   ],
+   "size": [
+    0.048,
+    0.048,
+    0.048
+   ],
+   "tris": 1552
+  },
+  {
+   "id": "p067",
+   "meshes": 2,
+   "sku": "1611-0514-4008",
+   "cad": "1611-0514-4008:13",
+   "system": "hardware",
+   "name": "Bearing / Collar",
+   "note": "Lets a shaft spin freely and keeps it in place.",
+   "label": false,
+   "center": [
+    -0.1791,
+    0.1,
+    0.11
+   ],
+   "size": [
+    0.005,
+    0.0146,
+    0.015
+   ],
+   "tris": 985
+  },
+  {
+   "id": "p068",
+   "meshes": 2,
+   "sku": "1611-0514-4008",
+   "cad": "1611-0514-4008:14",
+   "system": "hardware",
+   "name": "Bearing / Collar",
+   "note": "Lets a shaft spin freely and keeps it in place.",
+   "label": false,
+   "center": [
+    -0.1331,
+    0.1,
+    0.11
+   ],
+   "size": [
+    0.005,
+    0.0146,
+    0.015
+   ],
+   "tris": 985
+  },
+  {
+   "id": "p069",
+   "meshes": 2,
+   "sku": "1611-0514-4008",
+   "cad": "1611-0514-4008:15",
+   "system": "hardware",
+   "name": "Bearing / Collar",
+   "note": "Lets a shaft spin freely and keeps it in place.",
+   "label": false,
+   "center": [
+    0.1329,
+    0.1,
+    0.11
+   ],
+   "size": [
+    0.005,
+    0.0146,
+    0.015
+   ],
+   "tris": 985
+  },
+  {
+   "id": "p070",
+   "meshes": 2,
+   "sku": "1611-0514-4008",
+   "cad": "1611-0514-4008:16",
+   "system": "hardware",
+   "name": "Bearing / Collar",
+   "note": "Lets a shaft spin freely and keeps it in place.",
+   "label": false,
+   "center": [
+    0.1789,
+    0.1,
+    0.11
+   ],
+   "size": [
+    0.005,
+    0.0146,
+    0.015
+   ],
+   "tris": 985
+  },
+  {
+   "id": "p071",
+   "meshes": 2,
+   "sku": "2106-4008-0800",
+   "cad": "2106-4008-0800:7",
+   "system": "hardware",
+   "name": "8mm REX Shaft",
+   "note": "Hex shaft: the hex shape means wheels cannot slip.",
+   "label": false,
+   "center": [
+    -0.1399,
+    0.0999,
+    0.11
+   ],
+   "size": [
+    0.08,
+    0.0121,
+    0.0124
+   ],
+   "tris": 1916
+  },
+  {
+   "id": "p072",
+   "meshes": 2,
+   "sku": "2106-4008-0800",
+   "cad": "2106-4008-0800:8",
+   "system": "hardware",
+   "name": "8mm REX Shaft",
+   "note": "Hex shaft: the hex shape means wheels cannot slip.",
+   "label": false,
+   "center": [
+    0.1397,
+    0.1,
+    0.1108
+   ],
+   "size": [
+    0.08,
+    0.0123,
+    0.0108
+   ],
+   "tris": 1916
+  },
+  {
+   "id": "p073",
+   "meshes": 3,
+   "sku": "2920-0001-4008",
+   "cad": "2920-0001-4008:1",
+   "system": "hardware",
+   "name": "Bearing / Collar",
+   "note": "Lets a shaft spin freely and keeps it in place.",
+   "label": false,
+   "center": [
+    -0.1399,
+    0.1,
+    0.1099
+   ],
+   "size": [
+    0.0085,
+    0.0147,
+    0.0151
+   ],
+   "tris": 1687
+  },
+  {
+   "id": "p074",
+   "meshes": 3,
+   "sku": "2920-0001-4008",
+   "cad": "2920-0001-4008:2",
+   "system": "hardware",
+   "name": "Bearing / Collar",
+   "note": "Lets a shaft spin freely and keeps it in place.",
+   "label": false,
+   "center": [
+    0.1396,
+    0.1001,
+    0.1101
+   ],
+   "size": [
+    0.0085,
+    0.015,
+    0.0151
+   ],
+   "tris": 1687
+  },
+  {
+   "id": "p075",
+   "meshes": 2,
+   "sku": "1309-0016-4008",
+   "cad": "1309-0016-4008:3",
+   "system": "hardware",
+   "name": "Hub",
+   "note": "Locks a wheel or gear onto a shaft.",
+   "label": false,
+   "center": [
+    -0.1176,
+    0.1,
+    0.11
+   ],
+   "size": [
+    0.01,
+    0.0318,
+    0.0318
+   ],
+   "tris": 4280
+  },
+  {
+   "id": "p076",
+   "meshes": 2,
+   "sku": "1309-0016-4008",
+   "cad": "1309-0016-4008:4",
+   "system": "hardware",
+   "name": "Hub",
+   "note": "Locks a wheel or gear onto a shaft.",
+   "label": false,
+   "center": [
+    0.1094,
+    0.1,
+    0.11
+   ],
+   "size": [
+    0.01,
+    0.0318,
+    0.0318
+   ],
+   "tris": 4280
+  },
+  {
+   "id": "p077",
+   "meshes": 1,
+   "sku": "1121-0001-0048",
+   "cad": "1121-0001-0048:1",
+   "system": "structure",
+   "name": "U-Channel",
+   "note": "Aluminium channel with the goBILDA hole pattern.",
+   "label": false,
+   "center": [
+    -0.1181,
+    0.1,
+    0.11
+   ],
+   "size": [
+    0.012,
+    0.0528,
+    0.0528
+   ],
+   "tris": 920
+  },
+  {
+   "id": "p078",
+   "meshes": 1,
+   "sku": "1121-0001-0048",
+   "cad": "1121-0001-0048:2",
+   "system": "structure",
+   "name": "U-Channel",
+   "note": "Aluminium channel with the goBILDA hole pattern.",
+   "label": false,
+   "center": [
+    0.1099,
+    0.1,
+    0.11
+   ],
+   "size": [
+    0.012,
+    0.0528,
+    0.0528
+   ],
+   "tris": 920
+  },
+  {
+   "id": "p079",
+   "meshes": 1,
+   "sku": "1143-0003-0096",
+   "cad": "1143-0003-0096:1",
+   "system": "structure",
+   "name": "U-Channel",
+   "note": "Aluminium channel with the goBILDA hole pattern.",
+   "label": false,
+   "center": [
+    -0.1181,
+    0.1121,
+    0.1489
+   ],
+   "size": [
+    0.012,
+    0.0988,
+    0.0419
+   ],
+   "tris": 1208
+  },
+  {
+   "id": "p080",
+   "meshes": 1,
+   "sku": "1143-0003-0096",
+   "cad": "1143-0003-0096:2",
+   "system": "structure",
+   "name": "U-Channel",
+   "note": "Aluminium channel with the goBILDA hole pattern.",
+   "label": false,
+   "center": [
+    0.1099,
+    0.1121,
+    0.1489
+   ],
+   "size": [
+    0.012,
+    0.0988,
+    0.0419
+   ],
+   "tris": 1208
+  },
+  {
+   "id": "p081",
+   "meshes": 1,
+   "sku": "1201-0043-0002",
+   "cad": "1201-0043-0002:1",
+   "system": "structure",
+   "name": "Quad Block Mount",
+   "note": "Clamps a channel to a shaft or a motor.",
+   "label": false,
+   "center": [
+    -0.1061,
+    0.136,
+    0.1464
+   ],
+   "size": [
+    0.012,
+    0.0467,
+    0.0467
+   ],
+   "tris": 5852
+  },
+  {
+   "id": "p082",
+   "meshes": 1,
+   "sku": "1205-0001-0005",
+   "cad": "1205-0001-0005:5",
+   "system": "structure",
+   "name": "Dual Block Mount",
+   "note": "Small clamp block.",
+   "label": false,
+   "center": [
+    0.0979,
+    0.1526,
+    0.1447
+   ],
+   "size": [
+    0.012,
+    0.0138,
+    0.0436
+   ],
+   "tris": 3288
+  },
+  {
+   "id": "p083",
+   "meshes": 1,
+   "sku": "1205-0001-0005",
+   "cad": "1205-0001-0005:6",
+   "system": "structure",
+   "name": "Dual Block Mount",
+   "note": "Small clamp block.",
+   "label": false,
+   "center": [
+    0.0979,
+    0.1194,
+    0.1481
+   ],
+   "size": [
+    0.012,
+    0.0138,
+    0.0436
+   ],
+   "tris": 3288
+  },
+  {
+   "id": "p084",
+   "meshes": 1,
+   "sku": "1120-0008-0216",
+   "cad": "1120-0008-0216:1",
+   "system": "structure",
+   "name": "U-Channel",
+   "note": "Aluminium channel with the goBILDA hole pattern.",
+   "label": false,
+   "center": [
+    -0.0041,
+    0.136,
+    0.1464
+   ],
+   "size": [
+    0.216,
+    0.0528,
+    0.0528
+   ],
+   "tris": 4934
+  },
+  {
+   "id": "p085",
+   "meshes": 10,
+   "sku": "5203-2402-0051",
+   "cad": "5203-2402-0051:1",
+   "system": "intake",
+   "name": "Intake Motor",
+   "note": "50.9:1 Yellow Jacket motor, geared up through a big gear to spin the intake fast.",
+   "label": true,
+   "center": [
+    0.052,
+    0.1358,
+    0.1464
+   ],
+   "size": [
+    0.1507,
+    0.0373,
+    0.0376
+   ],
+   "tris": 13107
+  },
+  {
+   "id": "p086",
+   "meshes": 2,
+   "sku": "1611-0514-4008",
+   "cad": "1611-0514-4008:17",
+   "system": "hardware",
+   "name": "Bearing / Collar",
+   "note": "Lets a shaft spin freely and keeps it in place.",
+   "label": false,
+   "center": [
+    -0.1136,
+    0.0883,
+    0.1515
+   ],
+   "size": [
+    0.005,
+    0.0149,
+    0.0149
+   ],
+   "tris": 985
+  },
+  {
+   "id": "p087",
+   "meshes": 2,
+   "sku": "1611-0514-4008",
+   "cad": "1611-0514-4008:18",
+   "system": "hardware",
+   "name": "Bearing / Collar",
+   "note": "Lets a shaft spin freely and keeps it in place.",
+   "label": false,
+   "center": [
+    0.1054,
+    0.0883,
+    0.1515
+   ],
+   "size": [
+    0.005,
+    0.0149,
+    0.0149
+   ],
+   "tris": 985
+  },
+  {
+   "id": "p088",
+   "meshes": 2,
+   "sku": "2106-4008-2400",
+   "cad": "2106-4008-2400:1",
+   "system": "hardware",
+   "name": "8mm REX Shaft",
+   "note": "Hex shaft: the hex shape means wheels cannot slip.",
+   "label": false,
+   "center": [
+    0.0055,
+    0.0883,
+    0.1504
+   ],
+   "size": [
+    0.24,
+    0.0121,
+    0.0104
+   ],
+   "tris": 1930
+  },
+  {
+   "id": "p089",
+   "meshes": 1,
+   "sku": "1522-0010-0090",
+   "cad": "1522-0010-0090:3",
+   "system": "structure",
+   "name": "Standoff / Spacer",
+   "note": "Holds two parts a fixed distance apart.",
+   "label": false,
+   "center": [
+    -0.1059,
+    0.0883,
+    0.1515
+   ],
+   "size": [
+    0.009,
+    0.0097,
+    0.0099
+   ],
+   "tris": 200
+  },
+  {
+   "id": "p090",
+   "meshes": 2,
+   "sku": "3613-4008-0048",
+   "cad": "3613-4008-0048:1",
+   "system": "intake",
+   "name": "48mm Gecko Wheel",
+   "note": "Soft wheels that squash against a ball and pull it in.",
+   "label": true,
+   "center": [
+    -0.0935,
+    0.0883,
+    0.1515
+   ],
+   "size": [
+    0.016,
+    0.048,
+    0.048
+   ],
+   "tris": 8296
+  },
+  {
+   "id": "p091",
+   "meshes": 1,
+   "sku": "1522-0010-0120",
+   "cad": "1522-0010-0120:2",
+   "system": "structure",
+   "name": "Standoff / Spacer",
+   "note": "Holds two parts a fixed distance apart.",
+   "label": false,
+   "center": [
+    -0.0795,
+    0.0883,
+    0.1515
+   ],
+   "size": [
+    0.012,
+    0.0097,
+    0.0099
+   ],
+   "tris": 200
+  },
+  {
+   "id": "p092",
+   "meshes": 2,
+   "sku": "3613-4008-0048",
+   "cad": "3613-4008-0048:2",
+   "system": "intake",
+   "name": "48mm Gecko Wheel",
+   "note": "Soft wheels that squash against a ball and pull it in.",
+   "label": true,
+   "center": [
+    -0.0655,
+    0.0883,
+    0.1515
+   ],
+   "size": [
+    0.016,
+    0.048,
+    0.048
+   ],
+   "tris": 8296
+  },
+  {
+   "id": "p093",
+   "meshes": 1,
+   "sku": "1522-0010-0120",
+   "cad": "1522-0010-0120:3",
+   "system": "structure",
+   "name": "Standoff / Spacer",
+   "note": "Holds two parts a fixed distance apart.",
+   "label": false,
+   "center": [
+    -0.0515,
+    0.0883,
+    0.1515
+   ],
+   "size": [
+    0.012,
+    0.0097,
+    0.0099
+   ],
+   "tris": 200
+  },
+  {
+   "id": "p094",
+   "meshes": 2,
+   "sku": "3613-4008-0048",
+   "cad": "3613-4008-0048:3",
+   "system": "intake",
+   "name": "48mm Gecko Wheel",
+   "note": "Soft wheels that squash against a ball and pull it in.",
+   "label": true,
+   "center": [
+    -0.0375,
+    0.0883,
+    0.1515
+   ],
+   "size": [
+    0.016,
+    0.048,
+    0.048
+   ],
+   "tris": 8296
+  },
+  {
+   "id": "p095",
+   "meshes": 1,
+   "sku": "1522-0010-0120",
+   "cad": "1522-0010-0120:4",
+   "system": "structure",
+   "name": "Standoff / Spacer",
+   "note": "Holds two parts a fixed distance apart.",
+   "label": false,
+   "center": [
+    -0.0235,
+    0.0883,
+    0.1515
+   ],
+   "size": [
+    0.012,
+    0.0097,
+    0.0099
+   ],
+   "tris": 200
+  },
+  {
+   "id": "p096",
+   "meshes": 1,
+   "sku": "1522-0010-0120",
+   "cad": "1522-0010-0120:5",
+   "system": "structure",
+   "name": "Standoff / Spacer",
+   "note": "Holds two parts a fixed distance apart.",
+   "label": false,
+   "center": [
+    0.0325,
+    0.0883,
+    0.1515
+   ],
+   "size": [
+    0.012,
+    0.0097,
+    0.0099
+   ],
+   "tris": 200
+  },
+  {
+   "id": "p097",
+   "meshes": 2,
+   "sku": "3613-4008-0048",
+   "cad": "3613-4008-0048:4",
+   "system": "intake",
+   "name": "48mm Gecko Wheel",
+   "note": "Soft wheels that squash against a ball and pull it in.",
+   "label": true,
+   "center": [
+    0.0185,
+    0.0883,
+    0.1515
+   ],
+   "size": [
+    0.016,
+    0.048,
+    0.048
+   ],
+   "tris": 8296
+  },
+  {
+   "id": "p098",
+   "meshes": 1,
+   "sku": "1522-0010-0120",
+   "cad": "1522-0010-0120:6",
+   "system": "structure",
+   "name": "Standoff / Spacer",
+   "note": "Holds two parts a fixed distance apart.",
+   "label": false,
+   "center": [
+    0.0045,
+    0.0883,
+    0.1515
+   ],
+   "size": [
+    0.012,
+    0.0097,
+    0.0099
+   ],
+   "tris": 200
+  },
+  {
+   "id": "p099",
+   "meshes": 2,
+   "sku": "3613-4008-0048",
+   "cad": "3613-4008-0048:5",
+   "system": "intake",
+   "name": "48mm Gecko Wheel",
+   "note": "Soft wheels that squash against a ball and pull it in.",
+   "label": true,
+   "center": [
+    -0.0095,
+    0.0883,
+    0.1515
+   ],
+   "size": [
+    0.016,
+    0.048,
+    0.048
+   ],
+   "tris": 8296
+  },
+  {
+   "id": "p100",
+   "meshes": 2,
+   "sku": "3613-4008-0048",
+   "cad": "3613-4008-0048:7",
+   "system": "intake",
+   "name": "48mm Gecko Wheel",
+   "note": "Soft wheels that squash against a ball and pull it in.",
+   "label": true,
+   "center": [
+    0.0745,
+    0.0883,
+    0.1515
+   ],
+   "size": [
+    0.016,
+    0.048,
+    0.048
+   ],
+   "tris": 8296
+  },
+  {
+   "id": "p101",
+   "meshes": 1,
+   "sku": "1522-0010-0120",
+   "cad": "1522-0010-0120:9",
+   "system": "structure",
+   "name": "Standoff / Spacer",
+   "note": "Holds two parts a fixed distance apart.",
+   "label": false,
+   "center": [
+    0.0605,
+    0.0883,
+    0.1515
+   ],
+   "size": [
+    0.012,
+    0.0097,
+    0.0099
+   ],
+   "tris": 200
+  },
+  {
+   "id": "p102",
+   "meshes": 2,
+   "sku": "3613-4008-0048",
+   "cad": "3613-4008-0048:8",
+   "system": "intake",
+   "name": "48mm Gecko Wheel",
+   "note": "Soft wheels that squash against a ball and pull it in.",
+   "label": true,
+   "center": [
+    0.0465,
+    0.0883,
+    0.1515
+   ],
+   "size": [
+    0.016,
+    0.048,
+    0.048
+   ],
+   "tris": 8296
+  },
+  {
+   "id": "p103",
+   "meshes": 3,
+   "sku": "2920-0001-4008",
+   "cad": "2920-0001-4008:3",
+   "system": "hardware",
+   "name": "Bearing / Collar",
+   "note": "Lets a shaft spin freely and keeps it in place.",
+   "label": false,
+   "center": [
+    0.0868,
+    0.0882,
+    0.1515
+   ],
+   "size": [
+    0.0085,
+    0.0149,
+    0.015
+   ],
+   "tris": 1687
+  },
+  {
+   "id": "p104",
+   "meshes": 3,
+   "sku": "2920-0001-4008",
+   "cad": "2920-0001-4008:4",
+   "system": "hardware",
+   "name": "Bearing / Collar",
+   "note": "Lets a shaft spin freely and keeps it in place.",
+   "label": false,
+   "center": [
+    0.0986,
+    0.0883,
+    0.1515
+   ],
+   "size": [
+    0.0085,
+    0.0149,
+    0.015
+   ],
+   "tris": 1687
+  },
+  {
+   "id": "p105",
+   "meshes": 3,
+   "sku": "2303-4008-0020",
+   "cad": "2303-4008-0020:1",
+   "system": "intake",
+   "name": "20-Tooth Gear",
+   "note": "The small gear: five turns for every turn of the 100-tooth gear.",
+   "label": false,
+   "center": [
+    0.1214,
+    0.0883,
+    0.1515
+   ],
+   "size": [
+    0.014,
+    0.0176,
+    0.0176
+   ],
+   "tris": 2040
+  },
+  {
+   "id": "p106",
+   "meshes": 2,
+   "sku": "1309-0016-4008",
+   "cad": "1309-0016-4008:5",
+   "system": "hardware",
+   "name": "Hub",
+   "note": "Locks a wheel or gear onto a shaft.",
+   "label": false,
+   "center": [
+    0.1224,
+    0.136,
+    0.1464
+   ],
+   "size": [
+    0.01,
+    0.032,
+    0.032
+   ],
+   "tris": 4280
+  },
+  {
+   "id": "p107",
+   "meshes": 1,
+   "sku": "2302-0014-0100",
+   "cad": "2302-0014-0100:1",
+   "system": "intake",
+   "name": "100-Tooth Gear",
+   "note": "Big gear on the motor drives a small gear on the intake shaft, which multiplies speed.",
+   "label": true,
+   "center": [
+    0.1254,
+    0.136,
+    0.1464
+   ],
+   "size": [
+    0.006,
+    0.0816,
+    0.0816
+   ],
+   "tris": 5992
+  },
+  {
+   "id": "p108",
+   "meshes": 1,
+   "sku": "1516-4008-0240",
+   "cad": "1516-4008-0240:1",
+   "system": "structure",
+   "name": "Standoff / Spacer",
+   "note": "Holds two parts a fixed distance apart.",
+   "label": false,
+   "center": [
+    -0.1201,
+    0.0633,
+    0.134
+   ],
+   "size": [
+    0.024,
+    0.007,
+    0.008
+   ],
+   "tris": 1469
+  },
+  {
+   "id": "p109",
+   "meshes": 1,
+   "sku": "1516-4008-0430",
+   "cad": "1516-4008-0430:1",
+   "system": "structure",
+   "name": "Standoff / Spacer",
+   "note": "Holds two parts a fixed distance apart.",
+   "label": false,
+   "center": [
+    0.1104,
+    0.0633,
+    0.134
+   ],
+   "size": [
+    0.043,
+    0.007,
+    0.008
+   ],
+   "tris": 1476
+  },
+  {
+   "id": "p110",
+   "meshes": 1,
+   "sku": "1516-4008-0430",
+   "cad": "1516-4008-0430:2",
+   "system": "structure",
+   "name": "Standoff / Spacer",
+   "note": "Holds two parts a fixed distance apart.",
+   "label": false,
+   "center": [
+    -0.1361,
+    0.1033,
+    0.1418
+   ],
+   "size": [
+    0.043,
+    0.008,
+    0.0074
+   ],
+   "tris": 1476
+  },
+  {
+   "id": "p111",
+   "meshes": 1,
+   "sku": "1502-0006-0110",
+   "cad": "1502-0006-0110:1",
+   "system": "structure",
+   "name": "Standoff / Spacer",
+   "note": "Holds two parts a fixed distance apart.",
+   "label": false,
+   "center": [
+    -0.1721,
+    0.068,
+    0.15
+   ],
+   "size": [
+    0.0058,
+    0.011,
+    0.006
+   ],
+   "tris": 200
+  },
+  {
+   "id": "p112",
+   "meshes": 1,
+   "sku": "1502-0006-0110",
+   "cad": "1502-0006-0110:2",
+   "system": "structure",
+   "name": "Standoff / Spacer",
+   "note": "Holds two parts a fixed distance apart.",
+   "label": false,
+   "center": [
+    -0.1401,
+    0.068,
+    0.15
+   ],
+   "size": [
+    0.0058,
+    0.011,
+    0.006
+   ],
+   "tris": 200
+  },
+  {
+   "id": "p113",
+   "meshes": 1,
+   "sku": "1502-0006-0110",
+   "cad": "1502-0006-0110:3",
+   "system": "structure",
+   "name": "Standoff / Spacer",
+   "note": "Holds two parts a fixed distance apart.",
+   "label": false,
+   "center": [
+    0.1399,
+    0.068,
+    0.15
+   ],
+   "size": [
+    0.0058,
+    0.011,
+    0.006
+   ],
+   "tris": 200
+  },
+  {
+   "id": "p114",
+   "meshes": 1,
+   "sku": "1502-0006-0110",
+   "cad": "1502-0006-0110:4",
+   "system": "structure",
+   "name": "Standoff / Spacer",
+   "note": "Holds two parts a fixed distance apart.",
+   "label": false,
+   "center": [
+    0.1719,
+    0.068,
+    0.15
+   ],
+   "size": [
+    0.0058,
+    0.011,
+    0.006
+   ],
+   "tris": 200
+  },
+  {
+   "id": "p115",
+   "meshes": 4,
+   "sku": "3217-0001-2501",
+   "cad": "3217-0001-2501 w.Hardware (2.6):1",
+   "system": "intake",
+   "name": "Compact ServoBlock",
+   "note": "Takes the side load off a servo's output shaft.",
+   "label": false,
+   "center": [
+    -0.1561,
+    0.0581,
+    0.178
+   ],
+   "size": [
+    0.043,
+    0.0303,
+    0.067
+   ],
+   "tris": 11747
+  },
+  {
+   "id": "p116",
+   "meshes": 4,
+   "sku": "3217-0001-2501",
+   "cad": "3217-0001-2501 w.Hardware (2.6):2",
+   "system": "intake",
+   "name": "Compact ServoBlock",
+   "note": "Takes the side load off a servo's output shaft.",
+   "label": false,
+   "center": [
+    0.1559,
+    0.0581,
+    0.178
+   ],
+   "size": [
+    0.043,
+    0.0303,
+    0.067
+   ],
+   "tris": 11747
+  },
+  {
+   "id": "p117",
+   "meshes": 5,
+   "sku": "2000-0025-0003",
+   "cad": "2000-0025-0003:1",
+   "system": "intake",
+   "name": "Speed Servo",
+   "note": "Spins continuously to run a corner wheel.",
+   "label": true,
+   "center": [
+    -0.1562,
+    0.0734,
+    0.1803
+   ],
+   "size": [
+    0.0202,
+    0.0441,
+    0.0543
+   ],
+   "tris": 6176
+  },
+  {
+   "id": "p118",
+   "meshes": 5,
+   "sku": "2000-0025-0003",
+   "cad": "2000-0025-0003:2",
+   "system": "intake",
+   "name": "Speed Servo",
+   "note": "Spins continuously to run a corner wheel.",
+   "label": true,
+   "center": [
+    0.1558,
+    0.0734,
+    0.1803
+   ],
+   "size": [
+    0.0202,
+    0.0441,
+    0.0543
+   ],
+   "tris": 6176
+  },
+  {
+   "id": "p119",
+   "meshes": 2,
+   "sku": "3613-0014-0072",
+   "cad": "3613-0014-0072:1",
+   "system": "intake",
+   "name": "72mm Gecko Wheel",
+   "note": "Servo-driven wheels at the corners that steer balls inward.",
+   "label": true,
+   "center": [
+    -0.1561,
+    0.039,
+    0.19
+   ],
+   "size": [
+    0.072,
+    0.024,
+    0.072
+   ],
+   "tris": 12336
+  },
+  {
+   "id": "p120",
+   "meshes": 2,
+   "sku": "3613-0014-0072",
+   "cad": "3613-0014-0072:2",
+   "system": "intake",
+   "name": "72mm Gecko Wheel",
+   "note": "Servo-driven wheels at the corners that steer balls inward.",
+   "label": true,
+   "center": [
+    0.1559,
+    0.039,
+    0.19
+   ],
+   "size": [
+    0.072,
+    0.024,
+    0.072
+   ],
+   "tris": 12336
+  },
+  {
+   "id": "p121",
+   "meshes": 3,
+   "sku": "1209-0001-0001",
+   "cad": "1209-0001-0001 w.Strap w.Hardware:1",
+   "system": "power",
+   "name": "Battery Mount",
+   "note": "Holds the battery in. A loose battery means a dead robot.",
+   "label": false,
+   "center": [
+    0.1571,
+    0.1015,
+    -0.058
+   ],
+   "size": [
+    0.0505,
+    0.064,
+    0.128
+   ],
+   "tris": 16552
+  },
+  {
+   "id": "p122",
+   "meshes": 1,
+   "sku": "1201-0043-0002",
+   "cad": "1201-0043-0002:4",
+   "system": "structure",
+   "name": "Quad Block Mount",
+   "note": "Clamps a channel to a shaft or a motor.",
+   "label": false,
+   "center": [
+    0.0679,
+    0.05,
+    -0.122
+   ],
+   "size": [
+    0.043,
+    0.012,
+    0.043
+   ],
+   "tris": 5852
+  },
+  {
+   "id": "p123",
+   "meshes": 1,
+   "sku": "1201-0043-0002",
+   "cad": "1201-0043-0002:5",
+   "system": "structure",
+   "name": "Quad Block Mount",
+   "note": "Clamps a channel to a shaft or a motor.",
+   "label": false,
+   "center": [
+    -0.0682,
+    0.05,
+    -0.122
+   ],
+   "size": [
+    0.043,
+    0.012,
+    0.043
+   ],
+   "tris": 5852
+  },
+  {
+   "id": "p124",
+   "meshes": 1,
+   "sku": "1120-0010-0264",
+   "cad": "1120-0010-0264:1",
+   "system": "structure",
+   "name": "U-Channel",
+   "note": "Aluminium channel with the goBILDA hole pattern.",
+   "label": false,
+   "center": [
+    -0.0681,
+    0.176,
+    -0.122
+   ],
+   "size": [
+    0.048,
+    0.264,
+    0.048
+   ],
+   "tris": 5722
+  },
+  {
+   "id": "p125",
+   "meshes": 1,
+   "sku": "1120-0010-0264",
+   "cad": "1120-0010-0264:2",
+   "system": "structure",
+   "name": "U-Channel",
+   "note": "Aluminium channel with the goBILDA hole pattern.",
+   "label": false,
+   "center": [
+    0.0678,
+    0.176,
+    -0.122
+   ],
+   "size": [
+    0.048,
+    0.264,
+    0.048
+   ],
+   "tris": 5722
+  },
+  {
+   "id": "p126",
+   "meshes": 1,
+   "sku": "1201-0043-0002",
+   "cad": "1201-0043-0002:6",
+   "system": "launcher",
+   "name": "Launcher Mount",
+   "note": "Holds the flywheel and its motor rigid so every shot flies the same way.",
+   "label": false,
+   "center": [
+    -0.0681,
+    0.172,
+    -0.092
+   ],
+   "size": [
+    0.043,
+    0.043,
+    0.012
+   ],
+   "tris": 5852
+  },
+  {
+   "id": "p127",
+   "meshes": 1,
+   "sku": "1121-0005-0144",
+   "cad": "1121-0005-0144:1",
+   "system": "structure",
+   "name": "U-Channel",
+   "note": "Aluminium channel with the goBILDA hole pattern.",
+   "label": false,
+   "center": [
+    -0.0861,
+    0.172,
+    -0.026
+   ],
+   "size": [
+    0.012,
+    0.048,
+    0.144
+   ],
+   "tris": 2172
+  },
+  {
+   "id": "p128",
+   "meshes": 1,
+   "sku": "1120-0002-0072",
+   "cad": "1120-0002-0072:1",
+   "system": "launcher",
+   "name": "Launcher Mount",
+   "note": "Holds the flywheel and its motor rigid so every shot flies the same way.",
+   "label": false,
+   "center": [
+    0.0558,
+    0.172,
+    -0.074
+   ],
+   "size": [
+    0.072,
+    0.048,
+    0.048
+   ],
+   "tris": 2148
+  },
+  {
+   "id": "p129",
+   "meshes": 1,
+   "sku": "1121-0005-0144",
+   "cad": "1121-0005-0144:2",
+   "system": "structure",
+   "name": "U-Channel",
+   "note": "Aluminium channel with the goBILDA hole pattern.",
+   "label": false,
+   "center": [
+    0.0678,
+    0.202,
+    -0.026
+   ],
+   "size": [
+    0.048,
+    0.012,
+    0.144
+   ],
+   "tris": 2172
+  },
+  {
+   "id": "p130",
+   "meshes": 1,
+   "sku": "1201-0043-0002",
+   "cad": "1201-0043-0002:7",
+   "system": "launcher",
+   "name": "Launcher Mount",
+   "note": "Holds the flywheel and its motor rigid so every shot flies the same way.",
+   "label": false,
+   "center": [
+    0.0258,
+    0.172,
+    -0.074
+   ],
+   "size": [
+    0.012,
+    0.043,
+    0.043
+   ],
+   "tris": 5852
+  },
+  {
+   "id": "p131",
+   "meshes": 4,
+   "sku": "3217-0001-2501",
+   "cad": "3217-0001-2501 w.Hardware (2.6):3",
+   "system": "intake",
+   "name": "Compact ServoBlock",
+   "note": "Takes the side load off a servo's output shaft.",
+   "label": false,
+   "center": [
+    -0.0682,
+    0.1436,
+    -0.006
+   ],
+   "size": [
+    0.043,
+    0.0303,
+    0.067
+   ],
+   "tris": 11747
+  },
+  {
+   "id": "p132",
+   "meshes": 5,
+   "sku": "2000-0025-0002",
+   "cad": "2000-0025-0002:1",
+   "system": "ballpath",
+   "name": "Hopper Servo",
+   "note": "Moves to let one ball at a time reach the flywheel.",
+   "label": true,
+   "center": [
+    -0.0682,
+    0.1589,
+    -0.004
+   ],
+   "size": [
+    0.0202,
+    0.0441,
+    0.0543
+   ],
+   "tris": 6176
+  },
+  {
+   "id": "p133",
+   "meshes": 10,
+   "sku": "5203-2402-0019",
+   "cad": "5203-2402-0019:5",
+   "system": "launcher",
+   "name": "Launcher Motor",
+   "note": "Yellow Jacket motor that spins the flywheel. Your code sets how fast.",
+   "label": true,
+   "center": [
+    0.0714,
+    0.1718,
+    -0.074
+   ],
+   "size": [
+    0.142,
+    0.0373,
+    0.0376
+   ],
+   "tris": 13103
+  },
+  {
+   "id": "p134",
+   "meshes": 2,
+   "sku": "1310-0016-4008",
+   "cad": "1310-0016-4008:1",
+   "system": "launcher",
+   "name": "Launcher Mount",
+   "note": "Holds the flywheel and its motor rigid so every shot flies the same way.",
+   "label": false,
+   "center": [
+    0.0038,
+    0.172,
+    -0.074
+   ],
+   "size": [
+    0.022,
+    0.024,
+    0.024
+   ],
+   "tris": 4580
+  },
+  {
+   "id": "p135",
+   "meshes": 2,
+   "sku": "3626-0014-0096",
+   "cad": "3626-0014-0096:1",
+   "system": "launcher",
+   "name": "Flywheel",
+   "note": "A Hogback Wheel spun fast. Balls touch it for a split second and leave at speed.",
+   "label": true,
+   "center": [
+    -0.0052,
+    0.172,
+    -0.074
+   ],
+   "size": [
+    0.024,
+    0.0959,
+    0.0958
+   ],
+   "tris": 11656
+  },
+  {
+   "id": "p136",
+   "meshes": 1,
+   "sku": "1201-0043-0002",
+   "cad": "1201-0043-0002:8",
+   "system": "structure",
+   "name": "Quad Block Mount",
+   "note": "Clamps a channel to a shaft or a motor.",
+   "label": false,
+   "center": [
+    -0.0682,
+    0.1225,
+    0.006
+   ],
+   "size": [
+    0.043,
+    0.012,
+    0.043
+   ],
+   "tris": 5852
+  },
+  {
+   "id": "p137",
+   "meshes": 4,
+   "sku": "3100-0012-0020",
+   "cad": "3100-0012-0020:1",
+   "system": "power",
+   "name": "12V Battery",
+   "note": "Everything on the robot runs from this pack. Charge it before every match.",
+   "label": true,
+   "center": [
+    0.1558,
+    0.1077,
+    -0.058
+   ],
+   "size": [
+    0.043,
+    0.0475,
+    0.124
+   ],
+   "tris": 2708
+  },
+  {
+   "id": "p138",
+   "meshes": 1,
+   "sku": "1117-0040-0352",
+   "cad": "1117-0040-0352 (3200-2627-0004_D):1",
+   "system": "ballpath",
+   "name": "Hopper Panel",
+   "note": "Thin sheet that keeps balls on the ball path.",
+   "label": false,
+   "center": [
+    0.1311,
+    0.085,
+    -0.01
+   ],
+   "size": [
+    0.0015,
+    0.04,
+    0.152
+   ],
+   "tris": 1974
+  },
+  {
+   "id": "p139",
+   "meshes": 1,
+   "sku": "1117-0040-0352",
+   "cad": "1117-0040-0352 (3200-2627-0004_A):1",
+   "system": "ballpath",
+   "name": "Hopper Panel",
+   "note": "Thin sheet that keeps balls on the ball path.",
+   "label": false,
+   "center": [
+    -0.0904,
+    0.1045,
+    0.034
+   ],
+   "size": [
+    0.0015,
+    0.04,
+    0.096
+   ],
+   "tris": 1418
+  },
+  {
+   "id": "p140",
+   "meshes": 1,
+   "sku": "1117-0040-0352",
+   "cad": "1117-0040-0352 (3200-2627-0004_A):2",
+   "system": "ballpath",
+   "name": "Hopper Panel",
+   "note": "Thin sheet that keeps balls on the ball path.",
+   "label": false,
+   "center": [
+    -0.0402,
+    0.1045,
+    0.0283
+   ],
+   "size": [
+    0.096,
+    0.04,
+    0.0015
+   ],
+   "tris": 1418
+  },
+  {
+   "id": "p141",
+   "meshes": 1,
+   "sku": "1117-0040-0352",
+   "cad": "1117-0040-0352 (3200-2627-0004_A):3",
+   "system": "ballpath",
+   "name": "Hopper Panel",
+   "note": "Thin sheet that keeps balls on the ball path.",
+   "label": false,
+   "center": [
+    -0.0459,
+    0.1045,
+    -0.022
+   ],
+   "size": [
+    0.0015,
+    0.04,
+    0.096
+   ],
+   "tris": 1418
+  },
+  {
+   "id": "p142",
+   "meshes": 1,
+   "sku": "1117-0040-0352",
+   "cad": "1117-0040-0352 (3200-2627-0004_A):4",
+   "system": "ballpath",
+   "name": "Hopper Panel",
+   "note": "Thin sheet that keeps balls on the ball path.",
+   "label": false,
+   "center": [
+    -0.0961,
+    0.1045,
+    -0.0163
+   ],
+   "size": [
+    0.096,
+    0.04,
+    0.0015
+   ],
+   "tris": 1418
+  },
+  {
+   "id": "p143",
+   "meshes": 1,
+   "sku": "1117-0040-0352",
+   "cad": "1117-0040-0352 (3200-2627-0004_C):1",
+   "system": "ballpath",
+   "name": "Hopper Panel",
+   "note": "Thin sheet that keeps balls on the ball path.",
+   "label": false,
+   "center": [
+    -0.0463,
+    0.188,
+    -0.178
+   ],
+   "size": [
+    0.0037,
+    0.04,
+    0.0881
+   ],
+   "tris": 1398
+  },
+  {
+   "id": "p144",
+   "meshes": 1,
+   "sku": "1117-0040-0352",
+   "cad": "1117-0040-0352 (3200-2627-0004_C):2",
+   "system": "ballpath",
+   "name": "Hopper Panel",
+   "note": "Thin sheet that keeps balls on the ball path.",
+   "label": false,
+   "center": [
+    0.046,
+    0.188,
+    -0.178
+   ],
+   "size": [
+    0.0037,
+    0.04,
+    0.0881
+   ],
+   "tris": 1398
+  },
+  {
+   "id": "p145",
+   "meshes": 1,
+   "sku": "1117-0088-0352",
+   "cad": "1117-0088-0352 (3200-2627-0004_G):1",
+   "system": "ballpath",
+   "name": "Hopper Panel",
+   "note": "Thin sheet that keeps balls on the ball path.",
+   "label": false,
+   "center": [
+    -0.0001,
+    0.1214,
+    -0.1233
+   ],
+   "size": [
+    0.0882,
+    0.174,
+    0.2008
+   ],
+   "tris": 5898
+  },
+  {
+   "id": "p146",
+   "meshes": 1,
+   "sku": "1117-0088-0352",
+   "cad": "1117-0088-0352 (3200-2627-0004_F):1",
+   "system": "ballpath",
+   "name": "Hopper Panel",
+   "note": "Thin sheet that keeps balls on the ball path.",
+   "label": false,
+   "center": [
+    0.0791,
+    0.0511,
+    -0.05
+   ],
+   "size": [
+    0.0869,
+    0.0203,
+    0.0726
+   ],
+   "tris": 2144
+  },
+  {
+   "id": "p147",
+   "meshes": 1,
+   "sku": "1117-0040-0352",
+   "cad": "1117-0040-0352 (3200-2627-0004_B):1",
+   "system": "ballpath",
+   "name": "Hopper Panel",
+   "note": "Thin sheet that keeps balls on the ball path.",
+   "label": false,
+   "center": [
+    -0.0449,
+    0.0506,
+    -0.0671
+   ],
+   "size": [
+    0.0015,
+    0.0419,
+    0.0574
+   ],
+   "tris": 964
+  },
+  {
+   "id": "p148",
+   "meshes": 1,
+   "sku": "1117-0088-0352",
+   "cad": "1117-0088-0352 (3200-2627-0004_E):1",
+   "system": "ballpath",
+   "name": "Hopper Panel",
+   "note": "Thin sheet that keeps balls on the ball path.",
+   "label": false,
+   "center": [
+    0.0014,
+    0.0477,
+    0.022
+   ],
+   "size": [
+    0.2626,
+    0.0345,
+    0.0882
+   ],
+   "tris": 5758
+  },
+  {
+   "id": "p149",
+   "meshes": 1,
+   "sku": "1117-0216-0352",
+   "cad": "1117-0216-0352 (3200-2627-0004_H):1",
+   "system": "ballpath",
+   "name": "Ramp Panel",
+   "note": "Curved sheet that guides balls up to the flywheel.",
+   "label": true,
+   "center": [
+    -0.0,
+    0.241,
+    -0.0074
+   ],
+   "size": [
+    0.1766,
+    0.1319,
+    0.1812
+   ],
+   "tris": 7814
+  },
+  {
+   "id": "p150",
+   "meshes": 1,
+   "sku": "1501-0006-0430",
+   "cad": "1501-0006-0430:6",
+   "system": "structure",
+   "name": "Standoff / Spacer",
+   "note": "Holds two parts a fixed distance apart.",
+   "label": false,
+   "center": [
+    0.0381,
+    0.0694,
+    -0.0631
+   ],
+   "size": [
+    0.0085,
+    0.0434,
+    0.012
+   ],
+   "tris": 1344
+  },
+  {
+   "id": "p151",
+   "meshes": 1,
+   "sku": "1501-0006-0430",
+   "cad": "1501-0006-0430:5",
+   "system": "structure",
+   "name": "Standoff / Spacer",
+   "note": "Holds two parts a fixed distance apart.",
+   "label": false,
+   "center": [
+    0.0518,
+    0.0674,
+    -0.0422
+   ],
+   "size": [
+    0.0129,
+    0.0433,
+    0.0066
+   ],
+   "tris": 1344
+  },
+  {
+   "id": "p152",
+   "meshes": 1,
+   "sku": "1501-0006-0430",
+   "cad": "1501-0006-0430:4",
+   "system": "structure",
+   "name": "Standoff / Spacer",
+   "note": "Holds two parts a fixed distance apart.",
+   "label": false,
+   "center": [
+    0.0819,
+    0.0738,
+    -0.0577
+   ],
+   "size": [
+    0.0152,
+    0.0432,
+    0.0068
+   ],
+   "tris": 1344
+  },
+  {
+   "id": "p153",
+   "meshes": 1,
+   "sku": "Hardware:1/2801-0004-0008:32",
+   "cad": "Hardware:1/2801-0004-0008:32",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1641,
+    0.0385,
+    0.198
+   ],
+   "size": [
+    0.008,
+    0.001,
+    0.0078
+   ],
+   "tris": 112
+  },
+  {
+   "id": "p154",
+   "meshes": 1,
+   "sku": "Hardware:1/2801-0004-0008:26",
+   "cad": "Hardware:1/2801-0004-0008:26",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1639,
+    0.0385,
+    0.198
+   ],
+   "size": [
+    0.008,
+    0.001,
+    0.0078
+   ],
+   "tris": 112
+  },
+  {
+   "id": "p155",
+   "meshes": 1,
+   "sku": "Hardware:1/2801-0004-0008:27",
+   "cad": "Hardware:1/2801-0004-0008:27",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1639,
+    0.0385,
+    0.182
+   ],
+   "size": [
+    0.008,
+    0.001,
+    0.0078
+   ],
+   "tris": 112
+  },
+  {
+   "id": "p156",
+   "meshes": 1,
+   "sku": "Hardware:1/2801-0004-0008:28",
+   "cad": "Hardware:1/2801-0004-0008:28",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1479,
+    0.0385,
+    0.182
+   ],
+   "size": [
+    0.008,
+    0.001,
+    0.0078
+   ],
+   "tris": 112
+  },
+  {
+   "id": "p157",
+   "meshes": 1,
+   "sku": "Hardware:1/2801-0004-0008:34",
+   "cad": "Hardware:1/2801-0004-0008:34",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1479,
+    0.0385,
+    0.198
+   ],
+   "size": [
+    0.008,
+    0.001,
+    0.0078
+   ],
+   "tris": 112
+  },
+  {
+   "id": "p158",
+   "meshes": 1,
+   "sku": "Hardware:1/2801-0004-0008:29",
+   "cad": "Hardware:1/2801-0004-0008:29",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1481,
+    0.0385,
+    0.198
+   ],
+   "size": [
+    0.008,
+    0.001,
+    0.0078
+   ],
+   "tris": 112
+  },
+  {
+   "id": "p159",
+   "meshes": 1,
+   "sku": "Hardware:1/2801-0004-0008:30",
+   "cad": "Hardware:1/2801-0004-0008:30",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1481,
+    0.0385,
+    0.182
+   ],
+   "size": [
+    0.008,
+    0.001,
+    0.0078
+   ],
+   "tris": 112
+  },
+  {
+   "id": "p160",
+   "meshes": 1,
+   "sku": "Hardware:1/2801-0004-0008:31",
+   "cad": "Hardware:1/2801-0004-0008:31",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1641,
+    0.0385,
+    0.182
+   ],
+   "size": [
+    0.008,
+    0.001,
+    0.0078
+   ],
+   "tris": 112
+  },
+  {
+   "id": "p161",
+   "meshes": 1,
+   "sku": "Hardware:1/2801-0004-0008:35",
+   "cad": "Hardware:1/2801-0004-0008:35",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.0097,
+    0.18,
+    -0.082
+   ],
+   "size": [
+    0.001,
+    0.0078,
+    0.008
+   ],
+   "tris": 112
+  },
+  {
+   "id": "p162",
+   "meshes": 1,
+   "sku": "Hardware:1/2801-0004-0008:36",
+   "cad": "Hardware:1/2801-0004-0008:36",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.0097,
+    0.18,
+    -0.066
+   ],
+   "size": [
+    0.001,
+    0.0078,
+    0.008
+   ],
+   "tris": 112
+  },
+  {
+   "id": "p163",
+   "meshes": 1,
+   "sku": "Hardware:1/2801-0004-0008:37",
+   "cad": "Hardware:1/2801-0004-0008:37",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.0097,
+    0.164,
+    -0.082
+   ],
+   "size": [
+    0.001,
+    0.0078,
+    0.008
+   ],
+   "tris": 112
+  },
+  {
+   "id": "p164",
+   "meshes": 1,
+   "sku": "Hardware:1/2801-0004-0008:38",
+   "cad": "Hardware:1/2801-0004-0008:38",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.0097,
+    0.164,
+    -0.066
+   ],
+   "size": [
+    0.001,
+    0.0078,
+    0.008
+   ],
+   "tris": 112
+  },
+  {
+   "id": "p165",
+   "meshes": 1,
+   "sku": "Hardware:1/2801-0004-0008:39",
+   "cad": "Hardware:1/2801-0004-0008:39",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.0916,
+    0.1205,
+    -0.01
+   ],
+   "size": [
+    0.001,
+    0.008,
+    0.0078
+   ],
+   "tris": 112
+  },
+  {
+   "id": "p166",
+   "meshes": 1,
+   "sku": "Hardware:1/2801-0004-0008:40",
+   "cad": "Hardware:1/2801-0004-0008:40",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.0916,
+    0.1205,
+    0.022
+   ],
+   "size": [
+    0.001,
+    0.008,
+    0.0078
+   ],
+   "tris": 112
+  },
+  {
+   "id": "p167",
+   "meshes": 1,
+   "sku": "Hardware:1/2801-0004-0008:41",
+   "cad": "Hardware:1/2801-0004-0008:41",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.0842,
+    0.1205,
+    0.0295
+   ],
+   "size": [
+    0.008,
+    0.0078,
+    0.001
+   ],
+   "tris": 112
+  },
+  {
+   "id": "p168",
+   "meshes": 1,
+   "sku": "Hardware:1/2801-0004-0008:42",
+   "cad": "Hardware:1/2801-0004-0008:42",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.0522,
+    0.1205,
+    0.0295
+   ],
+   "size": [
+    0.008,
+    0.0078,
+    0.001
+   ],
+   "tris": 112
+  },
+  {
+   "id": "p169",
+   "meshes": 1,
+   "sku": "Hardware:1/2801-0004-0008:43",
+   "cad": "Hardware:1/2801-0004-0008:43",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.0446,
+    0.1205,
+    0.022
+   ],
+   "size": [
+    0.001,
+    0.008,
+    0.0078
+   ],
+   "tris": 112
+  },
+  {
+   "id": "p170",
+   "meshes": 1,
+   "sku": "Hardware:1/2801-0004-0008:44",
+   "cad": "Hardware:1/2801-0004-0008:44",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.0446,
+    0.1205,
+    -0.01
+   ],
+   "size": [
+    0.001,
+    0.008,
+    0.0078
+   ],
+   "tris": 112
+  },
+  {
+   "id": "p171",
+   "meshes": 1,
+   "sku": "Hardware:1/2801-0004-0008:45",
+   "cad": "Hardware:1/2801-0004-0008:45",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.0521,
+    0.1205,
+    -0.0175
+   ],
+   "size": [
+    0.008,
+    0.0078,
+    0.001
+   ],
+   "tris": 112
+  },
+  {
+   "id": "p172",
+   "meshes": 1,
+   "sku": "Hardware:1/2801-0004-0008:46",
+   "cad": "Hardware:1/2801-0004-0008:46",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.0841,
+    0.1205,
+    -0.0175
+   ],
+   "size": [
+    0.008,
+    0.0078,
+    0.001
+   ],
+   "tris": 112
+  },
+  {
+   "id": "p173",
+   "meshes": 1,
+   "sku": "Hardware:1/2801-0004-0008:48",
+   "cad": "Hardware:1/2801-0004-0008:48",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.0395,
+    0.0476,
+    -0.0662
+   ],
+   "size": [
+    0.008,
+    0.0022,
+    0.0079
+   ],
+   "tris": 112
+  },
+  {
+   "id": "p174",
+   "meshes": 1,
+   "sku": "Hardware:1/2801-0004-0008:50",
+   "cad": "Hardware:1/2801-0004-0008:50",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.0398,
+    0.0431,
+    -0.0669
+   ],
+   "size": [
+    0.008,
+    0.0022,
+    0.0079
+   ],
+   "tris": 112
+  },
+  {
+   "id": "p175",
+   "meshes": 1,
+   "sku": "Hardware:1/2801-0004-0008:51",
+   "cad": "Hardware:1/2801-0004-0008:51",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.0868,
+    0.0524,
+    -0.0581
+   ],
+   "size": [
+    0.008,
+    0.0028,
+    0.0078
+   ],
+   "tris": 112
+  },
+  {
+   "id": "p176",
+   "meshes": 1,
+   "sku": "Hardware:1/2801-0004-0008:52",
+   "cad": "Hardware:1/2801-0004-0008:52",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.0874,
+    0.0499,
+    -0.0582
+   ],
+   "size": [
+    0.008,
+    0.0028,
+    0.0078
+   ],
+   "tris": 112
+  },
+  {
+   "id": "p177",
+   "meshes": 1,
+   "sku": "Hardware:1/2801-0004-0008:53",
+   "cad": "Hardware:1/2801-0004-0008:53",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.0555,
+    0.0457,
+    -0.0425
+   ],
+   "size": [
+    0.0081,
+    0.0023,
+    0.0078
+   ],
+   "tris": 112
+  },
+  {
+   "id": "p178",
+   "meshes": 1,
+   "sku": "Hardware:1/2801-0004-0008:54",
+   "cad": "Hardware:1/2801-0004-0008:54",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.0559,
+    0.0433,
+    -0.0426
+   ],
+   "size": [
+    0.0081,
+    0.0023,
+    0.0078
+   ],
+   "tris": 112
+  },
+  {
+   "id": "p179",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0008:1",
+   "cad": "Hardware:1/2800-0004-0008:1",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1324,
+    0.036,
+    -0.218
+   ],
+   "size": [
+    0.012,
+    0.007,
+    0.0068
+   ],
+   "tris": 820
+  },
+  {
+   "id": "p180",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0008:2",
+   "cad": "Hardware:1/2800-0004-0008:2",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1324,
+    0.068,
+    -0.218
+   ],
+   "size": [
+    0.012,
+    0.007,
+    0.0068
+   ],
+   "tris": 820
+  },
+  {
+   "id": "p181",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0008:3",
+   "cad": "Hardware:1/2800-0004-0008:3",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1324,
+    0.036,
+    -0.138
+   ],
+   "size": [
+    0.012,
+    0.007,
+    0.0068
+   ],
+   "tris": 820
+  },
+  {
+   "id": "p182",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0008:4",
+   "cad": "Hardware:1/2800-0004-0008:4",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1324,
+    0.036,
+    -0.106
+   ],
+   "size": [
+    0.012,
+    0.007,
+    0.0068
+   ],
+   "tris": 820
+  },
+  {
+   "id": "p183",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0008:5",
+   "cad": "Hardware:1/2800-0004-0008:5",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1326,
+    0.036,
+    -0.218
+   ],
+   "size": [
+    0.012,
+    0.007,
+    0.0068
+   ],
+   "tris": 820
+  },
+  {
+   "id": "p184",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0008:6",
+   "cad": "Hardware:1/2800-0004-0008:6",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1326,
+    0.068,
+    -0.218
+   ],
+   "size": [
+    0.012,
+    0.007,
+    0.0068
+   ],
+   "tris": 820
+  },
+  {
+   "id": "p185",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0008:7",
+   "cad": "Hardware:1/2800-0004-0008:7",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1326,
+    0.036,
+    -0.138
+   ],
+   "size": [
+    0.012,
+    0.007,
+    0.0068
+   ],
+   "tris": 820
+  },
+  {
+   "id": "p186",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0008:8",
+   "cad": "Hardware:1/2800-0004-0008:8",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1326,
+    0.036,
+    -0.106
+   ],
+   "size": [
+    0.012,
+    0.007,
+    0.0068
+   ],
+   "tris": 820
+  },
+  {
+   "id": "p187",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0008:9",
+   "cad": "Hardware:1/2800-0004-0008:9",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.0839,
+    0.0435,
+    -0.106
+   ],
+   "size": [
+    0.0068,
+    0.012,
+    0.007
+   ],
+   "tris": 820
+  },
+  {
+   "id": "p188",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0008:10",
+   "cad": "Hardware:1/2800-0004-0008:10",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.0518,
+    0.0435,
+    -0.106
+   ],
+   "size": [
+    0.0068,
+    0.012,
+    0.007
+   ],
+   "tris": 820
+  },
+  {
+   "id": "p189",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0008:11",
+   "cad": "Hardware:1/2800-0004-0008:11",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.0519,
+    0.0435,
+    -0.138
+   ],
+   "size": [
+    0.0068,
+    0.012,
+    0.007
+   ],
+   "tris": 820
+  },
+  {
+   "id": "p190",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0008:12",
+   "cad": "Hardware:1/2800-0004-0008:12",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.0839,
+    0.0435,
+    -0.138
+   ],
+   "size": [
+    0.0068,
+    0.012,
+    0.007
+   ],
+   "tris": 820
+  },
+  {
+   "id": "p191",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0008:13",
+   "cad": "Hardware:1/2800-0004-0008:13",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.0842,
+    0.0435,
+    -0.106
+   ],
+   "size": [
+    0.0068,
+    0.012,
+    0.007
+   ],
+   "tris": 820
+  },
+  {
+   "id": "p192",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0008:14",
+   "cad": "Hardware:1/2800-0004-0008:14",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.0521,
+    0.0435,
+    -0.106
+   ],
+   "size": [
+    0.0068,
+    0.012,
+    0.007
+   ],
+   "tris": 820
+  },
+  {
+   "id": "p193",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0008:15",
+   "cad": "Hardware:1/2800-0004-0008:15",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.0522,
+    0.0435,
+    -0.138
+   ],
+   "size": [
+    0.0068,
+    0.012,
+    0.007
+   ],
+   "tris": 820
+  },
+  {
+   "id": "p194",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0008:16",
+   "cad": "Hardware:1/2800-0004-0008:16",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.0842,
+    0.0435,
+    -0.138
+   ],
+   "size": [
+    0.0068,
+    0.012,
+    0.007
+   ],
+   "tris": 820
+  },
+  {
+   "id": "p195",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0008:17",
+   "cad": "Hardware:1/2800-0004-0008:17",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.0841,
+    0.156,
+    -0.0985
+   ],
+   "size": [
+    0.007,
+    0.0068,
+    0.012
+   ],
+   "tris": 820
+  },
+  {
+   "id": "p196",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0008:18",
+   "cad": "Hardware:1/2800-0004-0008:18",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.0521,
+    0.156,
+    -0.0985
+   ],
+   "size": [
+    0.007,
+    0.0068,
+    0.012
+   ],
+   "tris": 820
+  },
+  {
+   "id": "p197",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0008:19",
+   "cad": "Hardware:1/2800-0004-0008:19",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.0521,
+    0.188,
+    -0.0985
+   ],
+   "size": [
+    0.007,
+    0.0068,
+    0.012
+   ],
+   "tris": 820
+  },
+  {
+   "id": "p198",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0008:20",
+   "cad": "Hardware:1/2800-0004-0008:20",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.0841,
+    0.188,
+    -0.0985
+   ],
+   "size": [
+    0.007,
+    0.0068,
+    0.012
+   ],
+   "tris": 820
+  },
+  {
+   "id": "p199",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:9",
+   "cad": "Hardware:1/2800-0004-0010:9",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1401,
+    0.0755,
+    0.094
+   ],
+   "size": [
+    0.007,
+    0.014,
+    0.0068
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p200",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:10",
+   "cad": "Hardware:1/2800-0004-0010:10",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1721,
+    0.0755,
+    0.094
+   ],
+   "size": [
+    0.007,
+    0.014,
+    0.0068
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p201",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:11",
+   "cad": "Hardware:1/2800-0004-0010:11",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1721,
+    0.0755,
+    0.126
+   ],
+   "size": [
+    0.007,
+    0.014,
+    0.0068
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p202",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:12",
+   "cad": "Hardware:1/2800-0004-0010:12",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1401,
+    0.0755,
+    0.126
+   ],
+   "size": [
+    0.007,
+    0.014,
+    0.0068
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p203",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:13",
+   "cad": "Hardware:1/2800-0004-0010:13",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1719,
+    0.0755,
+    0.126
+   ],
+   "size": [
+    0.007,
+    0.014,
+    0.0068
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p204",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:14",
+   "cad": "Hardware:1/2800-0004-0010:14",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1399,
+    0.0755,
+    0.126
+   ],
+   "size": [
+    0.007,
+    0.014,
+    0.0068
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p205",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:15",
+   "cad": "Hardware:1/2800-0004-0010:15",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1399,
+    0.0755,
+    0.094
+   ],
+   "size": [
+    0.007,
+    0.014,
+    0.0068
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p206",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:16",
+   "cad": "Hardware:1/2800-0004-0010:16",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1719,
+    0.0755,
+    0.094
+   ],
+   "size": [
+    0.007,
+    0.014,
+    0.0068
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p207",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:33",
+   "cad": "Hardware:1/2800-0004-0010:33",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1254,
+    0.148,
+    0.1464
+   ],
+   "size": [
+    0.014,
+    0.007,
+    0.007
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p208",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:34",
+   "cad": "Hardware:1/2800-0004-0010:34",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1254,
+    0.136,
+    0.1351
+   ],
+   "size": [
+    0.014,
+    0.007,
+    0.007
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p209",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:35",
+   "cad": "Hardware:1/2800-0004-0010:35",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1254,
+    0.136,
+    0.1577
+   ],
+   "size": [
+    0.014,
+    0.007,
+    0.007
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p210",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:36",
+   "cad": "Hardware:1/2800-0004-0010:36",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1254,
+    0.1247,
+    0.1464
+   ],
+   "size": [
+    0.014,
+    0.007,
+    0.007
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p211",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:37",
+   "cad": "Hardware:1/2800-0004-0010:37",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1041,
+    0.1228,
+    0.1691
+   ],
+   "size": [
+    0.0068,
+    0.0073,
+    0.0144
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p212",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:38",
+   "cad": "Hardware:1/2800-0004-0010:38",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1041,
+    0.1547,
+    0.1657
+   ],
+   "size": [
+    0.0068,
+    0.0073,
+    0.0144
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p213",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:39",
+   "cad": "Hardware:1/2800-0004-0010:39",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1041,
+    0.1492,
+    0.1238
+   ],
+   "size": [
+    0.0068,
+    0.0073,
+    0.0144
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p214",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:40",
+   "cad": "Hardware:1/2800-0004-0010:40",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1041,
+    0.1174,
+    0.1271
+   ],
+   "size": [
+    0.0068,
+    0.0073,
+    0.0144
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p215",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:41",
+   "cad": "Hardware:1/2800-0004-0010:41",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1201,
+    0.1189,
+    0.1318
+   ],
+   "size": [
+    0.007,
+    0.0071,
+    0.0144
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p216",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:42",
+   "cad": "Hardware:1/2800-0004-0010:42",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1201,
+    0.0871,
+    0.1351
+   ],
+   "size": [
+    0.007,
+    0.0071,
+    0.0144
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p217",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:43",
+   "cad": "Hardware:1/2800-0004-0010:43",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1119,
+    0.0871,
+    0.1351
+   ],
+   "size": [
+    0.007,
+    0.0071,
+    0.0144
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p218",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:44",
+   "cad": "Hardware:1/2800-0004-0010:44",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1119,
+    0.1189,
+    0.1318
+   ],
+   "size": [
+    0.007,
+    0.0071,
+    0.0144
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p219",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:45",
+   "cad": "Hardware:1/2800-0004-0010:45",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1151,
+    0.1112,
+    0.1088
+   ],
+   "size": [
+    0.014,
+    0.007,
+    0.007
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p220",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:46",
+   "cad": "Hardware:1/2800-0004-0010:46",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1151,
+    0.1012,
+    0.1213
+   ],
+   "size": [
+    0.014,
+    0.007,
+    0.007
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p221",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:47",
+   "cad": "Hardware:1/2800-0004-0010:47",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1151,
+    0.0887,
+    0.1112
+   ],
+   "size": [
+    0.014,
+    0.007,
+    0.007
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p222",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:48",
+   "cad": "Hardware:1/2800-0004-0010:48",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1151,
+    0.0988,
+    0.0987
+   ],
+   "size": [
+    0.014,
+    0.007,
+    0.007
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p223",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:49",
+   "cad": "Hardware:1/2800-0004-0010:49",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1069,
+    0.1012,
+    0.1213
+   ],
+   "size": [
+    0.014,
+    0.007,
+    0.007
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p224",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:50",
+   "cad": "Hardware:1/2800-0004-0010:50",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1069,
+    0.0887,
+    0.1112
+   ],
+   "size": [
+    0.014,
+    0.007,
+    0.007
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p225",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:51",
+   "cad": "Hardware:1/2800-0004-0010:51",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1069,
+    0.1112,
+    0.1088
+   ],
+   "size": [
+    0.014,
+    0.007,
+    0.007
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p226",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:52",
+   "cad": "Hardware:1/2800-0004-0010:52",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1069,
+    0.0988,
+    0.0987
+   ],
+   "size": [
+    0.014,
+    0.007,
+    0.007
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p227",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:61",
+   "cad": "Hardware:1/2800-0004-0010:61",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1719,
+    0.0765,
+    -0.138
+   ],
+   "size": [
+    0.007,
+    0.014,
+    0.0068
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p228",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:62",
+   "cad": "Hardware:1/2800-0004-0010:62",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1399,
+    0.0765,
+    -0.138
+   ],
+   "size": [
+    0.007,
+    0.014,
+    0.0068
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p229",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:63",
+   "cad": "Hardware:1/2800-0004-0010:63",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1399,
+    0.0765,
+    -0.17
+   ],
+   "size": [
+    0.007,
+    0.014,
+    0.0068
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p230",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:64",
+   "cad": "Hardware:1/2800-0004-0010:64",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1719,
+    0.0765,
+    -0.17
+   ],
+   "size": [
+    0.007,
+    0.014,
+    0.0068
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p231",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:65",
+   "cad": "Hardware:1/2800-0004-0010:65",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1401,
+    0.0765,
+    -0.17
+   ],
+   "size": [
+    0.007,
+    0.014,
+    0.0068
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p232",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:66",
+   "cad": "Hardware:1/2800-0004-0010:66",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1721,
+    0.0765,
+    -0.17
+   ],
+   "size": [
+    0.007,
+    0.014,
+    0.0068
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p233",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:67",
+   "cad": "Hardware:1/2800-0004-0010:67",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1401,
+    0.0765,
+    -0.138
+   ],
+   "size": [
+    0.007,
+    0.014,
+    0.0068
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p234",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:68",
+   "cad": "Hardware:1/2800-0004-0010:68",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1721,
+    0.0765,
+    -0.138
+   ],
+   "size": [
+    0.007,
+    0.014,
+    0.0068
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p235",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:69",
+   "cad": "Hardware:1/2800-0004-0010:69",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1314,
+    0.044,
+    0.094
+   ],
+   "size": [
+    0.014,
+    0.007,
+    0.0068
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p236",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:70",
+   "cad": "Hardware:1/2800-0004-0010:70",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1316,
+    0.044,
+    0.094
+   ],
+   "size": [
+    0.014,
+    0.007,
+    0.0068
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p237",
+   "meshes": 2,
+   "sku": "Hardware:1/2822-0004-0010:41",
+   "cad": "Hardware:1/2822-0004-0010:41",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1034,
+    0.1448,
+    0.1535
+   ],
+   "size": [
+    0.014,
+    0.007,
+    0.007
+   ],
+   "tris": 1246
+  },
+  {
+   "id": "p238",
+   "meshes": 2,
+   "sku": "Hardware:1/2822-0004-0010:42",
+   "cad": "Hardware:1/2822-0004-0010:42",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1034,
+    0.1272,
+    0.1393
+   ],
+   "size": [
+    0.014,
+    0.007,
+    0.007
+   ],
+   "tris": 1246
+  },
+  {
+   "id": "p239",
+   "meshes": 2,
+   "sku": "Hardware:1/2822-0004-0010:43",
+   "cad": "Hardware:1/2822-0004-0010:43",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1034,
+    0.1289,
+    0.1552
+   ],
+   "size": [
+    0.014,
+    0.007,
+    0.007
+   ],
+   "tris": 1246
+  },
+  {
+   "id": "p240",
+   "meshes": 2,
+   "sku": "Hardware:1/2822-0004-0010:44",
+   "cad": "Hardware:1/2822-0004-0010:44",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1034,
+    0.1431,
+    0.1376
+   ],
+   "size": [
+    0.014,
+    0.007,
+    0.007
+   ],
+   "tris": 1246
+  },
+  {
+   "id": "p241",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:53",
+   "cad": "Hardware:1/2800-0004-0010:53",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1641,
+    0.041,
+    0.198
+   ],
+   "size": [
+    0.007,
+    0.014,
+    0.0068
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p242",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:54",
+   "cad": "Hardware:1/2800-0004-0010:54",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1481,
+    0.041,
+    0.198
+   ],
+   "size": [
+    0.007,
+    0.014,
+    0.0068
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p243",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:55",
+   "cad": "Hardware:1/2800-0004-0010:55",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1641,
+    0.041,
+    0.182
+   ],
+   "size": [
+    0.007,
+    0.014,
+    0.0068
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p244",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:56",
+   "cad": "Hardware:1/2800-0004-0010:56",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1481,
+    0.041,
+    0.182
+   ],
+   "size": [
+    0.007,
+    0.014,
+    0.0068
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p245",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:57",
+   "cad": "Hardware:1/2800-0004-0010:57",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1479,
+    0.041,
+    0.198
+   ],
+   "size": [
+    0.007,
+    0.014,
+    0.0068
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p246",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:58",
+   "cad": "Hardware:1/2800-0004-0010:58",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1639,
+    0.041,
+    0.198
+   ],
+   "size": [
+    0.007,
+    0.014,
+    0.0068
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p247",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:59",
+   "cad": "Hardware:1/2800-0004-0010:59",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1639,
+    0.041,
+    0.182
+   ],
+   "size": [
+    0.007,
+    0.014,
+    0.0068
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p248",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:60",
+   "cad": "Hardware:1/2800-0004-0010:60",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1479,
+    0.041,
+    0.182
+   ],
+   "size": [
+    0.007,
+    0.014,
+    0.0068
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p249",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:71",
+   "cad": "Hardware:1/2800-0004-0010:71",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.0598,
+    0.1955,
+    -0.09
+   ],
+   "size": [
+    0.007,
+    0.014,
+    0.0068
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p250",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:72",
+   "cad": "Hardware:1/2800-0004-0010:72",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.0758,
+    0.1955,
+    -0.09
+   ],
+   "size": [
+    0.007,
+    0.014,
+    0.0068
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p251",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:73",
+   "cad": "Hardware:1/2800-0004-0010:73",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.0838,
+    0.1955,
+    -0.058
+   ],
+   "size": [
+    0.007,
+    0.014,
+    0.0068
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p252",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:74",
+   "cad": "Hardware:1/2800-0004-0010:74",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.0518,
+    0.1955,
+    -0.058
+   ],
+   "size": [
+    0.007,
+    0.014,
+    0.0068
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p253",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:75",
+   "cad": "Hardware:1/2800-0004-0010:75",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.0841,
+    0.193,
+    -0.09
+   ],
+   "size": [
+    0.007,
+    0.014,
+    0.0068
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p254",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:76",
+   "cad": "Hardware:1/2800-0004-0010:76",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.0891,
+    0.156,
+    -0.09
+   ],
+   "size": [
+    0.014,
+    0.007,
+    0.0068
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p255",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:77",
+   "cad": "Hardware:1/2800-0004-0010:77",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.0892,
+    0.052,
+    -0.106
+   ],
+   "size": [
+    0.014,
+    0.0068,
+    0.007
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p256",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:78",
+   "cad": "Hardware:1/2800-0004-0010:78",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.0892,
+    0.052,
+    -0.138
+   ],
+   "size": [
+    0.014,
+    0.0068,
+    0.007
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p257",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:79",
+   "cad": "Hardware:1/2800-0004-0010:79",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.0472,
+    0.052,
+    -0.106
+   ],
+   "size": [
+    0.014,
+    0.0068,
+    0.007
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p258",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:80",
+   "cad": "Hardware:1/2800-0004-0010:80",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.0472,
+    0.052,
+    -0.138
+   ],
+   "size": [
+    0.014,
+    0.0068,
+    0.007
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p259",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:81",
+   "cad": "Hardware:1/2800-0004-0010:81",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.0888,
+    0.052,
+    -0.138
+   ],
+   "size": [
+    0.014,
+    0.0068,
+    0.007
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p260",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:82",
+   "cad": "Hardware:1/2800-0004-0010:82",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.0888,
+    0.052,
+    -0.106
+   ],
+   "size": [
+    0.014,
+    0.0068,
+    0.007
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p261",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:83",
+   "cad": "Hardware:1/2800-0004-0010:83",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.0468,
+    0.052,
+    -0.106
+   ],
+   "size": [
+    0.014,
+    0.0068,
+    0.007
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p262",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:84",
+   "cad": "Hardware:1/2800-0004-0010:84",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.0468,
+    0.052,
+    -0.138
+   ],
+   "size": [
+    0.014,
+    0.0068,
+    0.007
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p263",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:85",
+   "cad": "Hardware:1/2800-0004-0010:85",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.0838,
+    0.188,
+    -0.0985
+   ],
+   "size": [
+    0.0068,
+    0.007,
+    0.014
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p264",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:87",
+   "cad": "Hardware:1/2800-0004-0010:87",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.0838,
+    0.156,
+    -0.0985
+   ],
+   "size": [
+    0.0068,
+    0.007,
+    0.014
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p265",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:88",
+   "cad": "Hardware:1/2800-0004-0010:88",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.0518,
+    0.156,
+    -0.0985
+   ],
+   "size": [
+    0.0068,
+    0.007,
+    0.014
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p266",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:89",
+   "cad": "Hardware:1/2800-0004-0010:89",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.0518,
+    0.188,
+    -0.0985
+   ],
+   "size": [
+    0.0068,
+    0.007,
+    0.014
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p267",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:90",
+   "cad": "Hardware:1/2800-0004-0010:90",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.0876,
+    0.0521,
+    -0.0582
+   ],
+   "size": [
+    0.0082,
+    0.0146,
+    0.0069
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p268",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:91",
+   "cad": "Hardware:1/2800-0004-0010:91",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.0563,
+    0.0456,
+    -0.0426
+   ],
+   "size": [
+    0.0076,
+    0.0145,
+    0.0069
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p269",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0010:92",
+   "cad": "Hardware:1/2800-0004-0010:92",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.04,
+    0.0454,
+    -0.0672
+   ],
+   "size": [
+    0.0072,
+    0.0145,
+    0.0072
+   ],
+   "tris": 942
+  },
+  {
+   "id": "p270",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0012:1",
+   "cad": "Hardware:1/2800-0004-0012:1",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1239,
+    0.04,
+    -0.138
+   ],
+   "size": [
+    0.007,
+    0.016,
+    0.0068
+   ],
+   "tris": 1062
+  },
+  {
+   "id": "p271",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0012:2",
+   "cad": "Hardware:1/2800-0004-0012:2",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1239,
+    0.04,
+    -0.106
+   ],
+   "size": [
+    0.007,
+    0.016,
+    0.0068
+   ],
+   "tris": 1062
+  },
+  {
+   "id": "p272",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0012:3",
+   "cad": "Hardware:1/2800-0004-0012:3",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1241,
+    0.04,
+    -0.138
+   ],
+   "size": [
+    0.007,
+    0.016,
+    0.0068
+   ],
+   "tris": 1062
+  },
+  {
+   "id": "p273",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0012:4",
+   "cad": "Hardware:1/2800-0004-0012:4",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1241,
+    0.04,
+    -0.106
+   ],
+   "size": [
+    0.007,
+    0.016,
+    0.0068
+   ],
+   "tris": 1062
+  },
+  {
+   "id": "p274",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0012:5",
+   "cad": "Hardware:1/2800-0004-0012:5",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1241,
+    0.072,
+    -0.218
+   ],
+   "size": [
+    0.007,
+    0.016,
+    0.0068
+   ],
+   "tris": 1062
+  },
+  {
+   "id": "p275",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0012:6",
+   "cad": "Hardware:1/2800-0004-0012:6",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1239,
+    0.072,
+    -0.218
+   ],
+   "size": [
+    0.007,
+    0.016,
+    0.0068
+   ],
+   "tris": 1062
+  },
+  {
+   "id": "p276",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0012:7",
+   "cad": "Hardware:1/2800-0004-0012:7",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1239,
+    0.032,
+    -0.218
+   ],
+   "size": [
+    0.007,
+    0.016,
+    0.0068
+   ],
+   "tris": 1062
+  },
+  {
+   "id": "p277",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0012:8",
+   "cad": "Hardware:1/2800-0004-0012:8",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1241,
+    0.032,
+    -0.218
+   ],
+   "size": [
+    0.007,
+    0.016,
+    0.0068
+   ],
+   "tris": 1062
+  },
+  {
+   "id": "p278",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0012:33",
+   "cad": "Hardware:1/2800-0004-0012:33",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.0959,
+    0.1228,
+    0.1681
+   ],
+   "size": [
+    0.007,
+    0.0071,
+    0.0164
+   ],
+   "tris": 1062
+  },
+  {
+   "id": "p279",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0012:34",
+   "cad": "Hardware:1/2800-0004-0012:34",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.0959,
+    0.1577,
+    0.1596
+   ],
+   "size": [
+    0.007,
+    0.0164,
+    0.0071
+   ],
+   "tris": 1062
+  },
+  {
+   "id": "p280",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0012:35",
+   "cad": "Hardware:1/2800-0004-0012:35",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.0959,
+    0.1543,
+    0.1278
+   ],
+   "size": [
+    0.007,
+    0.0164,
+    0.0071
+   ],
+   "tris": 1062
+  },
+  {
+   "id": "p281",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0012:36",
+   "cad": "Hardware:1/2800-0004-0012:36",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.0959,
+    0.1174,
+    0.1281
+   ],
+   "size": [
+    0.007,
+    0.0071,
+    0.0164
+   ],
+   "tris": 1062
+  },
+  {
+   "id": "p282",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0012:41",
+   "cad": "Hardware:1/2800-0004-0012:41",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1306,
+    0.0633,
+    0.134
+   ],
+   "size": [
+    0.016,
+    0.0068,
+    0.007
+   ],
+   "tris": 1062
+  },
+  {
+   "id": "p283",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0012:42",
+   "cad": "Hardware:1/2800-0004-0012:42",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1304,
+    0.0633,
+    0.134
+   ],
+   "size": [
+    0.016,
+    0.0068,
+    0.007
+   ],
+   "tris": 1062
+  },
+  {
+   "id": "p284",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0012:43",
+   "cad": "Hardware:1/2800-0004-0012:43",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1161,
+    0.1033,
+    0.1418
+   ],
+   "size": [
+    0.016,
+    0.007,
+    0.007
+   ],
+   "tris": 1062
+  },
+  {
+   "id": "p285",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0012:44",
+   "cad": "Hardware:1/2800-0004-0012:44",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1024,
+    0.1511,
+    0.1368
+   ],
+   "size": [
+    0.016,
+    0.007,
+    0.007
+   ],
+   "tris": 1062
+  },
+  {
+   "id": "p286",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0012:45",
+   "cad": "Hardware:1/2800-0004-0012:45",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1024,
+    0.1528,
+    0.1527
+   ],
+   "size": [
+    0.016,
+    0.007,
+    0.007
+   ],
+   "tris": 1062
+  },
+  {
+   "id": "p287",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0012:46",
+   "cad": "Hardware:1/2800-0004-0012:46",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1024,
+    0.1209,
+    0.1561
+   ],
+   "size": [
+    0.016,
+    0.007,
+    0.007
+   ],
+   "tris": 1062
+  },
+  {
+   "id": "p288",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0012:47",
+   "cad": "Hardware:1/2800-0004-0012:47",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1024,
+    0.1193,
+    0.1401
+   ],
+   "size": [
+    0.016,
+    0.007,
+    0.007
+   ],
+   "tris": 1062
+  },
+  {
+   "id": "p289",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0012:48",
+   "cad": "Hardware:1/2800-0004-0012:48",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1106,
+    0.1511,
+    0.1368
+   ],
+   "size": [
+    0.016,
+    0.007,
+    0.007
+   ],
+   "tris": 1062
+  },
+  {
+   "id": "p290",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0012:49",
+   "cad": "Hardware:1/2800-0004-0012:49",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1106,
+    0.1528,
+    0.1527
+   ],
+   "size": [
+    0.016,
+    0.007,
+    0.007
+   ],
+   "tris": 1062
+  },
+  {
+   "id": "p291",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0012:50",
+   "cad": "Hardware:1/2800-0004-0012:50",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1106,
+    0.1209,
+    0.1561
+   ],
+   "size": [
+    0.016,
+    0.007,
+    0.007
+   ],
+   "tris": 1062
+  },
+  {
+   "id": "p292",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0012:51",
+   "cad": "Hardware:1/2800-0004-0012:51",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1106,
+    0.1272,
+    0.1393
+   ],
+   "size": [
+    0.016,
+    0.007,
+    0.007
+   ],
+   "tris": 1062
+  },
+  {
+   "id": "p293",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0012:52",
+   "cad": "Hardware:1/2800-0004-0012:52",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.0238,
+    0.18,
+    -0.082
+   ],
+   "size": [
+    0.016,
+    0.0068,
+    0.007
+   ],
+   "tris": 1062
+  },
+  {
+   "id": "p294",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0012:53",
+   "cad": "Hardware:1/2800-0004-0012:53",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.0238,
+    0.18,
+    -0.066
+   ],
+   "size": [
+    0.016,
+    0.0068,
+    0.007
+   ],
+   "tris": 1062
+  },
+  {
+   "id": "p295",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0012:54",
+   "cad": "Hardware:1/2800-0004-0012:54",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.0238,
+    0.164,
+    -0.082
+   ],
+   "size": [
+    0.016,
+    0.0068,
+    0.007
+   ],
+   "tris": 1062
+  },
+  {
+   "id": "p296",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0012:55",
+   "cad": "Hardware:1/2800-0004-0012:55",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.0238,
+    0.164,
+    -0.066
+   ],
+   "size": [
+    0.016,
+    0.0068,
+    0.007
+   ],
+   "tris": 1062
+  },
+  {
+   "id": "p297",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0012:56",
+   "cad": "Hardware:1/2800-0004-0012:56",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.0062,
+    0.164,
+    -0.066
+   ],
+   "size": [
+    0.016,
+    0.007,
+    0.0068
+   ],
+   "tris": 1062
+  },
+  {
+   "id": "p298",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0012:57",
+   "cad": "Hardware:1/2800-0004-0012:57",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.0062,
+    0.18,
+    -0.066
+   ],
+   "size": [
+    0.016,
+    0.007,
+    0.0068
+   ],
+   "tris": 1062
+  },
+  {
+   "id": "p299",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0012:58",
+   "cad": "Hardware:1/2800-0004-0012:58",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.0062,
+    0.18,
+    -0.082
+   ],
+   "size": [
+    0.016,
+    0.007,
+    0.0068
+   ],
+   "tris": 1062
+  },
+  {
+   "id": "p300",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0012:59",
+   "cad": "Hardware:1/2800-0004-0012:59",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.0062,
+    0.164,
+    -0.082
+   ],
+   "size": [
+    0.016,
+    0.007,
+    0.0068
+   ],
+   "tris": 1062
+  },
+  {
+   "id": "p301",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0012:60",
+   "cad": "Hardware:1/2800-0004-0012:60",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.0841,
+    0.1465,
+    -0.034
+   ],
+   "size": [
+    0.0068,
+    0.016,
+    0.007
+   ],
+   "tris": 1062
+  },
+  {
+   "id": "p302",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0012:61",
+   "cad": "Hardware:1/2800-0004-0012:61",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.0842,
+    0.1465,
+    0.022
+   ],
+   "size": [
+    0.0068,
+    0.016,
+    0.007
+   ],
+   "tris": 1062
+  },
+  {
+   "id": "p303",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0020:1",
+   "cad": "Hardware:1/2800-0004-0020:1",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1721,
+    0.068,
+    0.15
+   ],
+   "size": [
+    0.007,
+    0.024,
+    0.0068
+   ],
+   "tris": 1494
+  },
+  {
+   "id": "p304",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0020:2",
+   "cad": "Hardware:1/2800-0004-0020:2",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1401,
+    0.068,
+    0.15
+   ],
+   "size": [
+    0.007,
+    0.024,
+    0.0068
+   ],
+   "tris": 1494
+  },
+  {
+   "id": "p305",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0020:3",
+   "cad": "Hardware:1/2800-0004-0020:3",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1719,
+    0.068,
+    0.15
+   ],
+   "size": [
+    0.007,
+    0.024,
+    0.0068
+   ],
+   "tris": 1494
+  },
+  {
+   "id": "p306",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0020:4",
+   "cad": "Hardware:1/2800-0004-0020:4",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1399,
+    0.068,
+    0.15
+   ],
+   "size": [
+    0.007,
+    0.024,
+    0.0068
+   ],
+   "tris": 1494
+  },
+  {
+   "id": "p307",
+   "meshes": 2,
+   "sku": "Hardware:1/2812-0004-0007:17",
+   "cad": "Hardware:1/2812-0004-0007:17",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1721,
+    0.071,
+    0.126
+   ],
+   "size": [
+    0.0069,
+    0.0049,
+    0.0077
+   ],
+   "tris": 1412
+  },
+  {
+   "id": "p308",
+   "meshes": 2,
+   "sku": "Hardware:1/2812-0004-0007:18",
+   "cad": "Hardware:1/2812-0004-0007:18",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1721,
+    0.071,
+    0.094
+   ],
+   "size": [
+    0.0069,
+    0.0049,
+    0.0077
+   ],
+   "tris": 1412
+  },
+  {
+   "id": "p309",
+   "meshes": 2,
+   "sku": "Hardware:1/2812-0004-0007:19",
+   "cad": "Hardware:1/2812-0004-0007:19",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1401,
+    0.071,
+    0.126
+   ],
+   "size": [
+    0.0069,
+    0.0049,
+    0.0077
+   ],
+   "tris": 1412
+  },
+  {
+   "id": "p310",
+   "meshes": 2,
+   "sku": "Hardware:1/2812-0004-0007:20",
+   "cad": "Hardware:1/2812-0004-0007:20",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1401,
+    0.071,
+    0.094
+   ],
+   "size": [
+    0.0069,
+    0.0049,
+    0.0077
+   ],
+   "tris": 1412
+  },
+  {
+   "id": "p311",
+   "meshes": 2,
+   "sku": "Hardware:1/2812-0004-0007:21",
+   "cad": "Hardware:1/2812-0004-0007:21",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1399,
+    0.071,
+    0.126
+   ],
+   "size": [
+    0.0069,
+    0.0049,
+    0.0077
+   ],
+   "tris": 1412
+  },
+  {
+   "id": "p312",
+   "meshes": 2,
+   "sku": "Hardware:1/2812-0004-0007:22",
+   "cad": "Hardware:1/2812-0004-0007:22",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1719,
+    0.071,
+    0.126
+   ],
+   "size": [
+    0.0069,
+    0.0049,
+    0.0077
+   ],
+   "tris": 1412
+  },
+  {
+   "id": "p313",
+   "meshes": 2,
+   "sku": "Hardware:1/2812-0004-0007:23",
+   "cad": "Hardware:1/2812-0004-0007:23",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1399,
+    0.071,
+    0.094
+   ],
+   "size": [
+    0.0069,
+    0.0049,
+    0.0077
+   ],
+   "tris": 1412
+  },
+  {
+   "id": "p314",
+   "meshes": 2,
+   "sku": "Hardware:1/2812-0004-0007:24",
+   "cad": "Hardware:1/2812-0004-0007:24",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1719,
+    0.071,
+    0.094
+   ],
+   "size": [
+    0.0069,
+    0.0049,
+    0.0077
+   ],
+   "tris": 1412
+  },
+  {
+   "id": "p315",
+   "meshes": 2,
+   "sku": "Hardware:1/2812-0004-0007:25",
+   "cad": "Hardware:1/2812-0004-0007:25",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1119,
+    0.0862,
+    0.1307
+   ],
+   "size": [
+    0.0069,
+    0.0079,
+    0.0054
+   ],
+   "tris": 1412
+  },
+  {
+   "id": "p316",
+   "meshes": 2,
+   "sku": "Hardware:1/2812-0004-0007:26",
+   "cad": "Hardware:1/2812-0004-0007:26",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1119,
+    0.118,
+    0.1273
+   ],
+   "size": [
+    0.0069,
+    0.0079,
+    0.0054
+   ],
+   "tris": 1412
+  },
+  {
+   "id": "p317",
+   "meshes": 2,
+   "sku": "Hardware:1/2812-0004-0007:27",
+   "cad": "Hardware:1/2812-0004-0007:27",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1201,
+    0.118,
+    0.1273
+   ],
+   "size": [
+    0.0069,
+    0.0079,
+    0.0054
+   ],
+   "tris": 1412
+  },
+  {
+   "id": "p318",
+   "meshes": 2,
+   "sku": "Hardware:1/2812-0004-0007:28",
+   "cad": "Hardware:1/2812-0004-0007:28",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1201,
+    0.0862,
+    0.1306
+   ],
+   "size": [
+    0.0069,
+    0.0079,
+    0.0054
+   ],
+   "tris": 1412
+  },
+  {
+   "id": "p319",
+   "meshes": 2,
+   "sku": "Hardware:1/2812-0004-0007:29",
+   "cad": "Hardware:1/2812-0004-0007:29",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1057,
+    0.1209,
+    0.1561
+   ],
+   "size": [
+    0.0049,
+    0.0071,
+    0.0077
+   ],
+   "tris": 1412
+  },
+  {
+   "id": "p320",
+   "meshes": 2,
+   "sku": "Hardware:1/2812-0004-0007:30",
+   "cad": "Hardware:1/2812-0004-0007:30",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1057,
+    0.1511,
+    0.1368
+   ],
+   "size": [
+    0.0049,
+    0.0071,
+    0.0077
+   ],
+   "tris": 1412
+  },
+  {
+   "id": "p321",
+   "meshes": 2,
+   "sku": "Hardware:1/2812-0004-0007:31",
+   "cad": "Hardware:1/2812-0004-0007:31",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1057,
+    0.1528,
+    0.1527
+   ],
+   "size": [
+    0.0049,
+    0.0071,
+    0.0077
+   ],
+   "tris": 1412
+  },
+  {
+   "id": "p322",
+   "meshes": 2,
+   "sku": "Hardware:1/2812-0004-0007:32",
+   "cad": "Hardware:1/2812-0004-0007:32",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.0974,
+    0.1511,
+    0.1368
+   ],
+   "size": [
+    0.0049,
+    0.0077,
+    0.0071
+   ],
+   "tris": 1412
+  },
+  {
+   "id": "p323",
+   "meshes": 2,
+   "sku": "Hardware:1/2812-0004-0007:33",
+   "cad": "Hardware:1/2812-0004-0007:33",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.0974,
+    0.1528,
+    0.1527
+   ],
+   "size": [
+    0.0049,
+    0.0077,
+    0.0071
+   ],
+   "tris": 1412
+  },
+  {
+   "id": "p324",
+   "meshes": 2,
+   "sku": "Hardware:1/2812-0004-0007:34",
+   "cad": "Hardware:1/2812-0004-0007:34",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.0974,
+    0.1193,
+    0.1401
+   ],
+   "size": [
+    0.0049,
+    0.0077,
+    0.0071
+   ],
+   "tris": 1412
+  },
+  {
+   "id": "p325",
+   "meshes": 2,
+   "sku": "Hardware:1/2812-0004-0007:35",
+   "cad": "Hardware:1/2812-0004-0007:35",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.0974,
+    0.1209,
+    0.1561
+   ],
+   "size": [
+    0.0049,
+    0.0077,
+    0.0071
+   ],
+   "tris": 1412
+  },
+  {
+   "id": "p326",
+   "meshes": 2,
+   "sku": "Hardware:1/2812-0004-0007:36",
+   "cad": "Hardware:1/2812-0004-0007:36",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1719,
+    0.0804,
+    -0.17
+   ],
+   "size": [
+    0.0075,
+    0.0049,
+    0.0075
+   ],
+   "tris": 1412
+  },
+  {
+   "id": "p327",
+   "meshes": 2,
+   "sku": "Hardware:1/2812-0004-0007:37",
+   "cad": "Hardware:1/2812-0004-0007:37",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1399,
+    0.0804,
+    -0.17
+   ],
+   "size": [
+    0.0075,
+    0.0049,
+    0.0075
+   ],
+   "tris": 1412
+  },
+  {
+   "id": "p328",
+   "meshes": 2,
+   "sku": "Hardware:1/2812-0004-0007:38",
+   "cad": "Hardware:1/2812-0004-0007:38",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1719,
+    0.0804,
+    -0.138
+   ],
+   "size": [
+    0.0075,
+    0.0049,
+    0.0075
+   ],
+   "tris": 1412
+  },
+  {
+   "id": "p329",
+   "meshes": 2,
+   "sku": "Hardware:1/2812-0004-0007:39",
+   "cad": "Hardware:1/2812-0004-0007:39",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1399,
+    0.0804,
+    -0.138
+   ],
+   "size": [
+    0.0075,
+    0.0049,
+    0.0075
+   ],
+   "tris": 1412
+  },
+  {
+   "id": "p330",
+   "meshes": 2,
+   "sku": "Hardware:1/2812-0004-0007:40",
+   "cad": "Hardware:1/2812-0004-0007:40",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1401,
+    0.0804,
+    -0.138
+   ],
+   "size": [
+    0.0075,
+    0.0049,
+    0.0075
+   ],
+   "tris": 1412
+  },
+  {
+   "id": "p331",
+   "meshes": 2,
+   "sku": "Hardware:1/2812-0004-0007:41",
+   "cad": "Hardware:1/2812-0004-0007:41",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1721,
+    0.0804,
+    -0.138
+   ],
+   "size": [
+    0.0075,
+    0.0049,
+    0.0075
+   ],
+   "tris": 1412
+  },
+  {
+   "id": "p332",
+   "meshes": 2,
+   "sku": "Hardware:1/2812-0004-0007:42",
+   "cad": "Hardware:1/2812-0004-0007:42",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1721,
+    0.0804,
+    -0.17
+   ],
+   "size": [
+    0.0075,
+    0.0049,
+    0.0075
+   ],
+   "tris": 1412
+  },
+  {
+   "id": "p333",
+   "meshes": 2,
+   "sku": "Hardware:1/2812-0004-0007:43",
+   "cad": "Hardware:1/2812-0004-0007:43",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1401,
+    0.0804,
+    -0.17
+   ],
+   "size": [
+    0.0075,
+    0.0049,
+    0.0075
+   ],
+   "tris": 1412
+  },
+  {
+   "id": "p334",
+   "meshes": 2,
+   "sku": "Hardware:1/2812-0004-0007:44",
+   "cad": "Hardware:1/2812-0004-0007:44",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.0838,
+    0.156,
+    -0.1029
+   ],
+   "size": [
+    0.0075,
+    0.0075,
+    0.0049
+   ],
+   "tris": 1412
+  },
+  {
+   "id": "p335",
+   "meshes": 2,
+   "sku": "Hardware:1/2812-0004-0007:45",
+   "cad": "Hardware:1/2812-0004-0007:45",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.0518,
+    0.156,
+    -0.1029
+   ],
+   "size": [
+    0.0075,
+    0.0075,
+    0.0049
+   ],
+   "tris": 1412
+  },
+  {
+   "id": "p336",
+   "meshes": 2,
+   "sku": "Hardware:1/2812-0004-0007:46",
+   "cad": "Hardware:1/2812-0004-0007:46",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.0518,
+    0.188,
+    -0.1029
+   ],
+   "size": [
+    0.0075,
+    0.0075,
+    0.0049
+   ],
+   "tris": 1412
+  },
+  {
+   "id": "p337",
+   "meshes": 2,
+   "sku": "Hardware:1/2812-0004-0007:47",
+   "cad": "Hardware:1/2812-0004-0007:47",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.0838,
+    0.188,
+    -0.1029
+   ],
+   "size": [
+    0.0075,
+    0.0075,
+    0.0049
+   ],
+   "tris": 1412
+  },
+  {
+   "id": "p338",
+   "meshes": 2,
+   "sku": "Hardware:1/2812-0004-0007:48",
+   "cad": "Hardware:1/2812-0004-0007:48",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.0838,
+    0.191,
+    -0.058
+   ],
+   "size": [
+    0.0075,
+    0.0049,
+    0.0075
+   ],
+   "tris": 1412
+  },
+  {
+   "id": "p339",
+   "meshes": 2,
+   "sku": "Hardware:1/2812-0004-0007:49",
+   "cad": "Hardware:1/2812-0004-0007:49",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.0518,
+    0.191,
+    -0.058
+   ],
+   "size": [
+    0.0075,
+    0.0049,
+    0.0075
+   ],
+   "tris": 1412
+  },
+  {
+   "id": "p340",
+   "meshes": 2,
+   "sku": "Hardware:1/2812-0004-0007:50",
+   "cad": "Hardware:1/2812-0004-0007:50",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.0758,
+    0.191,
+    -0.09
+   ],
+   "size": [
+    0.0075,
+    0.0049,
+    0.0075
+   ],
+   "tris": 1412
+  },
+  {
+   "id": "p341",
+   "meshes": 2,
+   "sku": "Hardware:1/2812-0004-0007:51",
+   "cad": "Hardware:1/2812-0004-0007:51",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.0598,
+    0.191,
+    -0.09
+   ],
+   "size": [
+    0.0075,
+    0.0049,
+    0.0075
+   ],
+   "tris": 1412
+  },
+  {
+   "id": "p342",
+   "meshes": 2,
+   "sku": "Hardware:1/2822-0004-0010:1",
+   "cad": "Hardware:1/2822-0004-0010:1",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.2042,
+    0.06,
+    0.118
+   ],
+   "size": [
+    0.014,
+    0.007,
+    0.0068
+   ],
+   "tris": 1246
+  },
+  {
+   "id": "p343",
+   "meshes": 2,
+   "sku": "Hardware:1/2822-0004-0010:2",
+   "cad": "Hardware:1/2822-0004-0010:2",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.2042,
+    0.06,
+    0.102
+   ],
+   "size": [
+    0.014,
+    0.007,
+    0.0068
+   ],
+   "tris": 1246
+  },
+  {
+   "id": "p344",
+   "meshes": 2,
+   "sku": "Hardware:1/2822-0004-0010:3",
+   "cad": "Hardware:1/2822-0004-0010:3",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.2042,
+    0.044,
+    0.102
+   ],
+   "size": [
+    0.014,
+    0.007,
+    0.0068
+   ],
+   "tris": 1246
+  },
+  {
+   "id": "p345",
+   "meshes": 2,
+   "sku": "Hardware:1/2822-0004-0010:4",
+   "cad": "Hardware:1/2822-0004-0010:4",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.2042,
+    0.044,
+    0.118
+   ],
+   "size": [
+    0.014,
+    0.007,
+    0.0068
+   ],
+   "tris": 1246
+  },
+  {
+   "id": "p346",
+   "meshes": 2,
+   "sku": "Hardware:1/2822-0004-0010:5",
+   "cad": "Hardware:1/2822-0004-0010:5",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.2039,
+    0.06,
+    -0.162
+   ],
+   "size": [
+    0.014,
+    0.007,
+    0.0068
+   ],
+   "tris": 1246
+  },
+  {
+   "id": "p347",
+   "meshes": 2,
+   "sku": "Hardware:1/2822-0004-0010:6",
+   "cad": "Hardware:1/2822-0004-0010:6",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.2039,
+    0.06,
+    -0.146
+   ],
+   "size": [
+    0.014,
+    0.007,
+    0.0068
+   ],
+   "tris": 1246
+  },
+  {
+   "id": "p348",
+   "meshes": 2,
+   "sku": "Hardware:1/2822-0004-0010:7",
+   "cad": "Hardware:1/2822-0004-0010:7",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.2039,
+    0.044,
+    -0.162
+   ],
+   "size": [
+    0.014,
+    0.007,
+    0.0068
+   ],
+   "tris": 1246
+  },
+  {
+   "id": "p349",
+   "meshes": 2,
+   "sku": "Hardware:1/2822-0004-0010:8",
+   "cad": "Hardware:1/2822-0004-0010:8",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.2039,
+    0.044,
+    -0.146
+   ],
+   "size": [
+    0.014,
+    0.007,
+    0.0068
+   ],
+   "tris": 1246
+  },
+  {
+   "id": "p350",
+   "meshes": 2,
+   "sku": "Hardware:1/2822-0004-0010:9",
+   "cad": "Hardware:1/2822-0004-0010:9",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.2041,
+    0.06,
+    -0.162
+   ],
+   "size": [
+    0.014,
+    0.007,
+    0.0068
+   ],
+   "tris": 1246
+  },
+  {
+   "id": "p351",
+   "meshes": 2,
+   "sku": "Hardware:1/2822-0004-0010:10",
+   "cad": "Hardware:1/2822-0004-0010:10",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.2041,
+    0.06,
+    -0.146
+   ],
+   "size": [
+    0.014,
+    0.007,
+    0.0068
+   ],
+   "tris": 1246
+  },
+  {
+   "id": "p352",
+   "meshes": 2,
+   "sku": "Hardware:1/2822-0004-0010:11",
+   "cad": "Hardware:1/2822-0004-0010:11",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.2041,
+    0.044,
+    -0.146
+   ],
+   "size": [
+    0.014,
+    0.007,
+    0.0068
+   ],
+   "tris": 1246
+  },
+  {
+   "id": "p353",
+   "meshes": 2,
+   "sku": "Hardware:1/2822-0004-0010:12",
+   "cad": "Hardware:1/2822-0004-0010:12",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.2041,
+    0.044,
+    -0.162
+   ],
+   "size": [
+    0.014,
+    0.007,
+    0.0068
+   ],
+   "tris": 1246
+  },
+  {
+   "id": "p354",
+   "meshes": 2,
+   "sku": "Hardware:1/2822-0004-0010:13",
+   "cad": "Hardware:1/2822-0004-0010:13",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.2041,
+    0.06,
+    0.118
+   ],
+   "size": [
+    0.014,
+    0.007,
+    0.0068
+   ],
+   "tris": 1246
+  },
+  {
+   "id": "p355",
+   "meshes": 2,
+   "sku": "Hardware:1/2822-0004-0010:14",
+   "cad": "Hardware:1/2822-0004-0010:14",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.2041,
+    0.06,
+    0.102
+   ],
+   "size": [
+    0.014,
+    0.007,
+    0.0068
+   ],
+   "tris": 1246
+  },
+  {
+   "id": "p356",
+   "meshes": 2,
+   "sku": "Hardware:1/2822-0004-0010:15",
+   "cad": "Hardware:1/2822-0004-0010:15",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.2041,
+    0.044,
+    0.102
+   ],
+   "size": [
+    0.014,
+    0.007,
+    0.0068
+   ],
+   "tris": 1246
+  },
+  {
+   "id": "p357",
+   "meshes": 2,
+   "sku": "Hardware:1/2822-0004-0010:16",
+   "cad": "Hardware:1/2822-0004-0010:16",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.2041,
+    0.044,
+    0.118
+   ],
+   "size": [
+    0.014,
+    0.007,
+    0.0068
+   ],
+   "tris": 1246
+  },
+  {
+   "id": "p358",
+   "meshes": 2,
+   "sku": "Hardware:1/2822-0004-0010:17",
+   "cad": "Hardware:1/2822-0004-0010:17",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1771,
+    0.036,
+    0.078
+   ],
+   "size": [
+    0.014,
+    0.0068,
+    0.007
+   ],
+   "tris": 1246
+  },
+  {
+   "id": "p359",
+   "meshes": 2,
+   "sku": "Hardware:1/2822-0004-0010:18",
+   "cad": "Hardware:1/2822-0004-0010:18",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1771,
+    0.068,
+    0.078
+   ],
+   "size": [
+    0.014,
+    0.0068,
+    0.007
+   ],
+   "tris": 1246
+  },
+  {
+   "id": "p360",
+   "meshes": 2,
+   "sku": "Hardware:1/2822-0004-0010:19",
+   "cad": "Hardware:1/2822-0004-0010:19",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1351,
+    0.036,
+    0.078
+   ],
+   "size": [
+    0.014,
+    0.0068,
+    0.007
+   ],
+   "tris": 1246
+  },
+  {
+   "id": "p361",
+   "meshes": 2,
+   "sku": "Hardware:1/2822-0004-0010:20",
+   "cad": "Hardware:1/2822-0004-0010:20",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1351,
+    0.068,
+    0.078
+   ],
+   "size": [
+    0.014,
+    0.0068,
+    0.007
+   ],
+   "tris": 1246
+  },
+  {
+   "id": "p362",
+   "meshes": 2,
+   "sku": "Hardware:1/2822-0004-0010:21",
+   "cad": "Hardware:1/2822-0004-0010:21",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1349,
+    0.068,
+    0.078
+   ],
+   "size": [
+    0.014,
+    0.0068,
+    0.007
+   ],
+   "tris": 1246
+  },
+  {
+   "id": "p363",
+   "meshes": 2,
+   "sku": "Hardware:1/2822-0004-0010:22",
+   "cad": "Hardware:1/2822-0004-0010:22",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1349,
+    0.036,
+    0.078
+   ],
+   "size": [
+    0.014,
+    0.0068,
+    0.007
+   ],
+   "tris": 1246
+  },
+  {
+   "id": "p364",
+   "meshes": 2,
+   "sku": "Hardware:1/2822-0004-0010:23",
+   "cad": "Hardware:1/2822-0004-0010:23",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1769,
+    0.036,
+    0.078
+   ],
+   "size": [
+    0.014,
+    0.0068,
+    0.007
+   ],
+   "tris": 1246
+  },
+  {
+   "id": "p365",
+   "meshes": 2,
+   "sku": "Hardware:1/2822-0004-0010:24",
+   "cad": "Hardware:1/2822-0004-0010:24",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1769,
+    0.068,
+    0.078
+   ],
+   "size": [
+    0.014,
+    0.0068,
+    0.007
+   ],
+   "tris": 1246
+  },
+  {
+   "id": "p366",
+   "meshes": 2,
+   "sku": "Hardware:1/2822-0004-0010:25",
+   "cad": "Hardware:1/2822-0004-0010:25",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1479,
+    0.06,
+    0.083
+   ],
+   "size": [
+    0.0068,
+    0.007,
+    0.014
+   ],
+   "tris": 1246
+  },
+  {
+   "id": "p367",
+   "meshes": 2,
+   "sku": "Hardware:1/2822-0004-0010:26",
+   "cad": "Hardware:1/2822-0004-0010:26",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1639,
+    0.06,
+    0.083
+   ],
+   "size": [
+    0.0068,
+    0.007,
+    0.014
+   ],
+   "tris": 1246
+  },
+  {
+   "id": "p368",
+   "meshes": 2,
+   "sku": "Hardware:1/2822-0004-0010:27",
+   "cad": "Hardware:1/2822-0004-0010:27",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1639,
+    0.044,
+    0.083
+   ],
+   "size": [
+    0.0068,
+    0.007,
+    0.014
+   ],
+   "tris": 1246
+  },
+  {
+   "id": "p369",
+   "meshes": 2,
+   "sku": "Hardware:1/2822-0004-0010:28",
+   "cad": "Hardware:1/2822-0004-0010:28",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1479,
+    0.044,
+    0.083
+   ],
+   "size": [
+    0.0068,
+    0.007,
+    0.014
+   ],
+   "tris": 1246
+  },
+  {
+   "id": "p370",
+   "meshes": 2,
+   "sku": "Hardware:1/2822-0004-0010:29",
+   "cad": "Hardware:1/2822-0004-0010:29",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1641,
+    0.06,
+    0.083
+   ],
+   "size": [
+    0.0068,
+    0.007,
+    0.014
+   ],
+   "tris": 1246
+  },
+  {
+   "id": "p371",
+   "meshes": 2,
+   "sku": "Hardware:1/2822-0004-0010:30",
+   "cad": "Hardware:1/2822-0004-0010:30",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1481,
+    0.06,
+    0.083
+   ],
+   "size": [
+    0.0068,
+    0.007,
+    0.014
+   ],
+   "tris": 1246
+  },
+  {
+   "id": "p372",
+   "meshes": 2,
+   "sku": "Hardware:1/2822-0004-0010:31",
+   "cad": "Hardware:1/2822-0004-0010:31",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1481,
+    0.044,
+    0.083
+   ],
+   "size": [
+    0.0068,
+    0.007,
+    0.014
+   ],
+   "tris": 1246
+  },
+  {
+   "id": "p373",
+   "meshes": 2,
+   "sku": "Hardware:1/2822-0004-0010:32",
+   "cad": "Hardware:1/2822-0004-0010:32",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1641,
+    0.044,
+    0.083
+   ],
+   "size": [
+    0.0068,
+    0.007,
+    0.014
+   ],
+   "tris": 1246
+  },
+  {
+   "id": "p374",
+   "meshes": 2,
+   "sku": "Hardware:1/2822-0004-0010:33",
+   "cad": "Hardware:1/2822-0004-0010:33",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1481,
+    0.083,
+    -0.162
+   ],
+   "size": [
+    0.0068,
+    0.014,
+    0.007
+   ],
+   "tris": 1246
+  },
+  {
+   "id": "p375",
+   "meshes": 2,
+   "sku": "Hardware:1/2822-0004-0010:34",
+   "cad": "Hardware:1/2822-0004-0010:34",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1641,
+    0.083,
+    -0.162
+   ],
+   "size": [
+    0.0068,
+    0.014,
+    0.007
+   ],
+   "tris": 1246
+  },
+  {
+   "id": "p376",
+   "meshes": 2,
+   "sku": "Hardware:1/2822-0004-0010:35",
+   "cad": "Hardware:1/2822-0004-0010:35",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1641,
+    0.083,
+    -0.146
+   ],
+   "size": [
+    0.0068,
+    0.014,
+    0.007
+   ],
+   "tris": 1246
+  },
+  {
+   "id": "p377",
+   "meshes": 2,
+   "sku": "Hardware:1/2822-0004-0010:36",
+   "cad": "Hardware:1/2822-0004-0010:36",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1481,
+    0.083,
+    -0.146
+   ],
+   "size": [
+    0.0068,
+    0.014,
+    0.007
+   ],
+   "tris": 1246
+  },
+  {
+   "id": "p378",
+   "meshes": 2,
+   "sku": "Hardware:1/2822-0004-0010:37",
+   "cad": "Hardware:1/2822-0004-0010:37",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1479,
+    0.083,
+    -0.162
+   ],
+   "size": [
+    0.0068,
+    0.014,
+    0.007
+   ],
+   "tris": 1246
+  },
+  {
+   "id": "p379",
+   "meshes": 2,
+   "sku": "Hardware:1/2822-0004-0010:38",
+   "cad": "Hardware:1/2822-0004-0010:38",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1639,
+    0.083,
+    -0.162
+   ],
+   "size": [
+    0.0068,
+    0.014,
+    0.007
+   ],
+   "tris": 1246
+  },
+  {
+   "id": "p380",
+   "meshes": 2,
+   "sku": "Hardware:1/2822-0004-0010:39",
+   "cad": "Hardware:1/2822-0004-0010:39",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1479,
+    0.083,
+    -0.146
+   ],
+   "size": [
+    0.0068,
+    0.014,
+    0.007
+   ],
+   "tris": 1246
+  },
+  {
+   "id": "p381",
+   "meshes": 2,
+   "sku": "Hardware:1/2822-0004-0010:40",
+   "cad": "Hardware:1/2822-0004-0010:40",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1639,
+    0.083,
+    -0.146
+   ],
+   "size": [
+    0.0068,
+    0.014,
+    0.007
+   ],
+   "tris": 1246
+  },
+  {
+   "id": "p382",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0006:1",
+   "cad": "Hardware:1/2800-0004-0006:1",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.0521,
+    0.1205,
+    -0.017
+   ],
+   "size": [
+    0.007,
+    0.0068,
+    0.01
+   ],
+   "tris": 686
+  },
+  {
+   "id": "p383",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0006:2",
+   "cad": "Hardware:1/2800-0004-0006:2",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.0841,
+    0.1205,
+    -0.017
+   ],
+   "size": [
+    0.007,
+    0.0068,
+    0.01
+   ],
+   "tris": 686
+  },
+  {
+   "id": "p384",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0006:3",
+   "cad": "Hardware:1/2800-0004-0006:3",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.0451,
+    0.1205,
+    -0.01
+   ],
+   "size": [
+    0.01,
+    0.007,
+    0.0068
+   ],
+   "tris": 686
+  },
+  {
+   "id": "p385",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0006:4",
+   "cad": "Hardware:1/2800-0004-0006:4",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.0452,
+    0.1205,
+    0.022
+   ],
+   "size": [
+    0.01,
+    0.007,
+    0.0068
+   ],
+   "tris": 686
+  },
+  {
+   "id": "p386",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0006:5",
+   "cad": "Hardware:1/2800-0004-0006:5",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.0522,
+    0.1205,
+    0.029
+   ],
+   "size": [
+    0.007,
+    0.0068,
+    0.01
+   ],
+   "tris": 686
+  },
+  {
+   "id": "p387",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0006:6",
+   "cad": "Hardware:1/2800-0004-0006:6",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.0842,
+    0.1205,
+    0.029
+   ],
+   "size": [
+    0.007,
+    0.0068,
+    0.01
+   ],
+   "tris": 686
+  },
+  {
+   "id": "p388",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0006:7",
+   "cad": "Hardware:1/2800-0004-0006:7",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.0911,
+    0.1205,
+    0.022
+   ],
+   "size": [
+    0.01,
+    0.007,
+    0.0068
+   ],
+   "tris": 686
+  },
+  {
+   "id": "p389",
+   "meshes": 1,
+   "sku": "Hardware:1/2800-0004-0006:8",
+   "cad": "Hardware:1/2800-0004-0006:8",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.0911,
+    0.1205,
+    -0.01
+   ],
+   "size": [
+    0.01,
+    0.007,
+    0.0068
+   ],
+   "tris": 686
+  },
+  {
+   "id": "p390",
+   "meshes": 1,
+   "sku": "Zip Ties:1/2909-0101-0100 (3200-2627-0004_A):1",
+   "cad": "Zip Ties:1/2909-0101-0100 (3200-2627-0004_A):1",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.0841,
+    0.3039,
+    -0.0988
+   ],
+   "size": [
+    0.005,
+    0.0109,
+    0.0114
+   ],
+   "tris": 706
+  },
+  {
+   "id": "p391",
+   "meshes": 1,
+   "sku": "Zip Ties:1/2909-0101-0100 (3200-2627-0004_A):2",
+   "cad": "Zip Ties:1/2909-0101-0100 (3200-2627-0004_A):2",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.0521,
+    0.3039,
+    -0.0988
+   ],
+   "size": [
+    0.005,
+    0.0109,
+    0.0114
+   ],
+   "tris": 706
+  },
+  {
+   "id": "p392",
+   "meshes": 1,
+   "sku": "Zip Ties:1/2909-0101-0100 (3200-2627-0004_A):3",
+   "cad": "Zip Ties:1/2909-0101-0100 (3200-2627-0004_A):3",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.0518,
+    0.3039,
+    -0.0988
+   ],
+   "size": [
+    0.005,
+    0.0109,
+    0.0114
+   ],
+   "tris": 706
+  },
+  {
+   "id": "p393",
+   "meshes": 1,
+   "sku": "Zip Ties:1/2909-0101-0100 (3200-2627-0004_A):4",
+   "cad": "Zip Ties:1/2909-0101-0100 (3200-2627-0004_A):4",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.0838,
+    0.3039,
+    -0.0988
+   ],
+   "size": [
+    0.005,
+    0.0109,
+    0.0114
+   ],
+   "tris": 706
+  },
+  {
+   "id": "p394",
+   "meshes": 1,
+   "sku": "Zip Ties:1/2909-0101-0100 (3200-2627-0004_B):1",
+   "cad": "Zip Ties:1/2909-0101-0100 (3200-2627-0004_B):1",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.0841,
+    0.1954,
+    0.0437
+   ],
+   "size": [
+    0.005,
+    0.0118,
+    0.0145
+   ],
+   "tris": 704
+  },
+  {
+   "id": "p395",
+   "meshes": 1,
+   "sku": "Zip Ties:1/2909-0101-0100 (3200-2627-0004_C):1",
+   "cad": "Zip Ties:1/2909-0101-0100 (3200-2627-0004_C):1",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.0519,
+    0.2021,
+    0.0435
+   ],
+   "size": [
+    0.005,
+    0.0202,
+    0.0141
+   ],
+   "tris": 708
+  },
+  {
+   "id": "p396",
+   "meshes": 1,
+   "sku": "Zip Ties:1/2909-0101-0100 (3200-2627-0004_D):1",
+   "cad": "Zip Ties:1/2909-0101-0100 (3200-2627-0004_D):1",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.0474,
+    0.2071,
+    -0.138
+   ],
+   "size": [
+    0.0096,
+    0.0093,
+    0.005
+   ],
+   "tris": 708
+  },
+  {
+   "id": "p397",
+   "meshes": 1,
+   "sku": "Zip Ties:1/2909-0101-0100 (3200-2627-0004_D):2",
+   "cad": "Zip Ties:1/2909-0101-0100 (3200-2627-0004_D):2",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.0474,
+    0.1689,
+    -0.138
+   ],
+   "size": [
+    0.0096,
+    0.0093,
+    0.005
+   ],
+   "tris": 708
+  },
+  {
+   "id": "p398",
+   "meshes": 1,
+   "sku": "Zip Ties:1/2909-0101-0100 (3200-2627-0004_D):3",
+   "cad": "Zip Ties:1/2909-0101-0100 (3200-2627-0004_D):3",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.0471,
+    0.2071,
+    -0.138
+   ],
+   "size": [
+    0.0096,
+    0.0093,
+    0.005
+   ],
+   "tris": 708
+  },
+  {
+   "id": "p399",
+   "meshes": 1,
+   "sku": "Zip Ties:1/2909-0101-0100 (3200-2627-0004_D):4",
+   "cad": "Zip Ties:1/2909-0101-0100 (3200-2627-0004_D):4",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.0471,
+    0.1689,
+    -0.138
+   ],
+   "size": [
+    0.0096,
+    0.0093,
+    0.005
+   ],
+   "tris": 708
+  },
+  {
+   "id": "p400",
+   "meshes": 1,
+   "sku": "Zip Ties:1/2909-0101-0100 (3200-2627-0004_E):1",
+   "cad": "Zip Ties:1/2909-0101-0100 (3200-2627-0004_E):1",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.045,
+    0.204,
+    -0.2205
+   ],
+   "size": [
+    0.0096,
+    0.005,
+    0.008
+   ],
+   "tris": 710
+  },
+  {
+   "id": "p401",
+   "meshes": 1,
+   "sku": "Zip Ties:1/2909-0101-0100 (3200-2627-0004_E):2",
+   "cad": "Zip Ties:1/2909-0101-0100 (3200-2627-0004_E):2",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.0454,
+    0.2037,
+    -0.2204
+   ],
+   "size": [
+    0.0096,
+    0.0056,
+    0.0085
+   ],
+   "tris": 710
+  },
+  {
+   "id": "p402",
+   "meshes": 1,
+   "sku": "Zip Ties:1/2909-0101-0100 (3200-2627-0004_F):1",
+   "cad": "Zip Ties:1/2909-0101-0100 (3200-2627-0004_F):1",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.0448,
+    0.1725,
+    -0.2059
+   ],
+   "size": [
+    0.0114,
+    0.0061,
+    0.0109
+   ],
+   "tris": 782
+  },
+  {
+   "id": "p403",
+   "meshes": 1,
+   "sku": "Zip Ties:1/2909-0101-0100 (3200-2627-0004_G):1",
+   "cad": "Zip Ties:1/2909-0101-0100 (3200-2627-0004_G):1",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.0451,
+    0.1724,
+    -0.2057
+   ],
+   "size": [
+    0.0113,
+    0.0058,
+    0.0105
+   ],
+   "tris": 776
+  },
+  {
+   "id": "p404",
+   "meshes": 1,
+   "sku": "Zip Ties:1/2909-0101-0100 (3200-2627-0004_H0):1",
+   "cad": "Zip Ties:1/2909-0101-0100 (3200-2627-0004_H0):1",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.0445,
+    0.0732,
+    -0.1385
+   ],
+   "size": [
+    0.0117,
+    0.0108,
+    0.006
+   ],
+   "tris": 870
+  },
+  {
+   "id": "p405",
+   "meshes": 1,
+   "sku": "Zip Ties:1/2909-0101-0100 (3200-2627-0004_H1):1",
+   "cad": "Zip Ties:1/2909-0101-0100 (3200-2627-0004_H1):1",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.0448,
+    0.0732,
+    -0.1385
+   ],
+   "size": [
+    0.0117,
+    0.0108,
+    0.006
+   ],
+   "tris": 866
+  },
+  {
+   "id": "p406",
+   "meshes": 1,
+   "sku": "Zip Ties:1/2909-0101-0100 (3200-2627-0004_I):1",
+   "cad": "Zip Ties:1/2909-0101-0100 (3200-2627-0004_I):1",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.0445,
+    0.0469,
+    -0.0913
+   ],
+   "size": [
+    0.0103,
+    0.0101,
+    0.0051
+   ],
+   "tris": 706
+  },
+  {
+   "id": "p407",
+   "meshes": 1,
+   "sku": "Zip Ties:1/2909-0101-0100 (3200-2627-0004_J):1",
+   "cad": "Zip Ties:1/2909-0101-0100 (3200-2627-0004_J):1",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.0448,
+    0.037,
+    -0.0436
+   ],
+   "size": [
+    0.0097,
+    0.0096,
+    0.0051
+   ],
+   "tris": 712
+  },
+  {
+   "id": "p408",
+   "meshes": 1,
+   "sku": "Zip Ties:1/2909-0101-0100 (3200-2627-0004_K):1",
+   "cad": "Zip Ties:1/2909-0101-0100 (3200-2627-0004_K):1",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.0397,
+    0.0458,
+    -0.0778
+   ],
+   "size": [
+    0.0051,
+    0.01,
+    0.0093
+   ],
+   "tris": 710
+  },
+  {
+   "id": "p409",
+   "meshes": 1,
+   "sku": "Zip Ties:1/2909-0101-0100 (3200-2627-0004_L):1",
+   "cad": "Zip Ties:1/2909-0101-0100 (3200-2627-0004_L):1",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.0403,
+    0.0423,
+    -0.0217
+   ],
+   "size": [
+    0.0056,
+    0.01,
+    0.0107
+   ],
+   "tris": 782
+  },
+  {
+   "id": "p410",
+   "meshes": 1,
+   "sku": "Zip Ties:1/2909-0101-0100 (3200-2627-0004_M):1",
+   "cad": "Zip Ties:1/2909-0101-0100 (3200-2627-0004_M):1",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1227,
+    0.0594,
+    -0.0177
+   ],
+   "size": [
+    0.0101,
+    0.01,
+    0.0051
+   ],
+   "tris": 706
+  },
+  {
+   "id": "p411",
+   "meshes": 1,
+   "sku": "Zip Ties:1/2909-0101-0100 (3200-2627-0004_N):1",
+   "cad": "Zip Ties:1/2909-0101-0100 (3200-2627-0004_N):1",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.0403,
+    0.0346,
+    -0.0224
+   ],
+   "size": [
+    0.0053,
+    0.0072,
+    0.0122
+   ],
+   "tris": 716
+  },
+  {
+   "id": "p412",
+   "meshes": 1,
+   "sku": "Zip Ties:1/2909-0101-0100 (3200-2627-0004_O):1",
+   "cad": "Zip Ties:1/2909-0101-0100 (3200-2627-0004_O):1",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1332,
+    0.0649,
+    -0.018
+   ],
+   "size": [
+    0.0103,
+    0.0093,
+    0.005
+   ],
+   "tris": 718
+  },
+  {
+   "id": "p413",
+   "meshes": 1,
+   "sku": "Zip Ties:1/2909-0101-0100 (3200-2627-0004_P):1",
+   "cad": "Zip Ties:1/2909-0101-0100 (3200-2627-0004_P):1",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1313,
+    0.0587,
+    0.0618
+   ],
+   "size": [
+    0.0092,
+    0.0095,
+    0.0052
+   ],
+   "tris": 714
+  },
+  {
+   "id": "p414",
+   "meshes": 1,
+   "sku": "Zip Ties:1/2909-0101-0100 (3200-2627-0004_Q):1",
+   "cad": "Zip Ties:1/2909-0101-0100 (3200-2627-0004_Q):1",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1325,
+    0.0316,
+    0.062
+   ],
+   "size": [
+    0.0124,
+    0.0098,
+    0.005
+   ],
+   "tris": 714
+  },
+  {
+   "id": "p415",
+   "meshes": 1,
+   "sku": "Zip Ties:1/2909-0101-0100 (3200-2627-0004_Q):2",
+   "cad": "Zip Ties:1/2909-0101-0100 (3200-2627-0004_Q):2",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    -0.1325,
+    0.0316,
+    -0.018
+   ],
+   "size": [
+    0.0124,
+    0.0098,
+    0.005
+   ],
+   "tris": 714
+  },
+  {
+   "id": "p416",
+   "meshes": 1,
+   "sku": "Zip Ties:1/2909-0101-0100 (3200-2627-0004_R):1",
+   "cad": "Zip Ties:1/2909-0101-0100 (3200-2627-0004_R):1",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1351,
+    0.0742,
+    0.054
+   ],
+   "size": [
+    0.0126,
+    0.0115,
+    0.005
+   ],
+   "tris": 720
+  },
+  {
+   "id": "p417",
+   "meshes": 1,
+   "sku": "Zip Ties:1/2909-0101-0100 (3200-2627-0004_S):1",
+   "cad": "Zip Ties:1/2909-0101-0100 (3200-2627-0004_S):1",
+   "system": "hardware",
+   "name": "Hardware",
+   "note": "Screws, nuts and washers. On the real robot these are what you check before every match.",
+   "label": false,
+   "center": [
+    0.1311,
+    0.0685,
+    -0.0785
+   ],
+   "size": [
+    0.0096,
+    0.005,
+    0.01
+   ],
+   "tris": 710
+  }
+ ]
+}

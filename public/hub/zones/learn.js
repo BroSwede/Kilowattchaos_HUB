@@ -22,8 +22,8 @@ const PATHS = [
     ['Set up OnBot Java on your device', 'Do', 10, ['learn', 'Setup and FAQ']], ['Your first OpMode: Hello Robot', 'Do', 15], ['Read the gamepad', 'Do', 15], ['Drive a motor with a stick', 'Do', 20],
     ['Telemetry: make the robot talk', 'Do', 10, ['code', 'Snippets'], ['Telemetry puts numbers on the Driver Station screen while your OpMode runs. It is the fastest way to find out what the robot thinks is happening.', ['Inside your loop, add <code>telemetry.addData("Left stick", gamepad1.left_stick_y);</code>', 'Add <code>telemetry.update();</code> at the end of the loop, or nothing shows.', 'Build it, run it and move the stick. The number should follow your thumb.', 'Add one more line that shows something you care about, like a motor power.'], 'Snippets has a ready-made version called "Telemetry you can read".']],
     ['Change our TeleOp, with a mentor', 'Do', 30, ['code', 'Our code']]] },
-  { id: 'drive', t: 'Driving', ic: 'gamepad', badge: 'Driver', d: 'Field sense and smooth driving, practiced in the Arena before the real robot.', steps: [
-    ['Drive the Arena practice drill', 'Do', 10, ['code', 'BioBuzz Arena']], ['Collect 10 pollen in under 40 seconds', 'Challenge', 10, ['code', 'BioBuzz Arena']], ['Driver Station: Init, Start, Stop', 'Read', 5], ['Practice with the real robot', 'Do', 30]] },
+  { id: 'drive', t: 'Driving', ic: 'gamepad', badge: 'Driver', d: 'Field sense and smooth driving, practiced in BioBuzz XR before the real robot.', steps: [
+    ['Driver Academy, drill 1 in BioBuzz XR', 'Do', 10, ['code', 'BioBuzz XR']], ['Earn a medal in a Driver Academy drill', 'Challenge', 10, ['code', 'BioBuzz XR']], ['Driver Station: Init, Start, Stop', 'Read', 5], ['Practice with the real robot', 'Do', 30]] },
   { id: 'print', t: '3D printing', ic: 'printer', badge: 'First print', d: 'From an Onshape part to a printed one that fits, without wasting a spool.', steps: [
     ['What an STL and a slicer are', 'Read', 5], ['Why prints fail', 'Read', 6, ['learn', 'Build tips']], ['Request your first print', 'Do', 10, ['build', 'Print Shop']], ['Check that it fits, then log it', 'Do', 10]] },
   { id: 'wire', t: 'Wiring and power', ic: 'zap', badge: 'Wiring', d: 'The Control Hub, ports, batteries and wires that survive a match.', steps: [
@@ -254,7 +254,7 @@ const CORE = [
   ['Discovery', 'We explore new skills and ideas.', 'Trying a change when nobody knows yet if it will work, then testing it.'],
   ['Innovation', 'We use creativity and persistence to solve problems.', 'Testing a part ten times, and still going, until it works.'],
   ['Impact', 'We apply what we learn to improve our world.', 'Showing the robot at a library or a school, so other kids want to try FIRST.'],
-  ['Inclusion', 'We respect each other and embrace our differences.', 'Everyone gets Arena time, not just the drivers.'],
+  ['Inclusion', 'We respect each other and embrace our differences.', 'Everyone gets BioBuzz XR time, not just the drivers.'],
   ['Teamwork', 'We are stronger when we work together.', 'One person measures, one writes it down, then you swap.'],
   ['Fun', 'We enjoy and celebrate what we do!', 'Shoutouts at the end of a meeting for something a teammate did well.'],
 ];
@@ -379,19 +379,19 @@ const DEVICES = [['cb', 'Chromebook'], ['win', 'Windows'], ['mac', 'Mac'], ['ph'
 const WORKS = [
   ['The Hub', 'home', { cb: 'y', win: 'y', mac: 'y', ph: 'y' }, 'Any up-to-date browser. On a phone, add it to your home screen.'],
   ['3D robot', 'bot', { cb: 'y', win: 'y', mac: 'y', ph: 'm' }, 'The full 28-million-triangle robot, a 143 MB download. Use Wi-Fi, and close other tabs on older phones.'],
-  ['BioBuzz Arena', 'gamepad', { cb: 'y', win: 'y', mac: 'y', ph: 'y' }, 'Keyboard or gamepad on a laptop, touch controls on a phone.'],
+  ['BioBuzz XR', 'gamepad', { cb: 'y', win: 'y', mac: 'y', ph: 'm' }, 'Keyboard or gamepad on a laptop. It opens on a phone, but a bigger screen is much easier. The Quest browser works too.'],
   ['OnBot Java and Blocks', 'code', { cb: 'y', win: 'y', mac: 'y', ph: 'm' }, "In the browser, on the robot's Wi-Fi. It works on a phone, but the screen is tiny."],
   ['Android Studio', 'code', { cb: 'n', win: 'y', mac: 'y', ph: 'n' }, 'Later in the season, for bigger code. Needs a Windows or Mac laptop with 8 GB of memory or more.'],
   ['Onshape', 'layers', { cb: 'y', win: 'y', mac: 'y', ph: 'm' }, 'Full CAD in the browser. The phone app is great for looking, harder for building.'],
   ['Print Shop upload', 'printer', { cb: 'y', win: 'y', mac: 'y', ph: 'y' }, 'Upload an STL from Files or Downloads.'],
-  ['Gamepad in the Arena', 'gamepad', { cb: 'y', win: 'y', mac: 'y', ph: 'm' }, 'USB or Bluetooth on laptops. Some phones work with a Bluetooth controller.'],
+  ['Gamepad in BioBuzz XR', 'gamepad', { cb: 'y', win: 'y', mac: 'y', ph: 'm' }, 'USB or Bluetooth on laptops. Some phones work with a Bluetooth controller.'],
   ['Driver Station app', 'sliders', { cb: 'n', win: 'n', mac: 'n', ph: 'm' }, "Android only. The team's Driver Hub or an Android phone runs it; iPhones can't."],
 ];
 const DEV_TIPS = {
   cb: ['Keep ChromeOS up to date: Settings, About ChromeOS.', 'OnBot Java and Blocks run right in Chrome.', "A school-managed Chromebook may block the robot's Wi-Fi. If it does, tell Coach and pair up with a teammate for now."],
   win: ['Use Chrome or Edge.', 'Android Studio runs here later in the season.', "If the robot's Wi-Fi won't connect, forget the network and join it again."],
   mac: ['Use Chrome, Safari or Firefox.', 'Android Studio runs here later in the season.', "If your Mac jumps back to another Wi-Fi, pick the robot's network again."],
-  ph: ['The Hub, the Arena and the 3D robot all work here.', 'Add the Hub to your home screen so it opens like an app.', 'For OnBot Java, a laptop is much easier.'],
+  ph: ['The Hub, BioBuzz XR and the 3D robot all work here.', 'Add the Hub to your home screen so it opens like an app.', 'For OnBot Java, a laptop is much easier.'],
 };
 const HELLO = `package org.firstinspires.ftc.teamcode;
 
@@ -427,7 +427,7 @@ const DEV_FAQ = [
   ["My laptop can't see the robot's Wi-Fi", 'Check the robot is on and has had a minute to start. Move closer. If your device is managed by a school, it may block other networks. Tell Coach, and pair up with a teammate whose device connects.'],
   ['The build has red errors', 'Read the first error only, and look at its line number. A missing <b>;</b> or <b>}</b> causes most of them. Still stuck? Post the error in #help.'],
   ['Where does my code live?', "On the Control Hub. Once a mentor connects the team's GitHub repo, a copy lives there too, and Code, Our code shows it."],
-  ['Can I code at home?', 'Yes. Try ideas in the BioBuzz Arena and Snippets. OnBot Java needs the robot, so build those changes at the next meeting.'],
+  ['Can I code at home?', 'Yes. Try ideas in the BioBuzz XR Code Lab and Snippets. OnBot Java needs the robot, so build those changes at the next meeting.'],
   ['Which gamepad is which?', 'On the Driver Station, press Start and A together on a gamepad to make it gamepad 1, the driver. Start and B makes it gamepad 2, the operator.'],
   ['The Hub is slow on my phone', 'Close other tabs, and turn off low power mode while you use the 3D robot. Robot, Specs and parts has everything without 3D.'],
   ['How do I install the Hub like an app?', 'On Android in Chrome: menu, then Add to Home screen. On an iPhone in Safari: Share, then Add to Home Screen.'],
@@ -463,7 +463,7 @@ function setup(view, ctx) {
       <ol class="lsteps">${OBJ_STEPS.map(([t, d], i) => `<li class="lstep"><span class="n">${i + 1}</span><div style="min-width:0"><div class="t">${t}</div><div class="cap" style="font-weight:400;font-size:13px;line-height:19px">${d}</div></div><div class="row">${i === 2 ? '<button class="btn soft pill sm" type="button" id="copyAddr">Copy</button>' : ''}</div></li>`).join('')}</ol>
       <div class="code-head"><span class="path">TeamCode/HelloRobot.java</span><button class="btn ghost pill sm" type="button" id="copyHello" style="margin-left:auto">Copy code</button></div>
       ${codeBlock(HELLO)}
-      <p class="cap" style="font-weight:400">Try it at home first: Snippets has the same idea, and the Arena shows what your stick does.</p>
+      <p class="cap" style="font-weight:400">Try it at home first: Snippets has the same idea, and BioBuzz XR's Driver Academy shows what your stick does.</p>
     </article>
     <article class="card c5">
       <div class="card-head"><h3 class="card-title">Device questions</h3></div>
@@ -598,8 +598,8 @@ function buildtips(view, ctx) {
 }
 
 // ================================================================= AI agents
-const LOOP = [['Ask', 'Say what you want in plain words, with the file name.'], ['Plan', 'The agent writes a plan. You read it before it changes anything.'], ['Change', 'It edits the files, on its own branch.'], ['Test', 'Run it in the Arena, then on the robot with the wheels off the floor.'], ['Review', 'Read every line it changed. Ask it to explain anything new.'], ['Commit', 'Save it with a clear message that says AI helped.']];
-const RULES = ['Under 13? A mentor drives the agent and you co-pilot. That is the rule for every AI tool here.', 'Never paste passwords, real names, your school or photos into an AI tool.', 'Read every change before you keep it. You are the one who answers for the code.', 'Test in the Arena first, then on the robot with the wheels off the floor.', 'The agent works on a branch, never straight on the code the robot runs.', 'Say when AI helped: in the commit message, and to judges if they ask.'];
+const LOOP = [['Ask', 'Say what you want in plain words, with the file name.'], ['Plan', 'The agent writes a plan. You read it before it changes anything.'], ['Change', 'It edits the files, on its own branch.'], ['Test', 'Run it in the BioBuzz XR Code Lab, then on the robot with the wheels off the floor.'], ['Review', 'Read every line it changed. Ask it to explain anything new.'], ['Commit', 'Save it with a clear message that says AI helped.']];
+const RULES = ['Under 13? A mentor drives the agent and you co-pilot. That is the rule for every AI tool here.', 'Never paste passwords, real names, your school or photos into an AI tool.', 'Read every change before you keep it. You are the one who answers for the code.', 'Test in BioBuzz XR first, then on the robot with the wheels off the floor.', 'The agent works on a branch, never straight on the code the robot runs.', 'Say when AI helped: in the commit message, and to judges if they ask.'];
 const RECIPES = [
   ['Explain it like I am new', 'Explain what this file does, step by step, in plain words. Then tell me the one line I should understand first.'],
   ['Plan before you change', "Before changing anything, write a short plan: which files you'll touch and why. Wait for me to say go."],
@@ -626,7 +626,7 @@ Our code is in TeamCode/src/main/java/org/firstinspires/ftc/teamcode/.
 
 ## Checking your work
 - It must build: ./gradlew assembleDebug
-- Tell us how to test it in the BioBuzz Arena before the real robot.
+- Tell us how to test it in BioBuzz XR before the real robot.
 
 ## Style
 - Explain anything new in a short comment.
