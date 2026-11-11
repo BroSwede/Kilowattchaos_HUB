@@ -57,3 +57,23 @@ On a laptop the database lives in `.data/`. Delete that folder to start fresh.
 - **The hub's screens** are plain JavaScript modules in `public/hub/`. They are the approved design preview, now reading and writing the API through `public/hub/api.js`. Each zone is one file in `public/hub/zones/`.
 - **Robot model files:** `public/hub/model/`. The conversion scripts live with the team's project files.
 - **End-to-end check:** `node scripts/e2e.cjs http://localhost:3000`. It needs Playwright and a fresh database, and runs setup, join, consent, approve, sign-in, check-in and permission checks.
+
+## BioBuzz XR (`/biobuzz-xr`)
+
+`public/biobuzz-xr/` is a static build of the laptop site from the BioBuzzXR project (`web/` folder): its hub, Robot Lab, Match Day, Driver Academy and Code Lab. The Code zone's **BioBuzz XR** page links to it. It is built on the open-source BIOBUZZ Digital Twin by the Camels Hump Coders (MIT, see `public/biobuzz-xr/LICENSE.txt`).
+
+To update it, rebuild from the BioBuzzXR project and replace the folder:
+
+```
+cd BioBuzzXR/web
+pnpm install
+BASE_PATH=/biobuzz-xr/ pnpm exec vite build
+# then copy everything in dist/ over public/biobuzz-xr/ in this repo
+```
+
+The Quest app is not hosted here. It installs from the shop laptop with `install-quest.bat` in the BioBuzzXR project.
+
+## Sample data on Home
+
+While a team has no records of a kind yet, the Home dashboard and the Shop TV show sample events, tasks, a plan, prints, session notes and shoutouts (`public/hub/sample.js`), each card tagged "Sample". They are never saved. As soon as the team saves its first real record of a kind, that list switches to the real ones.
+

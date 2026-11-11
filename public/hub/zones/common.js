@@ -13,7 +13,7 @@ export const KIDS = [
   { n: 'Sparky', c: '#F07A2A', role: 'Driver · Launcher', subs: ['launcher'], skills: ['Driving', 'Onshape', 'Testing'], badges: ['Shop safety', 'Onshape Basics', 'First print', 'Mechanisms 101', 'Driver', 'Helper'], work: "Measuring the flywheel's top speed", stats: [4, 3, 2, 9] },
   { n: 'Pixel', c: '#0E8F9E', role: 'Intake lead · CAD', subs: ['intake'], skills: ['Onshape', 'Prototyping', 'Testing'], badges: ['Shop safety', 'Onshape Basics', 'CAD for FTC', 'First print', 'Mechanisms 101', 'Prototype pro', 'Helper'], work: 'Gecko wheels 6 mm closer', stats: [6, 5, 1, 10] },
   { n: 'Gizmo', c: '#B394FF', role: 'Ball path · Build', subs: ['ballpath', 'structure'], skills: ['Building', 'Wiring', 'Java'], badges: ['Shop safety', 'First print', 'Mechanisms 101', 'Wiring', 'Helper'], work: 'Fixing the servo gate double-feed', stats: [3, 2, 3, 8] },
-  { n: 'Byte', c: '#E8F542', role: 'Code lead', subs: ['drivetrain'], skills: ['Java', 'OnBot Java', 'Arena'], badges: ['Shop safety', 'Java OpModes', 'First commit', 'Arena drill', 'Challenge winner', 'Mechanisms 101', 'Helper', 'Driver'], work: 'The drive-forward autonomous', stats: [2, 0, 14, 9] },
+  { n: 'Byte', c: '#E8F542', role: 'Code lead', subs: ['drivetrain'], skills: ['Java', 'OnBot Java', 'BioBuzz XR'], badges: ['Shop safety', 'Java OpModes', 'First commit', 'Academy drill', 'Challenge winner', 'Mechanisms 101', 'Helper', 'Driver'], work: 'The drive-forward autonomous', stats: [2, 0, 14, 9] },
   { n: 'Nova', c: '#C42D6B', role: 'Intake · Outreach', subs: ['intake'], skills: ['Outreach', 'Prototyping', 'Video'], badges: ['Shop safety', 'Onshape Basics', 'Outreach', 'Helper'], work: 'Library robot demo in December', stats: [3, 2, 0, 7] },
   { n: 'Rivet', c: '#9A968A', role: 'Frame · Launcher', subs: ['structure', 'launcher'], skills: ['Building', 'Tools', 'Onshape'], badges: ['Shop safety', 'First print', 'Mechanisms 101', 'Builder'], work: 'Stiffening the launcher mount', stats: [2, 4, 0, 8] },
   { n: 'Echo', c: '#8FD3DC', role: 'Portfolio · Power', subs: ['power', 'ballpath'], skills: ['Writing', 'Photos', 'Wiring'], badges: ['Shop safety', 'Portfolio', 'Wiring', 'Battery care', 'Helper', 'Onshape Basics'], work: 'Portfolio: the robot overview page', stats: [2, 1, 1, 10] },
@@ -136,6 +136,48 @@ export function drawer(html, { label = 'Details', wide = false, onClose } = {}) 
   return el;
 }
 export function closeDrawer() { if (openDrawer) openDrawer.close(); }
+
+// ---------------------------------------------------------------- Pop-up (centered on laptops, bottom sheet on phones)
+// `head` sits above the scrolling body and `foot` stays pinned under it, so the main button is always in reach.
+let openModal = null;
+export function modal({ head = '', body = '', foot = '', label = 'Dialog', cls = '', onClose } = {}) {
+  closeModal();
+  closeDrawer();
+  const back = document.createElement('div');
+  back.className = 'modal-back';
+  back.innerHTML = `<div class="modal${cls ? ` ${cls}` : ''}" role="dialog" aria-modal="true" aria-label="${esc(label)}">
+    <div class="modal-head">${head}<button class="icon-btn sm modal-x" type="button" aria-label="Close">${icon('x')}</button></div>
+    <div class="modal-body">${body}</div>${foot ? `<div class="modal-foot">${foot}</div>` : ''}</div>`;
+  const el = $('.modal', back);
+  document.body.append(back);
+  document.body.classList.add('no-scroll');
+  requestAnimationFrame(() => back.classList.add('is-on'));
+  const prev = document.activeElement;
+  let closed = false;
+  const close = () => {
+    if (closed) return;
+    closed = true;
+    back.classList.remove('is-on');
+    document.body.classList.remove('no-scroll');
+    setTimeout(() => back.remove(), 260);
+    if (openModal && openModal.el === el) openModal = null;
+    if (onClose) onClose();
+    if (prev && prev.focus && document.contains(prev)) prev.focus({ preventScroll: true });
+  };
+  back.addEventListener('pointerdown', (e) => { if (e.target === back) close(); });
+  $('.modal-x', el).addEventListener('click', close);
+  el.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { e.stopPropagation(); close(); return; }
+    if (e.key !== 'Tab') return;
+    const f = $$('button:not([disabled]), input, select, textarea, a[href]', el).filter((x) => x.offsetParent);
+    if (!f.length) return;
+    if (e.shiftKey && document.activeElement === f[0]) { e.preventDefault(); f[f.length - 1].focus(); }
+    else if (!e.shiftKey && document.activeElement === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
+  });
+  openModal = { el, close };
+  return { el, close };
+}
+export function closeModal() { if (openModal) openModal.close(); }
 
 // ---------------------------------------------------------------- Glossary (also powers the dotted-underline tooltips)
 export const GLOSSARY = [

@@ -2,6 +2,8 @@
 import { loadZone, initGlossaryTips, closeDrawer, slug } from './zones/index.js';
 import { api, session as S, isMentor } from './api.js';
 import { setRoster, esc, drawer } from './zones/common.js';
+import { buildSamples, SAMPLE_CREW, SAMPLE_MENTOR, isSample } from './sample.js';
+import { openPrintRequest, enhanceHomePrintCard } from './print-request.js';
 
 // Who is signed in, and the team. Everything below can rely on it.
 const BOOT = await api.me();
@@ -24,7 +26,7 @@ const session = safe(() => sessionStorage);
 let viewer = null;
 
 // ---------------------------------------------------------------- Robot avatars
-const PEOPLE = new Proxy(Object.fromEntries(BOOT.roster.map((r) => [r.name, r.color])), { get: (t, k) => t[k] || '#9A968A' });
+const PEOPLE = new Proxy(Object.fromEntries([...SAMPLE_CREW, [SAMPLE_MENTOR, '#4F5049']].concat(BOOT.roster.map((r) => [r.name, r.color]))), { get: (t, k) => t[k] || '#9A968A' });
 function bot(color) {
   return `<svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="20" fill="${color}"/><path d="M20 12.5V8.8" stroke="#222624" stroke-width="2" stroke-linecap="round"/><circle cx="20" cy="7.6" r="2.2" fill="#222624"/><rect x="9.5" y="12.5" width="21" height="16" rx="6" fill="#222624"/><circle cx="15.6" cy="20.4" r="2.6" fill="#E8F542"/><circle cx="24.4" cy="20.4" r="2.6" fill="#E8F542"/><rect x="16.5" y="24.6" width="7" height="1.8" rx=".9" fill="#E8F542" opacity=".85"/></svg>`;
 }
@@ -97,7 +99,7 @@ const ZONES = [
   { id: 'robot', name: 'Robot', icon: 'bot', subs: ['3D Explorer', 'Versions', 'Subsystems', 'Specs and parts', 'AR and VR'], q: 'What does our robot look like now, and how did it get here?' },
   { id: 'build', name: 'Build', icon: 'wrench', subs: ['Ideas', 'Mechanism Lab', 'Print Shop', 'Parts and inventory'], q: 'How do we make it better, and can I get that part printed?' },
   { id: 'learn', name: 'Learn', icon: 'book', subs: ['Paths', 'FIRST and BIOBUZZ', 'Setup and FAQ', 'Build tips', 'AI agents', 'Glossary'], q: 'How do I do this, and what do the rules say?' },
-  { id: 'code', name: 'Code', icon: 'code', subs: ['BioBuzz Arena', 'Our code', 'Snippets', 'Challenges'], q: 'Where do I write code, and does it work?' },
+  { id: 'code', name: 'Code', icon: 'code', subs: ['BioBuzz XR', 'Our code', 'Snippets', 'Challenges'], q: 'Where do I write code, and does it work?' },
   { id: 'crew', name: 'Crew', icon: 'users', subs: ['Chat', 'Inspiration', 'People', 'Feedback'], q: "What's the team talking about?" },
   { id: 'logbook', name: 'Logbook', icon: 'logbook', subs: ['Calendar', 'Sessions', 'Progress', 'Competitions', 'Portfolio'], q: 'What did we do, and when is the next thing?' },
 ];
@@ -146,9 +148,42 @@ function sparkBot() {
   return `<svg viewBox="0 0 132 132" aria-hidden="true"><circle cx="66" cy="66" r="62" fill="var(--well)" stroke="var(--divider)" stroke-width="1.5"/><path d="M66 34V22" stroke="#4F5049" stroke-width="3" stroke-linecap="round"/><path d="M63 9h9l-5 7h6L61 28l3-8h-5z" fill="#E8F542" stroke="#222624" stroke-width="1.6" stroke-linejoin="round"/><rect x="24" y="52" width="9" height="20" rx="4.5" fill="#4F5049"/><rect x="99" y="52" width="9" height="20" rx="4.5" fill="#4F5049"/><rect x="33" y="34" width="66" height="50" rx="17" fill="#2F3737"/><circle cx="54" cy="58" r="7" fill="#E8F542"/><circle cx="78" cy="58" r="7" fill="#E8F542"/><path d="M57 71q9 6 18 0" stroke="#E8F542" stroke-width="3" fill="none" stroke-linecap="round"/><rect x="44" y="88" width="44" height="22" rx="9" fill="#4F5049"/><circle cx="66" cy="99" r="5" fill="#E8F542"/></svg>`;
 }
 
+// ---------------------------------------------------------------- Sections (each zone's pages)
+// A labeled rail of its own under the heading, with an icon per section and a sliding dark pill,
+// so the pages read as parts of the zone instead of loose filter chips.
+const SUB_ICONS = {
+  Dashboard: 'home', 'Shop TV': 'play', Customize: 'sliders',
+  '3D Explorer': 'bot', Versions: 'commit', Subsystems: 'layers', 'Specs and parts': 'note', 'AR and VR': 'max',
+  Ideas: 'bulb', 'Mechanism Lab': 'wrench', 'Print Shop': 'printer', 'Parts and inventory': 'layers',
+  Paths: 'arrow', 'FIRST and BIOBUZZ': 'trophy', 'Setup and FAQ': 'help', 'Build tips': 'wrench', 'AI agents': 'sparkle', Glossary: 'book',
+  'BioBuzz XR': 'gamepad', 'Our code': 'code', Snippets: 'note', Challenges: 'flag',
+  Chat: 'chat', Inspiration: 'sparkle', People: 'users', Feedback: 'help',
+  Calendar: 'calendar', Sessions: 'clock', Progress: 'zap', Competitions: 'trophy', Portfolio: 'image',
+};
+const secBar = document.createElement('nav');
+secBar.className = 'secbar';
+secBar.innerHTML = '<span class="secbar-lbl" id="secLbl"></span>';
+$('.subbar').after(secBar);
+secBar.appendChild($('#subtabs'));
+$('#subtabs').className = 'sectabs';
+let secPlaced = false;
+function placeSec() {
+  const box = $('#subtabs'), ind = $('.sec-ind', box), a = $('.sec[aria-current="page"]', box);
+  if (!ind || !a || !a.offsetWidth) return;
+  if (!secPlaced) ind.style.transition = 'none';
+  ind.style.width = `${a.offsetWidth}px`;
+  ind.style.height = `${a.offsetHeight}px`;
+  ind.style.transform = `translate(${a.offsetLeft}px, ${a.offsetTop}px)`;
+  if (!secPlaced) { void ind.offsetWidth; ind.style.transition = ''; secPlaced = true; }
+}
+new ResizeObserver(placeSec).observe($('#subtabs'));
+if (document.fonts) document.fonts.ready.then(placeSec);
 function renderSubtabs(z) {
   const box = $('#subtabs');
-  box.innerHTML = z.subs.map((s, i) => `<button class="chip" type="button" data-sub="${i}" aria-pressed="false">${s}</button>`).join('');
+  secBar.setAttribute('aria-label', `${z.name} sections`);
+  $('#secLbl').innerHTML = `<span class="ic">${icon(z.icon, 'i sm')}</span><span><b>${z.name}</b><small>${z.subs.length} sections</small></span>`;
+  box.innerHTML = '<span class="sec-ind" aria-hidden="true"></span>' + z.subs.map((s, i) => `<button class="sec" type="button" data-sub="${i}"><span class="ic">${icon(SUB_ICONS[s] || 'arrow', 'i sm')}</span><span class="lbl">${s}</span></button>`).join('');
+  secPlaced = false;
 }
 $('#subtabs').addEventListener('click', (e) => {
   const c = e.target.closest('[data-sub]');
@@ -184,8 +219,9 @@ function showSub(i, opts = {}) {
   const z = ZONES.find((q) => q.id === zone);
   subIdx = clamp(i | 0, 0, z.subs.length - 1);
   const sub = z.subs[subIdx];
-  $$('#subtabs .chip').forEach((c, k) => c.setAttribute('aria-pressed', String(k === subIdx)));
-  const act = $(`#subtabs .chip[data-sub="${subIdx}"]`);
+  $$('#subtabs .sec').forEach((c, k) => { if (k === subIdx) c.setAttribute('aria-current', 'page'); else c.removeAttribute('aria-current'); });
+  placeSec();
+  const act = $(`#subtabs .sec[data-sub="${subIdx}"]`);
   if (act && act.parentElement.scrollWidth > act.parentElement.clientWidth) act.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   if (cleanup) { try { cleanup(); } catch (err) { console.error(err); } cleanup = null; }
   closeDrawer();
@@ -255,7 +291,43 @@ async function loadHome(kinds = Object.keys(KIND_KEY)) {
   await Promise.all(kinds.map(async (k) => {
     try { H[KIND_KEY[k]] = (await api.list(k)) || []; } catch (err) { console.error(err); }
   }));
+  fillSamples();
   H.loaded = true;
+}
+// Filler for a new team: each list shows sample records until the team saves its first real one of that kind.
+// Samples live only in this tab (ids start with "sample-") and are never sent to the server.
+const SAMPLE_KEYS = ['events', 'rsvps', 'comps', 'tasks', 'agenda', 'prints', 'sessions', 'versions', 'shoutouts'];
+const sampleOn = new Set();
+let samples = null;
+function fillSamples() {
+  samples = samples || buildSamples(ME, isMentor());
+  const real = (k) => H[k].filter((r) => !isSample(r));
+  for (const k of SAMPLE_KEYS) {
+    const mine = real(k);
+    const useSample = !mine.length && !(k === 'rsvps' && real('events').length);
+    H[k] = useSample ? samples[k] : mine;
+    sampleOn[useSample ? 'add' : 'delete'](k);
+  }
+}
+// After the first real record of a kind is saved, that list switches from samples to the team's own.
+function dropSamples(k) { H[k] = H[k].filter((r) => !isSample(r)); sampleOn.delete(k); if (k === 'events') dropSamples('rsvps'); }
+const teamSize = () => (sampleOn.has('rsvps') ? Math.max(BOOT.roster.length, SAMPLE_CREW.length + 1) : BOOT.roster.length);
+// A "Sample" tag on each dashboard card that is showing filler.
+function markSamples() {
+  const cards = { '.w-next': ['events'], '.w-tasks': ['tasks'], '.w-plan': ['agenda'], '.w-print': ['prints'], '.w-timeline': ['comps', 'sessions', 'versions'] };
+  for (const [sel, keys] of Object.entries(cards)) {
+    const head = $(`${sel} .card-head`);
+    if (!head) continue;
+    let t = $('.sample-tag', head);
+    const on = keys.some((k) => sampleOn.has(k));
+    if (on && !t) {
+      t = Object.assign(document.createElement('span'), { className: 'tag sample-tag', textContent: 'Sample' });
+      t.title = 'Filler to show what this card does. It goes away when the team adds its own.';
+      const title = $('.card-title', head) || head.firstElementChild;
+      title.after(t);
+    }
+    if (t) t.hidden = !on;
+  }
 }
 const isMentorName = (n) => BOOT.roster.some((r) => r.name === n && r.role === 'mentor');
 const pad2 = (n) => String(n).padStart(2, '0');
@@ -302,7 +374,8 @@ function evInfo(r) {
 }
 const allEvents = () => H.events.map(evInfo).filter(Boolean).sort((a, b) => a.start - b.start);
 const nextEvent = (now = new Date()) => allEvents().find((e) => e.end > now) || null;
-const isMeet = (e) => /meet|competition|tournament|scrimmage|qualifier|championship/i.test(`${e.kind} ${e.title}`);
+// Whole words only, so "Team meeting" is not mistaken for a league meet.
+const isMeet = (e) => /\b(meet|competition|tournament|scrimmage|qualifier|championship)s?\b/i.test(`${e.kind} ${e.title}`);
 // Competitions from Logbook (and events marked as a meet), soonest first.
 function meets() {
   const out = H.comps.map((r) => {
@@ -365,6 +438,9 @@ function renderHeader() {
 $$('.w-next .card-head .tag, .w-timeline .card-head .tag, .w-plan .card-head .tag, .w-print .card-head .tag').forEach((t) => t.remove());
 $('#dock').setAttribute('aria-label', 'Season dock');
 { const c = $('.w-print .card-foot .cap'); if (c) c.textContent = 'A mentor starts each print and updates its progress here.'; }
+enhanceHomePrintCard();
+// A request sent from the pop-up shows up in the Home queue right away.
+document.addEventListener('kwc:print-sent', (e) => { if (e.detail && !H.prints.some((r) => r.id === e.detail.id)) { H.prints.unshift({ ...e.detail, author: e.detail.author || ME.name }); changed(); } });
 
 // ---------------------------------------------------------------- Next up (events from Logbook, RSVPs from everyone)
 let nextEv = null;
@@ -422,7 +498,7 @@ function renderGoing() {
   btn.innerHTML = going ? `${icon('check', 'i sm')}Going` : mine ? 'Not going' : 'RSVP';
   btn.setAttribute('aria-label', going ? `You're going to ${ev.title}. Press to change.` : `RSVP to ${ev.title}`);
   $('#goingStack').innerHTML = names.length
-    ? names.slice(0, 5).map(avBot).join('') + `<span class="cap">${names.length} of ${BOOT.roster.length} going</span>`
+    ? names.slice(0, 5).map(avBot).join('') + `<span class="cap">${names.length} of ${teamSize()} going</span>`
     : '<span class="cap">Nobody yet. Be the first!</span>';
 }
 let rsvpBusy = false;
@@ -439,6 +515,7 @@ $('#rsvpBtn').addEventListener('click', async () => {
   else { temp = { id: `tmp-${Date.now()}`, user_id: ME.id, author: ME.name, data: { event: ev.id, going }, created_at: new Date().toISOString(), updated_at: new Date().toISOString() }; H.rsvps.unshift(temp); }
   renderGoing();
   try {
+    if (isSample(ev.rec)) { toast(going ? "You're going. This is a sample meeting, so nothing was saved." : "Got it. This is a sample meeting, so nothing was saved."); return; }
     if (mine) await api.update('rsvp', mine.id, { going });
     else Object.assign(temp, await api.create('rsvp', { event: ev.id, going }), { author: ME.name });
     toast(going ? `You're going. See you at ${ev.title.toLowerCase().startsWith('team') ? 'the meeting' : ev.title}!` : "Got it. You're marked as not going.");
@@ -533,6 +610,7 @@ $('.w-tasks').addEventListener('submit', async (e) => {
   sub.disabled = true;
   try {
     const it = await api.create('task', data);
+    dropSamples('tasks');
     H.tasks.unshift({ ...it, author: ME.name });
     taskFormOpen = false;
     renderTasks();
@@ -551,6 +629,7 @@ $('#tasks').addEventListener('click', async (e) => {
   renderTasks();
   const again = $(`[data-task="${CSS.escape(r.id)}"]`);
   if (again) again.focus();
+  if (isSample(r)) { changed(); return; }
   try { await api.update('task', r.id, { done }); changed(); }
   catch (err) { r.data = { ...r.data, done: !done }; renderTasks(); toast(err.message); }
 });
@@ -702,6 +781,7 @@ $('.w-plan').addEventListener('submit', async (e) => {
   const sub = $('button[type=submit]', form);
   sub.disabled = true;
   try {
+    dropSamples('agenda');
     const rec = H.agenda.find((r) => r.data && r.data.date === date);
     if (rec) Object.assign(rec, await api.update('agenda', rec.id, { items }));
     else H.agenda.unshift({ ...(await api.create('agenda', { date, items })), author: ME.name });
@@ -729,7 +809,7 @@ function renderPrints() {
     const ok = printSt(r) === 'done';
     rows.push(`<div class="pr">${ringHtml(ok ? 100 : 0, icon(ok ? 'check' : 'alert', 'i sm'))}<div><div class="what">${esc(printName(r))}</div><div class="meta">${ok ? 'Done · ready to pick up' : "Didn't work · a mentor will try again"} · for ${esc(printWho(r))}</div></div></div>`);
   }
-  box.innerHTML = rows.length ? rows.slice(0, 4).join('') + (rows.length > 4 ? `<p class="cap">${rows.length - 4} more in the Print Shop</p>` : '') : '<div class="live-empty">Nothing in the print queue. Need a part? Send a request and a mentor prints it.</div>';
+  box.innerHTML = rows.length ? rows.slice(0, 4).join('') + (rows.length > 4 ? `<p class="cap">${rows.length - 4} more in the Print Shop</p>` : '') : '<div class="live-empty">Nothing in the print queue right now.</div>';
 }
 
 // ---------------------------------------------------------------- Count-ups for the robot vitals
@@ -786,6 +866,7 @@ function renderDock() {
 }
 
 function renderHomeAll() {
+  markSamples();
   renderNext();
   renderTasks();
   renderTimeline();
@@ -851,12 +932,13 @@ $('#createBtn').addEventListener('click', (e) => showPop(e.currentTarget, `<h5>C
   ${item('sparkle', 'Shoutout', 'Say thanks to a teammate', 'id="mkShout"')}
   ${item('bulb', 'Idea', 'Pitch a mechanism or a fix', 'data-goto="build|Ideas"')}
   ${item('sparkle', 'Inspiration', 'A video or robot worth studying', 'data-goto="crew|Inspiration"')}
-  ${item('printer', 'Print request', 'Send a part with a note', 'data-goto="build|Print Shop"')}
+  ${item('printer', 'Print request', 'Send a part with a note', 'data-print-request')}
   ${item('note', 'Session note', 'From the meeting template', 'data-goto="logbook|Sessions"')}
   ${S.team.chatEnabled ? item('help', 'Question', 'Ask in #help, a mentor answers too', 'data-goto="crew|Chat" data-chan="help"') : ''}
   ${item('chat', 'Chat post', S.team.chatEnabled ? 'Post in a team channel' : 'Turns on once a second trained adult is set up', 'data-goto="crew|Chat"')}`));
 document.addEventListener('click', (e) => {
-  if (e.target.closest('#mkShout')) { closePop(); openShoutout(); }
+  if (e.target.closest('[data-print-request]')) { closePop(); openPrintRequest(ctx); }
+  else if (e.target.closest('#mkShout')) { closePop(); openShoutout(); }
   else if (e.target.closest('#mkTask')) { closePop(); goHomeCard('.w-tasks', () => { taskFormOpen = true; renderTaskForm(); }); }
   else if (e.target.closest('#mkPlan')) { closePop(); goHomeCard('.w-plan', () => { if (!planEditing) openPlanEditor(); }); }
 });
@@ -888,6 +970,7 @@ function openShoutout(to = '') {
     sub.disabled = true;
     try {
       const it = await api.create('shoutout', data);
+      dropSamples('shoutouts');
       H.shoutouts.unshift({ ...it, author: ME.name });
       closeDrawer();
       toast(`Shoutout sent to ${data.to}.`);
@@ -957,7 +1040,7 @@ document.addEventListener('click', (e) => {
 });
 $('#moreBtn').addEventListener('click', (e) => showPop(e.currentTarget, `<h5>More zones</h5>
   ${item('book', 'Learn', 'Paths, rules, setup and FAQ', 'data-zone="learn"')}
-  ${item('code', 'Code', 'BioBuzz Arena and team code', 'data-zone="code"')}
+  ${item('code', 'Code', 'BioBuzz XR and team code', 'data-zone="code"')}
   ${item('logbook', 'Logbook', 'Calendar, sessions, competitions', 'data-zone="logbook"')}
   ${item('search', 'Search everything', 'Pages, parts, people', 'id="moreSearch"')}`, true));
 document.addEventListener('click', (e) => { if (e.target.closest('#moreSearch')) { closePop(); openPalette(); } });
@@ -986,8 +1069,8 @@ function paletteItems() {
     { label: 'Explore the robot full screen', hint: 'Action', ic: 'max', run: () => { setZone('home'); setFull(true); } },
     { label: isDark() ? 'Switch to Light' : 'Switch to Night shift', hint: 'Action', ic: isDark() ? 'sun' : 'moon', run: () => { root.dataset.theme = isDark() ? 'light' : 'dark'; local.set('kwc-theme', root.dataset.theme); syncTheme(); } },
     { label: 'Replay the power-up splash', hint: 'Action', ic: 'zap', run: playSplash },
-    { label: 'Request a print', hint: 'Action', ic: 'printer', run: () => setZone('build', 'Print Shop', { scroll: true }) },
-    { label: 'Drive the robot in the Arena', hint: 'Action', ic: 'gamepad', run: () => setZone('code', 'BioBuzz Arena', { scroll: true }) },
+    { label: 'Request a print', hint: 'Action', ic: 'printer', run: () => openPrintRequest(ctx) },
+    { label: 'Open BioBuzz XR', hint: 'Action', ic: 'gamepad', run: () => window.open('/biobuzz-xr/index.html', '_blank', 'noopener') },
     // (Design system page lives in the master plan, not in the app.)
   );
   if (partsData) {
@@ -1207,7 +1290,7 @@ explode.addEventListener('input', () => {
   if (viewer) viewer.setExplode(v / 100);
 });
 $('#resetBtn').addEventListener('click', () => viewer && viewer.resetView());
-$('#driveBtn').addEventListener('click', () => { setFull(false); setZone('code', 'BioBuzz Arena', { scroll: true }); });
+$('#driveBtn').addEventListener('click', () => { setFull(false); window.open('/biobuzz-xr/academy.html', '_blank', 'noopener'); });
 
 let fullBack = null;
 function setFull(on) {

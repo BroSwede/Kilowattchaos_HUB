@@ -1,0 +1,31 @@
+/* ---------- Sections rail: each zone's pages, under the heading ----------
+   Level 1 (zones) is the light pill bar at the top. Level 2 (sections) is this chalk rail with
+   the zone's name on the left and a dark sliding pill for the open section, so it reads as "inside" the zone. */
+.secbar { display: flex; align-items: center; gap: 6px; min-width: 0; margin: -4px 0 16px; padding: 5px; border-radius: var(--r-pill); background: var(--card); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04); }
+.secbar-lbl { flex: none; display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 16px 0 5px; margin-right: 2px; border-right: 1px solid var(--divider); }
+.secbar-lbl .ic { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--volt); color: var(--ink); }
+.secbar-lbl b { display: block; font: 500 14px/16px Outfit, sans-serif; }
+.secbar-lbl small { display: block; color: var(--muted); font: 500 11px/14px Inter, sans-serif; }
+
+.sectabs { position: relative; isolation: isolate; flex: 1; min-width: 0; display: flex; align-items: center; gap: 4px; overflow-x: auto; scrollbar-width: none; }
+.sectabs::-webkit-scrollbar { display: none; }
+.sec { position: relative; z-index: 2; flex: none; height: 40px; display: inline-flex; align-items: center; gap: 8px; padding: 0 16px 0 5px; border: 0; border-radius: var(--r-pill); background: transparent; color: var(--muted); font: 500 13px/18px Inter, sans-serif; white-space: nowrap; transition: color var(--t-quick) var(--ease), background var(--t-quick) var(--ease); }
+.sec .ic { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--well); color: var(--text); transition: background var(--t-quick) var(--ease), color var(--t-quick) var(--ease); }
+.sec:not([aria-current]):hover { color: var(--text); background: var(--well); }
+.sec:not([aria-current]):hover .ic { background: var(--raised); }
+.sec[aria-current="page"] { color: var(--on-solid); }
+.sec[aria-current="page"] .ic { background: var(--volt); color: var(--ink); }
+.sec:focus-visible { outline: 2px solid var(--text); outline-offset: -2px; }
+.sec-ind { position: absolute; z-index: 1; left: 0; top: 0; width: 0; height: 40px; border-radius: var(--r-pill); background: var(--solid); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.14); pointer-events: none; transition: transform var(--spring-dur) var(--spring-ease), width var(--spring-dur) var(--spring-ease); }
+@media (prefers-reduced-motion: reduce) { .sec-ind { transition: none; } }
+@media (pointer: coarse) { .sec { height: 44px; } .sec-ind { height: 44px; } .secbar-lbl { height: 44px; } }
+
+/* The zone heading sits right above the rail, so tighten the gap between them. */
+.subbar:has(+ .secbar) { margin-bottom: 12px; }
+
+@media (max-width: 759px) {
+  .secbar { margin: -2px 0 12px; padding: 4px; }
+  .secbar-lbl { display: none; }
+  .secbar .sectabs { width: auto; margin: 0; padding: 0; flex-wrap: nowrap; }
+  .sec { padding-right: 14px; }
+}

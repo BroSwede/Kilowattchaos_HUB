@@ -326,7 +326,7 @@ const EXTRAS = [
   { id: 'shout', name: 'Latest shoutout', short: 'Latest shoutout', ic: 'sparkle' },
   { id: 'printer', name: 'Printer right now', short: 'Printer right now', ic: 'printer' },
   { id: 'word', name: 'Word of the day', short: 'Word of the day', ic: 'book' },
-  { id: 'arena', name: 'My best Arena time', short: 'My best Arena time', ic: 'gamepad' },
+  { id: 'arena', name: 'BioBuzz XR launcher', short: 'BioBuzz XR', ic: 'gamepad' }, // id kept so saved layouts still find it
   { id: 'week', name: 'Season week', short: 'Season week', ic: 'calendar' },
 ];
 const XSIZES = [['default', 'Small'], ['wide', 'Half']];
@@ -432,9 +432,7 @@ function extraHtml(id, ctx) {
     return `${head(tag(esc(cat)))}<div><div class="big xw-word">${esc(t)}</div><p class="xw-def">${esc(d)}</p></div><div class="card-foot"><span class="cap">A new word every day.</span><button class="btn ghost pill" type="button" data-goto="learn|Glossary">Glossary</button></div>`;
   }
   if (id === 'arena') {
-    const v = parseFloat(ctx.local.get('kwc-arena-best'));
-    const has = Number.isFinite(v) && v > 0;
-    return `${head(tag('On this device'))}<div>${has ? `<div class="big">${v.toFixed(1)} <span class="unit">s</span></div><p class="cap" style="font-weight:400">Your best time collecting all 10 pollen in the BioBuzz Arena.</p>` : `<div class="big">No run yet</div><p class="cap" style="font-weight:400">Collect all 10 pollen in the BioBuzz Arena and your best time shows up here.</p>`}</div><div class="card-foot"><span></span><button class="btn soft pill" type="button" data-goto="code|BioBuzz Arena">${icon('play', 'i sm')}${has ? 'Beat it' : 'Try the Arena'}</button></div>`;
+    return `${head(tag('Opens in a new tab'))}<div><div class="big">BioBuzz XR</div><p class="cap" style="font-weight:400">Robot Lab, Match Day, Driver Academy and Code Lab. Practice driving and coding before the next meeting.</p></div><div class="card-foot"><button class="btn ghost pill" type="button" data-goto="code|BioBuzz XR">More</button><a class="btn soft pill" href="/biobuzz-xr/academy.html" target="_blank" rel="noopener">${icon('play', 'i sm')}Driver Academy</a></div>`;
   }
   if (id === 'week') {
     const wk = weekOf(ctx, now);

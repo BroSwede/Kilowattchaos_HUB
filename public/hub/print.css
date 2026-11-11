@@ -1,0 +1,72 @@
+/* ---------- Pop-up (zones/common.js modal) ---------- */
+.modal-back { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 24px 16px; background: rgba(18, 21, 20, 0.42); opacity: 0; transition: opacity var(--t-base) var(--ease); }
+.modal-back.is-on { opacity: 1; }
+.modal { width: min(680px, 100%); max-height: min(860px, calc(100vh - 48px)); display: flex; flex-direction: column; overflow: hidden; border-radius: var(--r-card); background: var(--card); color: var(--text); box-shadow: var(--shadow-float), 0 0 0 1px var(--divider); transform: translateY(16px) scale(0.98); transition: transform var(--t-base) var(--ease); }
+.modal-back.is-on .modal { transform: none; }
+.modal-head { flex: none; display: flex; align-items: flex-start; gap: 14px; padding: 22px 22px 16px; border-bottom: 1px solid var(--divider); }
+.modal-x { margin-left: auto; flex: none; }
+.modal-body { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; padding: 18px 22px 22px; display: flex; flex-direction: column; gap: 14px; }
+.modal-foot { flex: none; display: flex; align-items: center; justify-content: flex-end; gap: 12px 16px; flex-wrap: wrap; padding: 14px 22px 18px; border-top: 1px solid var(--divider); background: var(--card); }
+.modal-foot .cap { flex: 1 1 260px; min-width: 0; font-weight: 400; }
+@media (prefers-reduced-motion: reduce) { .modal, .modal-back { transition: none; } }
+@media (max-width: 759px) {
+  .modal-back { place-items: end stretch; padding: 8px; }
+  .modal { width: auto; max-height: 92vh; border-radius: 26px; transform: translateY(calc(100% + 24px)); }
+  .modal-head { padding: 18px 16px 14px; }
+  .modal-body { padding: 14px 16px 18px; }
+  .modal-foot { padding: 12px 16px 14px; }
+  .modal-foot .btn { flex: 1; }
+}
+
+/* ---------- Print request pop-up ---------- */
+.pq-ic { flex: none; width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; background: var(--volt); color: var(--ink); }
+.pq-title { min-width: 0; }
+.pq-title h3 { margin: 2px 0 4px; font: 500 26px/32px Outfit, sans-serif; letter-spacing: -0.01em; }
+.pq-title p { margin: 0; color: var(--muted); font: 400 14px/20px Inter, sans-serif; }
+.pq-sec { display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 20px; background: var(--raised); }
+.pq-sec h4 { display: flex; align-items: center; gap: 10px; margin: 0; font: 500 16px/22px Outfit, sans-serif; }
+.pq-sec h4 .n { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--solid); color: var(--on-solid); font: 600 12px/1 Inter, sans-serif; }
+.pq-sec .drop { background: var(--card); }
+.pq-done { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 18px 0 8px; text-align: center; }
+.pq-done h3 { margin: 4px 0 0; font: 500 26px/32px Outfit, sans-serif; }
+.pq-done p { margin: 0 0 8px; color: var(--muted); font: 400 15px/22px Inter, sans-serif; }
+.pq-done .steps { justify-content: center; }
+.steps.is-queued .step.now { background: var(--raised); color: var(--text); }
+.steps.is-queued .step.now .n { background: var(--solid); color: var(--on-solid); }
+.steps.is-queued .step:nth-child(2) { background: var(--solid); color: var(--on-solid); }
+.steps.is-queued .step:nth-child(2) .n { background: var(--volt); color: var(--ink); }
+
+/* ---------- Home print card: the big volt "Need a part printed?" button ---------- */
+.pq-head-ic { flex: none; width: 32px; height: 32px; margin-right: -2px; border-radius: 50%; display: grid; place-items: center; background: var(--well); }
+.pq-cta { width: 100%; display: flex; align-items: center; gap: 14px; padding: 14px 14px 14px 14px; border: 0; border-radius: 22px; background: var(--volt); color: var(--ink); text-align: left; cursor: pointer; box-shadow: 0 10px 24px -14px rgba(120, 130, 0, 0.9); transition: transform var(--t-instant) linear, background var(--t-quick) var(--ease), box-shadow var(--t-quick) var(--ease); }
+.pq-cta:hover { background: var(--volt-bright); box-shadow: 0 14px 28px -14px rgba(120, 130, 0, 1); }
+.pq-cta:active { transform: scale(0.99); }
+.pq-cta:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+.pq-cta-ic { flex: none; width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; background: var(--graphite); color: var(--volt); }
+.pq-cta-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.pq-cta-txt b { font: 500 20px/26px Outfit, sans-serif; letter-spacing: -0.005em; }
+.pq-cta-txt span { font: 400 13px/18px Inter, sans-serif; color: #3F4236; }
+.pq-cta-go { flex: none; height: 44px; display: inline-flex; align-items: center; gap: 8px; padding: 0 18px; border-radius: var(--r-pill); background: var(--graphite); color: var(--white); font: 500 14px/18px Inter, sans-serif; white-space: nowrap; }
+@media (max-width: 1279px) and (min-width: 1100px), (max-width: 520px) {
+  .pq-cta { flex-wrap: wrap; }
+  .pq-cta-txt { flex-basis: calc(100% - 72px); }
+  .pq-cta-go { flex: 1; justify-content: center; }
+}
+
+/* ---------- Print Shop hero ---------- */
+.pq-hero { grid-column: 1 / -1; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 14px 18px; background: var(--volt); color: var(--ink); }
+.pq-hero .pq-cta-ic { width: 64px; height: 64px; }
+.pq-hero-txt h3 { margin: 0; font: 500 26px/32px Outfit, sans-serif; letter-spacing: -0.01em; }
+.pq-hero-txt p { margin: 2px 0 0; color: #3F4236; font: 400 14px/20px Inter, sans-serif; }
+.pq-hero .pq-hero-go { height: 48px; padding: 0 22px; font-size: 15px; background: var(--graphite); color: var(--white); }
+.pq-hero-steps { grid-column: 1 / -1; }
+.pq-hero-steps .step { background: rgba(255, 255, 255, 0.55); color: var(--ink); }
+.pq-hero-steps .step .n { background: rgba(34, 38, 36, 0.1); }
+.pq-hero-steps .step.now { background: var(--graphite); color: var(--white); }
+.pq-hero-steps .step.now .n { background: var(--volt); color: var(--ink); }
+@media (max-width: 759px) {
+  .pq-hero { grid-template-columns: auto minmax(0, 1fr); }
+  .pq-hero .pq-cta-ic { width: 52px; height: 52px; }
+  .pq-hero-txt h3 { font-size: 22px; line-height: 28px; }
+  .pq-hero-go { grid-column: 1 / -1; width: 100%; }
+}
