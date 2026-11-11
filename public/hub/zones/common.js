@@ -137,6 +137,48 @@ export function drawer(html, { label = 'Details', wide = false, onClose } = {}) 
 }
 export function closeDrawer() { if (openDrawer) openDrawer.close(); }
 
+// ---------------------------------------------------------------- Pop-up (centered on laptops, bottom sheet on phones)
+// `head` sits above the scrolling body and `foot` stays pinned under it, so the main button is always in reach.
+let openModal = null;
+export function modal({ head = '', body = '', foot = '', label = 'Dialog', cls = '', onClose } = {}) {
+  closeModal();
+  closeDrawer();
+  const back = document.createElement('div');
+  back.className = 'modal-back';
+  back.innerHTML = `<div class="modal${cls ? ` ${cls}` : ''}" role="dialog" aria-modal="true" aria-label="${esc(label)}">
+    <div class="modal-head">${head}<button class="icon-btn sm modal-x" type="button" aria-label="Close">${icon('x')}</button></div>
+    <div class="modal-body">${body}</div>${foot ? `<div class="modal-foot">${foot}</div>` : ''}</div>`;
+  const el = $('.modal', back);
+  document.body.append(back);
+  document.body.classList.add('no-scroll');
+  requestAnimationFrame(() => back.classList.add('is-on'));
+  const prev = document.activeElement;
+  let closed = false;
+  const close = () => {
+    if (closed) return;
+    closed = true;
+    back.classList.remove('is-on');
+    document.body.classList.remove('no-scroll');
+    setTimeout(() => back.remove(), 260);
+    if (openModal && openModal.el === el) openModal = null;
+    if (onClose) onClose();
+    if (prev && prev.focus && document.contains(prev)) prev.focus({ preventScroll: true });
+  };
+  back.addEventListener('pointerdown', (e) => { if (e.target === back) close(); });
+  $('.modal-x', el).addEventListener('click', close);
+  el.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { e.stopPropagation(); close(); return; }
+    if (e.key !== 'Tab') return;
+    const f = $$('button:not([disabled]), input, select, textarea, a[href]', el).filter((x) => x.offsetParent);
+    if (!f.length) return;
+    if (e.shiftKey && document.activeElement === f[0]) { e.preventDefault(); f[f.length - 1].focus(); }
+    else if (!e.shiftKey && document.activeElement === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
+  });
+  openModal = { el, close };
+  return { el, close };
+}
+export function closeModal() { if (openModal) openModal.close(); }
+
 // ---------------------------------------------------------------- Glossary (also powers the dotted-underline tooltips)
 export const GLOSSARY = [
   ['Torque', 'Mechanical', 'Twisting force. More torque turns heavier things; gearing trades speed for torque.', 'gear'],

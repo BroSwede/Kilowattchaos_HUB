@@ -2,6 +2,7 @@
 import { loadZone, initGlossaryTips, closeDrawer, slug } from './zones/index.js';
 import { api, session as S, isMentor } from './api.js';
 import { setRoster, esc, drawer } from './zones/common.js';
+import { openPrintRequest, enhanceHomePrintCard } from './print-request.js';
 
 // Who is signed in, and the team. Everything below can rely on it.
 const BOOT = await api.me();
@@ -146,9 +147,42 @@ function sparkBot() {
   return `<svg viewBox="0 0 132 132" aria-hidden="true"><circle cx="66" cy="66" r="62" fill="var(--well)" stroke="var(--divider)" stroke-width="1.5"/><path d="M66 34V22" stroke="#4F5049" stroke-width="3" stroke-linecap="round"/><path d="M63 9h9l-5 7h6L61 28l3-8h-5z" fill="#E8F542" stroke="#222624" stroke-width="1.6" stroke-linejoin="round"/><rect x="24" y="52" width="9" height="20" rx="4.5" fill="#4F5049"/><rect x="99" y="52" width="9" height="20" rx="4.5" fill="#4F5049"/><rect x="33" y="34" width="66" height="50" rx="17" fill="#2F3737"/><circle cx="54" cy="58" r="7" fill="#E8F542"/><circle cx="78" cy="58" r="7" fill="#E8F542"/><path d="M57 71q9 6 18 0" stroke="#E8F542" stroke-width="3" fill="none" stroke-linecap="round"/><rect x="44" y="88" width="44" height="22" rx="9" fill="#4F5049"/><circle cx="66" cy="99" r="5" fill="#E8F542"/></svg>`;
 }
 
+// ---------------------------------------------------------------- Sections (each zone's pages)
+// A labeled rail of its own under the heading, with an icon per section and a sliding dark pill,
+// so the pages read as parts of the zone instead of loose filter chips.
+const SUB_ICONS = {
+  Dashboard: 'home', 'Shop TV': 'play', Customize: 'sliders',
+  '3D Explorer': 'bot', Versions: 'commit', Subsystems: 'layers', 'Specs and parts': 'note', 'AR and VR': 'max',
+  Ideas: 'bulb', 'Mechanism Lab': 'wrench', 'Print Shop': 'printer', 'Parts and inventory': 'layers',
+  Paths: 'arrow', 'FIRST and BIOBUZZ': 'trophy', 'Setup and FAQ': 'help', 'Build tips': 'wrench', 'AI agents': 'sparkle', Glossary: 'book',
+  'BioBuzz Arena': 'gamepad', 'Our code': 'code', Snippets: 'note', Challenges: 'flag',
+  Chat: 'chat', Inspiration: 'sparkle', People: 'users', Feedback: 'help',
+  Calendar: 'calendar', Sessions: 'clock', Progress: 'zap', Competitions: 'trophy', Portfolio: 'image',
+};
+const secBar = document.createElement('nav');
+secBar.className = 'secbar';
+secBar.innerHTML = '<span class="secbar-lbl" id="secLbl"></span>';
+$('.subbar').after(secBar);
+secBar.appendChild($('#subtabs'));
+$('#subtabs').className = 'sectabs';
+let secPlaced = false;
+function placeSec() {
+  const box = $('#subtabs'), ind = $('.sec-ind', box), a = $('.sec[aria-current="page"]', box);
+  if (!ind || !a || !a.offsetWidth) return;
+  if (!secPlaced) ind.style.transition = 'none';
+  ind.style.width = `${a.offsetWidth}px`;
+  ind.style.height = `${a.offsetHeight}px`;
+  ind.style.transform = `translate(${a.offsetLeft}px, ${a.offsetTop}px)`;
+  if (!secPlaced) { void ind.offsetWidth; ind.style.transition = ''; secPlaced = true; }
+}
+new ResizeObserver(placeSec).observe($('#subtabs'));
+if (document.fonts) document.fonts.ready.then(placeSec);
 function renderSubtabs(z) {
   const box = $('#subtabs');
-  box.innerHTML = z.subs.map((s, i) => `<button class="chip" type="button" data-sub="${i}" aria-pressed="false">${s}</button>`).join('');
+  secBar.setAttribute('aria-label', `${z.name} sections`);
+  $('#secLbl').innerHTML = `<span class="ic">${icon(z.icon, 'i sm')}</span><span><b>${z.name}</b><small>${z.subs.length} sections</small></span>`;
+  box.innerHTML = '<span class="sec-ind" aria-hidden="true"></span>' + z.subs.map((s, i) => `<button class="sec" type="button" data-sub="${i}"><span class="ic">${icon(SUB_ICONS[s] || 'arrow', 'i sm')}</span><span class="lbl">${s}</span></button>`).join('');
+  secPlaced = false;
 }
 $('#subtabs').addEventListener('click', (e) => {
   const c = e.target.closest('[data-sub]');
@@ -184,8 +218,9 @@ function showSub(i, opts = {}) {
   const z = ZONES.find((q) => q.id === zone);
   subIdx = clamp(i | 0, 0, z.subs.length - 1);
   const sub = z.subs[subIdx];
-  $$('#subtabs .chip').forEach((c, k) => c.setAttribute('aria-pressed', String(k === subIdx)));
-  const act = $(`#subtabs .chip[data-sub="${subIdx}"]`);
+  $$('#subtabs .sec').forEach((c, k) => { if (k === subIdx) c.setAttribute('aria-current', 'page'); else c.removeAttribute('aria-current'); });
+  placeSec();
+  const act = $(`#subtabs .sec[data-sub="${subIdx}"]`);
   if (act && act.parentElement.scrollWidth > act.parentElement.clientWidth) act.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   if (cleanup) { try { cleanup(); } catch (err) { console.error(err); } cleanup = null; }
   closeDrawer();
@@ -365,6 +400,9 @@ function renderHeader() {
 $$('.w-next .card-head .tag, .w-timeline .card-head .tag, .w-plan .card-head .tag, .w-print .card-head .tag').forEach((t) => t.remove());
 $('#dock').setAttribute('aria-label', 'Season dock');
 { const c = $('.w-print .card-foot .cap'); if (c) c.textContent = 'A mentor starts each print and updates its progress here.'; }
+enhanceHomePrintCard();
+// A request sent from the pop-up shows up in the Home queue right away.
+document.addEventListener('kwc:print-sent', (e) => { if (e.detail && !H.prints.some((r) => r.id === e.detail.id)) { H.prints.unshift({ ...e.detail, author: e.detail.author || ME.name }); changed(); } });
 
 // ---------------------------------------------------------------- Next up (events from Logbook, RSVPs from everyone)
 let nextEv = null;
@@ -729,7 +767,7 @@ function renderPrints() {
     const ok = printSt(r) === 'done';
     rows.push(`<div class="pr">${ringHtml(ok ? 100 : 0, icon(ok ? 'check' : 'alert', 'i sm'))}<div><div class="what">${esc(printName(r))}</div><div class="meta">${ok ? 'Done · ready to pick up' : "Didn't work · a mentor will try again"} · for ${esc(printWho(r))}</div></div></div>`);
   }
-  box.innerHTML = rows.length ? rows.slice(0, 4).join('') + (rows.length > 4 ? `<p class="cap">${rows.length - 4} more in the Print Shop</p>` : '') : '<div class="live-empty">Nothing in the print queue. Need a part? Send a request and a mentor prints it.</div>';
+  box.innerHTML = rows.length ? rows.slice(0, 4).join('') + (rows.length > 4 ? `<p class="cap">${rows.length - 4} more in the Print Shop</p>` : '') : '<div class="live-empty">Nothing in the print queue right now.</div>';
 }
 
 // ---------------------------------------------------------------- Count-ups for the robot vitals
@@ -851,12 +889,13 @@ $('#createBtn').addEventListener('click', (e) => showPop(e.currentTarget, `<h5>C
   ${item('sparkle', 'Shoutout', 'Say thanks to a teammate', 'id="mkShout"')}
   ${item('bulb', 'Idea', 'Pitch a mechanism or a fix', 'data-goto="build|Ideas"')}
   ${item('sparkle', 'Inspiration', 'A video or robot worth studying', 'data-goto="crew|Inspiration"')}
-  ${item('printer', 'Print request', 'Send a part with a note', 'data-goto="build|Print Shop"')}
+  ${item('printer', 'Print request', 'Send a part with a note', 'data-print-request')}
   ${item('note', 'Session note', 'From the meeting template', 'data-goto="logbook|Sessions"')}
   ${S.team.chatEnabled ? item('help', 'Question', 'Ask in #help, a mentor answers too', 'data-goto="crew|Chat" data-chan="help"') : ''}
   ${item('chat', 'Chat post', S.team.chatEnabled ? 'Post in a team channel' : 'Turns on once a second trained adult is set up', 'data-goto="crew|Chat"')}`));
 document.addEventListener('click', (e) => {
-  if (e.target.closest('#mkShout')) { closePop(); openShoutout(); }
+  if (e.target.closest('[data-print-request]')) { closePop(); openPrintRequest(ctx); }
+  else if (e.target.closest('#mkShout')) { closePop(); openShoutout(); }
   else if (e.target.closest('#mkTask')) { closePop(); goHomeCard('.w-tasks', () => { taskFormOpen = true; renderTaskForm(); }); }
   else if (e.target.closest('#mkPlan')) { closePop(); goHomeCard('.w-plan', () => { if (!planEditing) openPlanEditor(); }); }
 });
@@ -986,7 +1025,7 @@ function paletteItems() {
     { label: 'Explore the robot full screen', hint: 'Action', ic: 'max', run: () => { setZone('home'); setFull(true); } },
     { label: isDark() ? 'Switch to Light' : 'Switch to Night shift', hint: 'Action', ic: isDark() ? 'sun' : 'moon', run: () => { root.dataset.theme = isDark() ? 'light' : 'dark'; local.set('kwc-theme', root.dataset.theme); syncTheme(); } },
     { label: 'Replay the power-up splash', hint: 'Action', ic: 'zap', run: playSplash },
-    { label: 'Request a print', hint: 'Action', ic: 'printer', run: () => setZone('build', 'Print Shop', { scroll: true }) },
+    { label: 'Request a print', hint: 'Action', ic: 'printer', run: () => openPrintRequest(ctx) },
     { label: 'Drive the robot in the Arena', hint: 'Action', ic: 'gamepad', run: () => setZone('code', 'BioBuzz Arena', { scroll: true }) },
     // (Design system page lives in the master plan, not in the app.)
   );

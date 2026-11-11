@@ -6,7 +6,7 @@ import { SHELL, SPRITE } from '@/hub/shell';
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Kilowattchaos Hub' };
 
-const CSS = ['shell.css', 'zones.css', 'zones-crew.css', 'zones-logbook.css', 'zones-home.css', 'live.css', 'live-home.css', 'live-build.css', 'live-learn.css', 'live-crew.css'];
+const CSS = ['shell.css', 'zones.css', 'zones-crew.css', 'zones-logbook.css', 'zones-home.css', 'live.css', 'live-home.css', 'live-build.css', 'live-learn.css', 'live-crew.css', 'sections.css', 'print.css'];
 
 // The hub itself: the approved preview's markup and zone scripts, now reading and writing the team database.
 export default async function Hub() {
