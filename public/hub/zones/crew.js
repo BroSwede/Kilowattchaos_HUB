@@ -60,11 +60,13 @@ function chatPage(view, ctx) {
     ? `<b>Chat is off.</b> Turn it on in <a href="/mentor">Mentor tools</a> after you name a second youth-protection-trained adult. Until then, nobody can post.`
     : '<b>Chat is off for now.</b> It turns on once a mentor sets up a second youth-protection-trained adult. Until then, ask your questions at meetings.';
   view.innerHTML = `<div class="zv">
-    ${strip('Team channels for questions, progress and thank-yous. Everyone on the team can read every channel.', [tag(on ? 'Chat is on' : 'Chat is off')])}
+    ${strip('Team channels for questions, progress and thank-yous. Everyone on the team can read every channel.', [tag(session.preview ? 'Sample chat' : on ? 'Chat is on' : 'Chat is off')])}
     <div class="safety-bar" role="note">
       <span class="oc2 volt">${icon('alert', 'i sm')}</span>
-      <span class="sb-txt">${on ? '<b>Chat is on.</b>' : offText} Mentors can read every channel, and there are no private messages, ever.</span>
-      ${pill(on ? 'On' : 'Off', on ? 'var(--ok)' : 'var(--stone)')}
+      <span class="sb-txt">${session.preview
+        ? '<b>This is just sample stuff.</b> These messages are made up to show how chat will work, and anything you type stays on your screen only. Nobody else sees it, and it is gone when you reload. In the real hub, chat turns on only after a mentor sets up a second youth-protection-trained adult.'
+        : on ? '<b>Chat is on.</b>' : offText} Mentors can read every channel, and there are no private messages, ever.</span>
+      ${pill(session.preview ? 'Sample' : on ? 'On' : 'Off', session.preview ? 'var(--stone)' : on ? 'var(--ok)' : 'var(--stone)')}
     </div>
     <div class="chat">
       <nav class="ch-side" aria-label="Channels">

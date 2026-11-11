@@ -23,6 +23,16 @@ The team website for FTC team Kilowattchaos: the robot in 3D, build ideas and pr
   - 418 parts and 28.1 million triangles.
   - It is served as four gzip parts (107 MB) and cached by the browser after the first load.
 
+## Testing and building mode (on by default)
+
+Until the team goes live, the hub runs in **testing and building mode**:
+
+- The site opens on a pretend sign-in page. Any nickname (or none) gets in, and no password is checked.
+- Everything inside is sample content (chat, build ideas, meetings, tasks, prints). Anything a visitor adds stays in their own browser tab and is gone on reload.
+- Setup, join, the mentor console and the data API are switched off, so nothing reaches the database.
+
+To go live, add `HUB_MODE` = `live` in Vercel (**Settings → Environment Variables**) and redeploy. Then follow the steps below.
+
 ## Put it online (Vercel)
 
 1. On vercel.com: **Add New → Project**, then import this GitHub repo. Keep the defaults and deploy.
