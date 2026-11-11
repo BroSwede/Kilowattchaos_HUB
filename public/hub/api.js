@@ -13,7 +13,9 @@ async function call(method, url, body) {
   return out;
 }
 
-export const api = {
+// Preview mode (no sign-in, sample content only): the server marks the page, and every call stays in this tab.
+export const PREVIEW = document.getElementById('kwc-root')?.dataset.preview === '1';
+const live = {
   me: () => call('GET', '/api/me'),
   list: async (kind) => (await call('GET', `/api/records/${kind}`)).items,
   create: async (kind, data) => (await call('POST', `/api/records/${kind}`, { data })).item,
@@ -22,8 +24,9 @@ export const api = {
   checkinInfo: () => call('GET', '/api/checkin'),
   checkin: (code) => call('POST', '/api/checkin', { code }),
 };
+export const api = PREVIEW ? (await import('./preview.js')).previewApi : live;
 
 // Who is signed in, the team roster and team settings. Filled once at boot (see app.js).
-export const session = { user: null, roster: [], team: { name: 'Kilowattchaos', chatEnabled: false }, demo: false };
+export const session = { user: null, roster: [], team: { name: 'Kilowattchaos', chatEnabled: false }, demo: false, preview: false };
 export const isMentor = () => session.user?.role === 'mentor';
 export const me = () => session.user?.name || '';

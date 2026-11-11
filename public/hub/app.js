@@ -1056,7 +1056,7 @@ $('#meBtn').addEventListener('click', (e) => showPop(e.currentTarget, `<h5>${ME.
 document.addEventListener('click', async (e) => {
   if (e.target.closest('#meMentor')) { location.href = '/mentor'; }
   if (e.target.closest('#meTheme')) { closePop(); root.dataset.theme = isDark() ? 'light' : 'dark'; local.set('kwc-theme', root.dataset.theme); syncTheme(); }
-  if (e.target.closest('#meOut')) { closePop(); await fetch('/api/logout', { method: 'POST' }); location.href = '/login'; }
+  if (e.target.closest('#meOut')) { closePop(); if (!S.preview) await fetch('/api/logout', { method: 'POST' }); location.href = '/login'; }
 });
 document.addEventListener('click', (e) => { if (e.target.closest('#meSplash')) { closePop(); playSplash(); } });
 

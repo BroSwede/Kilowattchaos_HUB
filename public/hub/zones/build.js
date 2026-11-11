@@ -31,7 +31,7 @@ function ideas(view, ctx) {
   let filt = 'all', recs = [], votes = [], alive = true, loaded = false;
   const sysF = () => ctx.state.ideaSys || '';
   view.innerHTML = `<div class="zv">
-    ${strip('One place for anything said about the robot: ideas and problems. Teammates vote and reply with "I like, I wonder, what if", and the idea moves across the board as the team tries it.', [tag('Team board', 'volt')], `<button class="btn primary pill" type="button" id="newIdea">${icon('plus', 'i sm')}New idea</button>`)}
+    ${strip('One place for anything said about the robot: ideas and problems. Teammates vote and reply with "I like, I wonder, what if", and the idea moves across the board as the team tries it.' + (session.preview ? ' These ideas are made-up samples, and anything you add stays on your screen only.' : ''), [tag(session.preview ? 'Sample board' : 'Team board', 'volt')], `<button class="btn primary pill" type="button" id="newIdea">${icon('plus', 'i sm')}New idea</button>`)}
     <article class="card" id="ideaForm" hidden></article>
     <div class="row wrap" style="padding:0 4px"><div class="chips" id="ideaF">${[['all', 'All'], ['prob', 'Problems'], ['idea', 'Ideas'], ['pinned', 'On the robot'], ['mine', 'Mine']].map(([v, t]) => `<button class="chip" type="button" data-f="${v}" aria-pressed="${v === filt}">${t}</button>`).join('')}</div><span id="sysChip"></span></div>
     <div id="ideaEmpty"></div>
