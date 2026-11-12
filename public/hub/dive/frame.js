@@ -1,6 +1,6 @@
 // Frame deep dive: the aluminium U-channel, from red rock in the ground to a drilled, anodised rail.
 // Ore to metal, extrusion (and how that differs from stamping), hole making, finishing, and why a U.
-import { THREE, C, mat, metal, mesh, cyl, box, ball, group, tube, Flow, plateGeo, clamp, lerp, smooth, span, TAU } from './kit.js';
+import { THREE, C, mat, metal, plastic, mesh, cyl, box, ball, bench, group, tube, Flow, part, ghost, plateGeo, clamp, lerp, smooth, span, TAU } from './kit.js';
 
 const ALU = '#CFD2D1';
 // Cross-sections, 1 unit = 10 mm. goBILDA channel is 48 mm wide and 48 mm tall with 2.5 mm walls.
@@ -39,6 +39,7 @@ export default function frame(ctx) {
     id: 'ore', tab: 'Rock to metal',
     title: 'Your robot used to be red dirt',
     lead: 'Aluminium is the most common metal in the Earth’s crust, but you never find a lump of it lying around. It is always locked up inside rock. Getting it out takes four big steps and a shocking amount of electricity.',
+    try: 'Step through the four stages, then slide to see what a kilogram really costs.',
     controls: [
       { type: 'seg', id: 'ostep', label: 'Step', value: 0, options: STEPS.map((s, i) => [i, `${i + 1} ${s[0]}`]) },
       { type: 'range', id: 'kg', label: 'Aluminium you want', min: 0.5, max: 5, step: 0.5, value: 1, fmt: (v) => `${v} kg` },
@@ -51,36 +52,49 @@ export default function frame(ctx) {
       ['How much is in the robot?', 'One 432 mm side rail of the StarterBot weighs roughly 400 grams. The whole frame is around 2 kg of aluminium. Try setting the slider to 2.'],
     ],
     build(st, S, ui) {
-      const X = 7.5, stations = [];
-      st.add(box(X * 4 + 2, 0.2, 6, '#3A3F3E', { r: 0.08, pos: [X * 1.5, -1.8, 0], rough: 0.8 }));
+      const X = 0, stations = []; // every step stands on the same spot; only the chosen one shows
+      const YEL = '#E8B820';
       for (let i = 0; i < 4; i++) {
-        const g = group(); g.position.x = i * X; st.add(g); stations.push(g);
-        st.label(`${i + 1}. ${STEPS[i][0]}`, new THREE.Vector3(i * X, 3.8, 0), { tone: 'volt' });
+        const g = group(); st.add(g); stations.push(g);
+        st.label(`${i + 1}. ${STEPS[i][0]}`, g, { tone: 'volt', off: new THREE.Vector3(0, 4.2, 0) });
       }
-      // 1 Mine: a pile of red rock, a bucket scooping.
-      for (let i = 0; i < 22; i++) { const r = rock(0.28 + Math.random() * 0.3, i % 4 === 0 ? '#8E4A2E' : C.ore); const a = Math.random() * TAU, d = Math.random() * 1.7; r.position.set(Math.cos(a) * d - 0.6, -1.5 + (1.7 - d) * 0.55 + Math.random() * 0.2, Math.sin(a) * d * 0.8); r.rotation.set(Math.random() * 3, Math.random() * 3, 0); stations[0].add(r); }
-      const arm = group(box(0.3, 3.2, 0.3, '#E6C83A', { r: 0.05, pos: [0, 1.6, 0] }), box(1.0, 0.7, 0.9, '#2A2D2E', { r: 0.1, pos: [0.2, 0.1, 0] }));
-      arm.position.set(2.2, -0.2, 0);
-      const cab = box(1.6, 1.3, 1.4, '#E6C83A', { r: 0.15, pos: [2.6, -1.0, 0] });
-      stations[0].add(arm, cab);
+      // 1 Mine: a pile of red rock and an excavator digging into it.
+      for (let i = 0; i < 34; i++) { const r = rock(0.25 + Math.random() * 0.34, i % 4 === 0 ? '#8E4A2E' : i % 5 === 0 ? '#B86A3C' : C.ore); const a = Math.random() * TAU, d = Math.random() * 2.1; r.position.set(Math.cos(a) * d - 1.6, -1.6 + (2.1 - d) * 0.6 + Math.random() * 0.2, Math.sin(a) * d * 0.9); r.rotation.set(Math.random() * 3, Math.random() * 3, 0); stations[0].add(r); }
+      const digger = group();
+      for (const z of [-0.75, 0.75]) { digger.add(box(3.0, 0.62, 0.5, mat('#1F2223', { rough: 0.9 }), { r: 0.28, pos: [0, -1.5, z] })); for (let i = 0; i < 5; i++) digger.add(cyl(0.2, 0.54, metal(C.iron, 0.5), { axis: 'z', seg: 14, pos: [-1.1 + i * 0.55, -1.5, z] })); }
+      digger.add(cyl(0.7, 0.22, metal(C.iron, 0.5), { pos: [0, -1.1, 0], seg: 32 }));
+      const upper = group(mesh(plateGeo([[-1.5, 0], [1.3, 0], [1.3, 0.55], [0.4, 0.95], [-1.5, 0.95]], 1.7, [], 0.05), plastic(YEL, 0.45)), mesh(plateGeo([[-0.2, 0.95], [-1.15, 0.95], [-1.15, 1.5], [-0.9, 1.95], [-0.2, 1.95]].reverse(), 0.8, [], 0.04), plastic(YEL, 0.45), [0, 0, 0.42]), box(0.9, 0.62, 0.84, mat('#18222A', { rough: 0.1, metal: 0.6 }), { r: 0.03, pos: [-0.75, 1.5, 0.42] }), box(1.0, 0.7, 1.5, plastic(C.dark), { r: 0.08, pos: [0.75, 1.15, 0] }), cyl(0.09, 0.7, metal(C.steel, 0.3), { pos: [0.9, 1.8, -0.4] }));
+      upper.position.y = -1.0;
+      const arm = group(mesh(plateGeo([[0, -0.22], [0, 0.22], [-1.6, 1.75], [-2.9, 1.2], [-2.95, 0.95], [-1.6, 1.25]], 0.34, [], 0.03), plastic(YEL, 0.45)));
+      const stick = group(mesh(plateGeo([[0.15, 0.2], [-0.15, 0.2], [-0.32, -2.0], [-0.02, -2.0]], 0.26, [], 0.03), plastic(YEL, 0.45)), cyl(0.5, 0.9, mat('#1F2223', { rough: 0.6, metal: 0.4 }), { axis: 'z', open: true, double: true, start: 0.3, theta: 3.4, pos: [-0.3, -2.3, 0] }), cyl(0.07, 1.5, metal(C.steel, 0.2), { pos: [0.25, -0.5, 0] }));
+      stick.position.set(-2.9, 1.08, 0);
+      arm.add(stick);
+      arm.position.set(-0.2, 0.6, -0.35);
+      upper.add(arm);
+      digger.add(upper);
+      digger.position.set(3.2, 0, 0);
+      stations[0].add(digger);
+      st.label('Bauxite', stations[0], { off: new THREE.Vector3(-1.9, 0.1, 0), tip: 'A soft red-brown rock. Roughly half of it is aluminium locked to oxygen. The red colour is iron, the same thing that makes rust red.' });
       // 2 Refine: red in, white powder out.
-      const tank = cyl(1.3, 2.8, metal('#8C9396', 0.45), { open: true, double: true, pos: [-0.6, -0.3, 0] });
+      const tank = group(cyl(1.3, 2.8, metal('#8C9396', 0.4), { open: true, double: true, seg: 56, pos: [-0.6, -0.3, 0] }), cyl(1.3, 0.1, metal('#8C9396', 0.4), { seg: 56, pos: [-0.6, -1.7, 0] }), mesh(new THREE.TorusGeometry(1.32, 0.07, 10, 56), metal(C.steel, 0.3), [-0.6, 1.1, 0], [Math.PI / 2, 0, 0]), mesh(new THREE.TorusGeometry(1.32, 0.05, 10, 56), metal(C.steel, 0.3), [-0.6, -0.4, 0], [Math.PI / 2, 0, 0]), tube([[0.7, 0.6, 0], [1.3, 0.75, 0.15], [1.7, 0.6, 0.22]], 0.16, metal(C.steel, 0.3)), box(2.6, 0.12, 1.0, mat('#2B2F30', { rough: 0.8 }), { r: 0.03, pos: [-2.4, 1.72, 0] }), cyl(0.18, 1.0, metal(C.steel, 0.3), { axis: 'z', pos: [-1.15, 1.72, 0] }), cyl(0.18, 1.0, metal(C.steel, 0.3), { axis: 'z', pos: [-3.65, 1.72, 0] }), cyl(0.09, 3.6, metal(C.alu, 0.4), { pos: [-3.4, -0.05, 0.3] }), cyl(0.09, 3.6, metal(C.alu, 0.4), { pos: [-3.4, -0.05, -0.3] }), box(2.2, 0.5, 2.2, plastic('#D9DAD2', 0.4), { r: 0.1, pos: [-0.6, 2.9, 0] }));
+      tank.children[5].rotation.z = 0.12;
       const soup = cyl(1.25, 0.1, '#B5532F', { pos: [-0.6, 0.7, 0], rough: 0.3 });
       const paddle = group(cyl(0.08, 3.4, metal(C.steel), { pos: [0, 0.8, 0] }), box(1.8, 0.5, 0.08, metal(C.steel), { r: 0.02, pos: [0, -0.6, 0] }));
       paddle.position.set(-0.6, 0.2, 0);
-      const pile = mesh(new THREE.ConeGeometry(1.1, 1.3, 24), mat('#F6F5EF', { rough: 0.95 }), [2.3, -1.05, 0.3]);
+      const pile = mesh(new THREE.ConeGeometry(1.2, 1.2, 36), mat('#F6F5EF', { rough: 0.95 }), [2.3, -1.2, 0.3]);
       const pour = new Flow([[0.7, 0.6, 0], [1.6, 0.8, 0.2], [2.3, -0.3, 0.3]], 8, { color: '#F6F5EF', size: 0.09 });
-      const inFlow = new Flow([[-3.2, 1.6, 0], [-1.6, 2.1, 0], [-0.7, 0.9, 0]], 6, { color: C.ore, size: 0.13 });
+      const inFlow = new Flow([[-3.5, 1.75, 0], [-1.3, 2.05, 0], [-0.8, 0.9, 0]], 6, { color: C.ore, size: 0.15 });
       stations[1].add(tank, soup, paddle, pile, pour.object, inFlow.object);
       // 3 Smelt: carbon blocks in a glowing bath, current pouring through.
-      const pot = group(box(4.6, 1.5, 2.6, '#2A2D2E', { r: 0.1, pos: [0, -1.0, 0] }), box(4.2, 0.5, 2.2, mat('#FF7A1A', { glow: '#FF5A00', glowPower: 1.4, rough: 0.3 }), { r: 0.02, pos: [0, -0.25, 0] }), box(4.2, 0.16, 2.2, metal('#E3E6E6', 0.15), { r: 0.02, pos: [0, -0.62, 0] }));
+      const pot = group(box(4.6, 1.5, 2.6, mat('#2A2D2E', { rough: 0.7, metal: 0.4 }), { r: 0.1, pos: [0, -1.0, 0] }), box(4.9, 0.22, 2.9, metal(C.iron, 0.5), { r: 0.05, pos: [0, -0.35, 0] }), box(4.9, 0.22, 2.9, metal(C.iron, 0.5), { r: 0.05, pos: [0, -1.5, 0] }), box(4.2, 0.5, 2.2, mat('#FF7A1A', { glow: '#FF5A00', glowPower: 1.4, rough: 0.3 }), { r: 0.02, pos: [0, -0.25, 0] }), box(4.2, 0.16, 2.2, metal('#E3E6E6', 0.15), { r: 0.02, pos: [0, -0.62, 0] }));
       const anodes = group();
       for (let i = 0; i < 3; i++) anodes.add(box(1.0, 1.5, 1.6, '#1B1D1E', { r: 0.05, pos: [(i - 1) * 1.4, 0.55, 0] }), cyl(0.1, 1.4, metal(C.copper, 0.3), { pos: [(i - 1) * 1.4, 1.9, 0] }));
       const bus = box(4.6, 0.25, 0.4, metal(C.copper, 0.3), { r: 0.04, pos: [0, 2.6, 0] });
       const amps = new Flow([[-3.4, 2.6, 0], [0, 2.6, 0], [1.4, 2.6, 0], [1.4, 0.2, 0]], 10, { size: 0.11 });
       const bubbles = [...Array(10)].map(() => { const b = ball(0.08, '#FFD9A0', { glow: '#FFB040', glowPower: 2 }); b.userData.p = Math.random(); b.userData.x = (Math.random() - 0.5) * 3.8; b.userData.z = (Math.random() - 0.5) * 1.8; pot.add(b); return b; });
       stations[2].add(pot, anodes, bus, amps.object);
-      st.label('960 °C', new THREE.Vector3(2 * X + 2.9, -0.2, 1.3), { tone: 'warn' });
+      st.label('960 °C', pot, { tone: 'warn', off: new THREE.Vector3(2.9, -0.2, 1.3) });
+      st.label('Carbon blocks', anodes, { off: new THREE.Vector3(-1.4, 1.3, 0), dy: -20, tip: 'The current enters through these. Oxygen pulled off the aluminium burns them away slowly, so they have to be replaced every few weeks.' });
       // 4 Cast: a glowing log grows out of the mould.
       const ladle = group(cyl([0.9, 0.7], 1.2, '#2A2D2E', { open: true, double: true }), cyl(0.82, 0.1, mat('#FF8A2A', { glow: '#FF5A00', glowPower: 1.5 }), { pos: [0, 0.4, 0] }));
       ladle.position.set(-1.6, 2.4, 0); ladle.rotation.z = -0.5;
@@ -94,7 +108,9 @@ export default function frame(ctx) {
       function apply(id) {
         if (id !== 'kg') {
           const i = Number(S.ostep);
-          st.setView([i * X + 4.5, 4.5, 13], [i * X, 0.3, 0], 800);
+          stations.forEach((g, n) => { g.visible = n === i; });
+          st.ground(-1.85);
+          st.setView([5.5, 4.6, 14.5], [0, 0.2, 0], 0);
           ui.note(`<b>${STEPS[i][0]}.</b> ${STEPS[i][1]}`);
         }
         const kg = S.kg;
@@ -108,7 +124,9 @@ export default function frame(ctx) {
         tick(dt) {
           ph += dt * 0.4;
           const k = ph % 1;
-          arm.rotation.z = 0.5 + Math.sin(ph * TAU) * 0.5;
+          arm.rotation.z = Math.sin(ph * TAU) * 0.14 - 0.05;
+          stick.rotation.z = -0.25 + Math.sin(ph * TAU + 1.2) * 0.4;
+          upper.rotation.y = Math.sin(ph * TAU * 0.5) * 0.12;
           paddle.rotation.y = ph * 6;
           pour.advance(dt * 0.6); inFlow.advance(dt * 0.4);
           amps.advance(dt * 0.5);
@@ -130,6 +148,7 @@ export default function frame(ctx) {
     id: 'extrude', tab: 'Squeeze it',
     title: 'A play-dough press the size of a house',
     lead: 'The channel on your robot is the same shape all the way along. That is the fingerprint of <b>extrusion</b>. A billet is heated until it is soft (not melted), then a ram shoves it through a steel plate with a U-shaped hole, called a <b>die</b>. Out comes 40 metres of U-channel, like toothpaste.',
+    try: 'Heat the billet until it glows, then drag the ram to squeeze it through the die.',
     controls: [
       { type: 'knob', id: 'temp', label: 'Billet temperature', min: 20, max: 640, step: 10, value: 480, unit: ' °C' },
       { type: 'range', id: 'ram', label: 'Push the ram', min: 0, max: 100, value: 0, unit: '%' },
@@ -144,14 +163,22 @@ export default function frame(ctx) {
     ],
     build(st, S, ui) {
       const L0 = 4.4; // billet length
-      const cont = cyl(2.0, L0 + 0.6, metal('#4A5052', 0.45), { axis: 'z', open: true, double: true, start: 3.3, theta: TAU * 0.7, pos: [0, 0, -(L0 + 0.6) / 2] });
-      const liner = cyl(1.35, L0 + 0.6, metal('#2E3234', 0.5), { axis: 'z', open: true, double: true, start: 3.3, theta: TAU * 0.7, pos: [0, 0, -(L0 + 0.6) / 2] });
-      const dieP = cyl(2.2, 0.5, metal('#6A6456', 0.4), { axis: 'z', pos: [0, 0, 0.25], start: 3.3, theta: TAU * 0.7 });
-      const billet = cyl(1.3, 1, mat(ALU, { metal: 0.6, rough: 0.4, glow: '#FF5A00', glowPower: 0 }), { axis: 'z' });
-      const ram = group(cyl(1.28, 0.5, metal(C.steel, 0.3), { axis: 'z' }), cyl(0.6, 6, metal(C.steel, 0.3), { axis: 'z', pos: [0, 0, -3.2] }));
-      const base = box(5, 0.5, 9, '#3A3F3E', { r: 0.08, pos: [0, -2.5, -1.5], rough: 0.8 });
-      const table = box(1.2, 0.2, 14, '#3A3F3E', { r: 0.05, pos: [0, -1.65, 8], rough: 0.8 });
-      st.add(cont, liner, dieP, billet, ram, base, table);
+      const cont = part('F_container', { axis: 'z', pos: [0, 0, -2.5] });
+      cont.rotation.z = 0.35; // cutaway toward the camera
+      const dies = { u: part('F_die_u', { axis: 'z', pos: [0, 0, 0.25] }), l: part('F_die_l', { axis: 'z', pos: [0, 0, 0.25] }), tube: part('F_die_tube', { axis: 'z', pos: [0, 0, 0.25] }) };
+      const dieP = group(dies.u, dies.l, dies.tube);
+      const platen = group(mesh(plateGeo([[-3, -2.9], [3, -2.9], [3, 2.6], [1.6, 3.4], [-1.6, 3.4], [-3, 2.6]], 0.9, [[0, 0, 1.85], [-2.3, 2.0, 0.3], [2.3, 2.0, 0.3], [-2.3, -2.2, 0.3], [2.3, -2.2, 0.3]], 0.06), plastic('#D9DAD2', 0.45)));
+      platen.position.z = 0.3;
+      platen.scale.z = 0.6;
+      const back = platen.clone(); back.position.z = -9.2;
+      const rods = group();
+      for (const [x, y] of [[-2.3, 2.0], [2.3, 2.0], [-2.3, -2.2], [2.3, -2.2]]) rods.add(cyl(0.26, 11.4, metal(C.steel, 0.2), { axis: 'z', pos: [x, y, -4.1] }));
+      const billet = cyl(1.33, 1, mat(ALU, { metal: 0.6, rough: 0.4, glow: '#FF5A00', glowPower: 0 }), { axis: 'z' });
+      const ram = group(cyl(1.3, 0.5, metal(C.steel, 0.25), { axis: 'z', seg: 48 }), cyl(0.75, 6, metal(C.steel, 0.2), { axis: 'z', seg: 40, pos: [0, 0, -3.2] }), cyl(1.1, 0.3, metal(C.iron, 0.5), { axis: 'z', seg: 40, pos: [0, 0, -0.4] }));
+      const table = group(box(0.12, 0.3, 13, metal(C.alu, 0.4), { r: 0.03, pos: [-1.0, -1.05, 8.2] }), box(0.12, 0.3, 13, metal(C.alu, 0.4), { r: 0.03, pos: [1.0, -1.05, 8.2] }));
+      for (let i = 0; i < 16; i++) table.add(cyl(0.16, 1.9, metal(C.steel, 0.3), { axis: 'x', seg: 16, pos: [0, -0.9, 2.2 + i * 0.8] }));
+      for (const z of [2.6, 8.2, 13.8]) for (const x of [-1, 1]) table.add(box(0.14, 2.0, 0.14, metal(C.alu, 0.4), { r: 0.02, pos: [x, -2.1, z] }));
+      st.add(cont, dieP, billet, ram, table, platen, back, rods, box(6.6, 0.4, 11.6, mat('#2B2F30', { rough: 0.6, metal: 0.4 }), { r: 0.08, pos: [0, -3.1, -4.1] }));
       const holder = group();
       holder.position.set(0, 0, 0.5);
       st.add(holder);
@@ -165,10 +192,11 @@ export default function frame(ctx) {
         prof.scale.set(k, k, 0.001);
         prof.position.y = (W / 2) * k;
         holder.add(prof);
+        for (const k2 in dies) dies[k2].visible = k2 === S.die;
       }
-      st.label('Ram', ram, { dy: -52 });
-      st.label('Hot billet', billet, { dy: 58 });
-      st.label('Die', dieP, { dy: -74 });
+      st.label('Ram', ram, { dy: -52, tip: 'A hydraulic piston. Oil pumped in behind it pushes with the weight of over a thousand cars.' });
+      st.label('Hot billet', billet, { dy: 58, tip: 'A log of 6061 aluminium, heated until it is soft but still solid.' });
+      st.label('Die', dieP, { dy: -74, tip: 'A disc of hardened tool steel with the shape of the part cut right through it. Change the die and the same press makes a different part.' });
       const jam = st.label('Jammed', new THREE.Vector3(0, 2.6, -2), { tone: 'warn' });
       let made = 0;
       function apply(id) {
@@ -203,7 +231,7 @@ export default function frame(ctx) {
           : 'Whatever shape the hole in the die is, that is the shape of the part, for as long as you keep pushing.', cold || hot ? 'warn' : '');
       }
       apply();
-      return { view: { pos: [11, 6, 12], target: [0, -0.2, 2] }, change: apply };
+      return { view: { pos: [18, 9.5, 18], target: [0, -0.6, 1.2] }, groundY: -3.3, change: apply, handles: [{ obj: ram, id: 'ram', axis: 'x', invert: true, span: 260, hint: 'Drag the ram to push', dy: 40 }] };
     },
   };
 
@@ -212,6 +240,7 @@ export default function frame(ctx) {
     id: 'stamp', tab: 'Stamp or squeeze?',
     title: 'The other way to shape metal',
     lead: 'Not every part can be squeezed out like toothpaste. Thin, flat or folded parts are <b>stamped</b>: a press slams a hardened steel punch through a sheet, like a hole punch through paper, and can fold the piece in the same hit. Hit the button and make some brackets.',
+    try: 'Tap the yellow press head on the model, or hit the button.',
     controls: [
       { type: 'button', id: 'hit', label: 'Stamp!' },
       { type: 'seg', id: 'fold', label: 'Die set', value: 'flat', options: [['flat', 'Punch a flat plate'], ['bend', 'Punch and fold a bracket']] },
@@ -225,14 +254,11 @@ export default function frame(ctx) {
       ['What is a progressive die?', 'The strip moves forward one step each hit, and each step does one more job: pierce the holes, cut the outline, fold the tabs. A finished part drops off the end with every stroke. The machine in the 3D view is a tiny one.'],
     ],
     build(st, S, ui) {
-      const bed = box(7, 0.8, 4, metal(C.iron, 0.5), { r: 0.08, pos: [0, -1.4, 0] });
-      const posts = group(cyl(0.22, 5.4, metal(C.steel, 0.25), { pos: [-3, 1.2, -1.5] }), cyl(0.22, 5.4, metal(C.steel, 0.25), { pos: [3, 1.2, -1.5] }), cyl(0.22, 5.4, metal(C.steel, 0.25), { pos: [-3, 1.2, 1.5] }), cyl(0.22, 5.4, metal(C.steel, 0.25), { pos: [3, 1.2, 1.5] }));
-      const crown = box(7, 0.9, 4, '#3A3F3E', { r: 0.1, pos: [0, 4.2, 0] });
-      const head = group(box(6.2, 0.9, 3.4, C.volt, { r: 0.1, rough: 0.5 }), box(2.6, 0.5, 2.6, metal('#5A6163', 0.4), { r: 0.04, pos: [0, -0.7, 0] }));
-      for (const [x, z] of [[-0.8, -0.8], [0.8, -0.8], [-0.8, 0.8], [0.8, 0.8]]) head.add(cyl(0.2, 0.4, metal(C.steel, 0.2), { pos: [x, -1.1, z], seg: 16 }));
-      head.add(cyl(0.55, 0.4, metal(C.steel, 0.2), { pos: [0, -1.1, 0], seg: 24 }));
-      const strip = box(16, 0.1, 3.0, metal(ALU, 0.3), { r: 0, pos: [0, -0.95, 0] });
-      st.add(bed, posts, crown, head, strip);
+      const press = part('F_press');
+      const head = part('F_ram');
+      const strip = box(16, 0.1, 2.7, metal(ALU, 0.3), { r: 0, pos: [0, -0.95, 0] });
+      const coil = group(cyl(1.5, 2.7, metal(ALU, 0.3), { axis: 'z', seg: 56, pos: [-8.6, -2.4, 0] }), cyl(0.5, 3.2, metal(C.iron, 0.5), { axis: 'z', pos: [-8.6, -2.4, 0] }), box(0.3, 2.4, 0.3, metal(C.alu, 0.4), { r: 0.04, pos: [-8.6, -3.5, 1.55] }), box(0.3, 2.4, 0.3, metal(C.alu, 0.4), { r: 0.04, pos: [-8.6, -3.5, -1.55] }));
+      st.add(press, head, strip, coil, bench(9.6, 5.4, -2.3, 2.2));
       const HOLES = [[0, 0, 0.55], [-0.8, -0.8, 0.2], [0.8, -0.8, 0.2], [-0.8, 0.8, 0.2], [0.8, 0.8, 0.2]];
       const flatGeo = plateGeo([[-1.3, -1.3], [1.3, -1.3], [1.3, 1.3], [-1.3, 1.3]], 0.1, HOLES); flatGeo.rotateX(Math.PI / 2);
       const pMat = metal(ALU, 0.3);
@@ -254,8 +280,10 @@ export default function frame(ctx) {
       }
       ui.out('count', '0'); ui.out('scrap', '0 g');
       return {
-        view: { pos: [9, 6, 14], target: [0.8, 0.6, 0.5] },
+        view: { pos: [10, 6.5, 17], target: [0.2, 1.2, 0.5] },
+        groundY: -4.7,
         change(id) { if (id === 'hit') hit(); },
+        taps: [{ obj: head, hint: 'Tap the press to stamp', dy: -30, onTap: hit }],
         tick(dt) {
           if (S.auto > 0) { autoT += dt; if (autoT > 60 / S.auto) { autoT = 0; hit(); } }
           if (t >= 0) {
@@ -265,7 +293,7 @@ export default function frame(ctx) {
             if (t >= 1) t = -1;
           }
           const k = t < 0 ? 0 : Math.sin(t * Math.PI);
-          head.position.y = 2.6 - k * 2.25;
+          head.position.y = 2.0 - k * 1.55;
           voids.children.forEach((v, i) => { // punched gaps in the strip step along with it
             v.userData.x = Math.min(v.userData.x + dt * 7, 3.1 * (voids.children.length - i));
             v.position.x = v.userData.x;
@@ -279,7 +307,7 @@ export default function frame(ctx) {
           ui.out('count', String(count));
           ui.out('scrap', `${count * (S.fold === 'bend' ? 6 : 4)} g`, 'the punched-out slugs');
           ui.label('hit', t >= 0 ? 'Bang!' : 'Stamp!');
-          ui.note(count === 0 ? 'Press <b>Stamp!</b> The yellow head comes down, five punches go through the sheet at once and a finished plate drops out.'
+          ui.note(count === 0 ? 'Press <b>Stamp!</b> or tap the press itself. The yellow head comes down, five punches go through the sheet at once and a finished plate drops out.'
             : S.auto >= 100 ? 'Real stamping presses run even faster than this: several hits a second, all day.'
             : S.fold === 'bend' ? 'Same hit, one more job: the die also folds a tab up at 90 degrees. Notice the fold makes a rounded corner.'
             : `One hit, one part, about a second. Making ${count === 1 ? 'that' : 'those'} on a milling machine would take minutes each.`);
@@ -302,6 +330,7 @@ export default function frame(ctx) {
     id: 'holes', tab: 'Add the holes',
     title: 'A robot that drills for robots',
     lead: 'The extrusion is cut to length and clamped in a <b>CNC machine</b>: a computer-controlled mill that moves a spinning cutter to exact positions, over and over, without getting bored. It follows a list of coordinates, a lot like your autonomous code. Every hole lands on an 8 mm grid, accurate to a few hundredths of a millimetre.',
+    try: 'Change the speed and the feed. Can you snap the drill?',
     controls: [
       { type: 'range', id: 'rpm', label: 'Spindle speed', min: 500, max: 12000, step: 500, value: 6000, fmt: (v) => `${v.toLocaleString('en-US')} rpm` },
       { type: 'range', id: 'feed', label: 'Feed (how fast it plunges)', min: 10, max: 100, step: 5, value: 45, unit: '%' },
@@ -323,10 +352,12 @@ export default function frame(ctx) {
       const top = mesh(new THREE.BufferGeometry(), metal(ALU, 0.3));
       top.rotation.x = Math.PI / 2; // plate is drawn in XY, laid flat as the top of the channel
       const vise = group(box(LEN + 2, 0.8, W + 2.4, '#3A3F3E', { r: 0.08, pos: [0, -W - 0.4, 0], rough: 0.7 }), box(LEN * 0.7, 2.2, 0.8, metal(C.iron, 0.5), { r: 0.06, pos: [0, -W + 1.1, W / 2 + 0.4] }), box(LEN * 0.7, 2.2, 0.8, metal(C.iron, 0.5), { r: 0.06, pos: [0, -W + 1.1, -W / 2 - 0.4] }));
-      const spindle = group(cyl(1.0, 3.0, '#E9EAE4', { pos: [0, 3.6, 0], rough: 0.4 }), cyl([0.5, 0.75], 0.9, metal(C.steel, 0.25), { pos: [0, 1.65, 0] }));
-      const drill = cyl(0.19, 1.5, metal('#D9B23A', 0.25), { pos: [0, 0.6, 0], seg: 12 });
-      const mill = cyl(0.42, 1.5, metal('#B9BEC0', 0.2), { pos: [0, 0.6, 0], seg: 6 });
+      const spindle = group(part('F_spindle', { pos: [0, 1.2, 0] }));
+      const drill = part('F_drill', { pos: [0, 1.2, 0] });
+      const mill = part('F_mill', { pos: [0, 1.2, 0] });
       const tool = group(drill, mill); spindle.add(tool);
+      for (const z of [-2.6, -1.3, 1.3, 2.6]) vise.add(box(LEN + 2, 0.06, 0.28, mat('#1D2021', { rough: 0.8 }), { r: 0, pos: [0, -W + 0.01, z * 1.15] }));
+      for (const sz of [-1, 1]) for (const x of [-3, 0, 3]) vise.add(cyl(0.22, 0.2, metal(C.steel, 0.25), { axis: 'z', seg: 6, pos: [x, -W + 1.3, sz * (W / 2 + 0.85)] }));
       st.add(s1, s2, top, vise, spindle);
       const chips = new Flow([[0, 0.1, 0], [0.7, 0.9, 0.5], [1.5, -0.4, 1.2]], 8, { color: '#F4F4F0', size: 0.06 });
       st.add(chips.object);
@@ -339,8 +370,9 @@ export default function frame(ctx) {
       }
       plate();
       return {
-        view: { pos: [11, 11, 20], target: [0, -1.6, 0] },
+        view: { pos: [13, 11, 24], target: [0, 0.6, 0] },
         change(id) { if (id === 'again') { n = 0; ph = 0; plate(); } },
+        handles: [{ obj: spindle, id: 'feed', axis: 'y', invert: true, span: 220, hint: 'Drag down to plunge faster', dy: -60 }],
         tick(dt) {
           const bite = (S.feed / 100) / (S.rpm / 6000); // relative chip load: 0.45 is comfortable
           const tooBig = bite > 1.3, rub = bite < 0.12;
@@ -387,6 +419,7 @@ export default function frame(ctx) {
     id: 'finish', tab: 'Finish it',
     title: 'Growing armour with electricity',
     lead: 'Bare aluminium scratches easily and leaves grey marks on your hands. So the drilled channels are hung on a rack and lowered into an acid bath with electricity running through them. This is <b>anodising</b>. It grows a glass-hard layer out of the metal’s own surface. It is not paint, and it cannot peel.',
+    try: 'Drag the rack down into the bath, wait for the layer to grow, then pick a dye.',
     controls: [
       { type: 'range', id: 'mins', label: 'Minutes in the tank', min: 0, max: 60, step: 5, value: 0, unit: ' min' },
       { type: 'seg', id: 'dye', label: 'Dye bath afterwards', value: 'clear', options: Object.entries(DYES).map(([k, v]) => [k, v[0]]) },
@@ -407,7 +440,7 @@ export default function frame(ctx) {
         ch.scale.setScalar(0.5); ch.rotation.x = Math.PI / 2; ch.position.set((i - 1) * 2.1, 1.6, 0.6);
         rack.add(ch, cyl(0.04, 0.7, metal(C.copper, 0.3), { pos: [(i - 1) * 2.1, 1.9, 0] }));
       }
-      const psu = group(box(1.8, 1.4, 1.2, C.dark, { r: 0.12 }), box(1.0, 0.4, 0.05, C.volt, { r: 0.04, pos: [0, 0.2, 0.62], glow: true, glowPower: 0.4 }));
+      const psu = group(box(1.8, 1.4, 1.2, plastic(C.dark), { r: 0.12 }), box(1.0, 0.4, 0.05, C.volt, { r: 0.04, pos: [0, 0.2, 0.62], glow: true, glowPower: 0.4 }), cyl(0.16, 0.12, plastic(C.red), { axis: 'z', pos: [-0.5, -0.35, 0.62] }), cyl(0.16, 0.12, plastic(C.black), { axis: 'z', pos: [0.5, -0.35, 0.62] }), cyl(0.09, 5.6, metal(C.alu, 0.4), { pos: [0, -3.5, 0] }), cyl(0.7, 0.1, metal(C.alu, 0.4), { pos: [0, -6.25, 0], seg: 32 }));
       psu.position.set(-6.4, 2.4, 0);
       const wire = [[-5.5, 2.6, 0], [-4.4, 3.1, 0], [-3.4, 2.2, 0]];
       const cur = new Flow(wire, 6, { size: 0.09 });
@@ -419,6 +452,7 @@ export default function frame(ctx) {
       const bare = new THREE.Color(ALU), tmp = new THREE.Color();
       return {
         view: { pos: [5, 5.5, 16], target: [-0.6, -0.2, 0] },
+        handles: [{ obj: rack, id: 'mins', axis: 'y', invert: true, span: 260, hint: 'Drag the rack into the bath' }],
         tick(dt) {
           const m = S.mins, on = m > 0;
           dip = lerp(dip, on ? 1 : 0, 1 - Math.pow(0.02, dt));
@@ -449,6 +483,7 @@ export default function frame(ctx) {
     id: 'shape', tab: 'Why a U?',
     title: 'Shape beats material',
     lead: 'The frame carries everything: motors, battery, and the shock of hitting a wall. Here is the same aluminium, the same 2.5 mm wall, in four shapes. Rest a weight on the middle of each and see which you would build a robot from.',
+    try: 'Drag the weight down to load the beam, then swap the shape.',
     controls: [
       { type: 'seg', id: 'sect', label: 'Cross-section', value: 'u', options: Object.entries(SECT).map(([k, v]) => [k, v[0]]) },
       { type: 'knob', id: 'wkg', label: 'Weight resting on the middle', min: 0, max: 20, step: 1, value: 5, unit: ' kg' },
@@ -465,9 +500,10 @@ export default function frame(ctx) {
       let beam = null, base = null;
       const holder = group(); st.add(holder);
       const sup = group(mesh(new THREE.CylinderGeometry(0.1, 0.9, 1.6, 3), mat('#3A3F3E', { rough: 0.7 }), [-LEN / 2 + 0.4, -5.7, 0]), mesh(new THREE.CylinderGeometry(0.1, 0.9, 1.6, 3), mat('#3A3F3E', { rough: 0.7 }), [LEN / 2 - 0.4, -5.7, 0]));
-      const floor = box(LEN + 3, 0.2, 6, '#3A3F3E', { r: 0.08, pos: [0, -6.6, 0], rough: 0.8 });
-      const wt = box(2.2, 1.6, 2.2, C.power, { r: 0.2, rough: 0.4 });
-      st.add(sup, floor, wt);
+      const wt = group();
+      for (let i = 0; i < 3; i++) wt.add(cyl(1.25 - i * 0.12, 0.46, mat('#1F2223', { rough: 0.55, metal: 0.6 }), { seg: 48, pos: [0, -0.55 + i * 0.5, 0] }), cyl(1.0 - i * 0.12, 0.47, plastic(C.power, 0.4), { seg: 48, pos: [0, -0.55 + i * 0.5, 0] }));
+      wt.add(cyl(0.16, 2.0, metal(C.steel, 0.2), { pos: [0, 0.1, 0] }), mesh(new THREE.TorusGeometry(0.3, 0.07, 10, 24), metal(C.steel, 0.2), [0, 1.3, 0]));
+      st.add(sup, wt);
       const real = ctx.fitReal(ctx.real(), LEN * 0.8);
       if (real) { real.position.set(0, 0.6, 0); st.add(real); st.label('The real rail, from the robot’s CAD', real, { tone: 'volt', dy: -48 }); }
       const wl = st.label('5 kg', wt, { dy: 0 });
@@ -498,7 +534,9 @@ export default function frame(ctx) {
       apply();
       return {
         view: { pos: [12, 1.5, 17], target: [0, -3.4, 0] },
+        groundY: -6.5,
         change: apply,
+        handles: [{ obj: wt, id: 'wkg', axis: 'y', invert: true, span: 200, hint: 'Drag down to add weight', dy: -50 }],
         tick(dt) {
           const I = SECT[S.sect][1];
           const mm = (S.wkg * 9.81 * SPAN ** 3) / (48 * E * I);

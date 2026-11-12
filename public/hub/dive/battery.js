@@ -1,18 +1,23 @@
 // Battery deep dive: what is inside the 12 V pack, how one cell pushes electrons,
 // how wiring cells in rows changes volts, amps and watts, how packs are built, and what it feeds.
-import { THREE, C, mat, metal, mesh, cyl, box, ball, group, tube, curveOf, Flow, fade, clamp, lerp, smooth, span, TAU } from './kit.js';
+import { miniMotor } from './motor.js';
+import { THREE, C, mat, metal, plastic, mesh, cyl, box, ball, bench, plateGeo, group, tube, curveOf, Flow, fade, part, ghost, clamp, lerp, smooth, span, TAU } from './kit.js';
 
 const CELL_V = 1.2, CELL_AH = 3.0, CELL_OHM = 0.012;
 const WRAP = '#2B8A57';
 
-// One round cell lying along Z with its + button toward +Z.
-function cell(r = 0.55, len = 2.1, wrap = WRAP) {
-  const g = group(
-    cyl(r, len * 0.9, wrap, { axis: 'z', rough: 0.45 }),
-    cyl(r * 0.97, len * 0.97, metal(C.steel), { axis: 'z' }),
-    cyl(r * 0.36, len * 0.06, metal(C.steel, 0.25), { axis: 'z', pos: [0, 0, len * 0.5] }),
-    cyl(r * 1.005, len * 0.07, C.red, { axis: 'z', pos: [0, 0, len * 0.4] }),
-  );
+// One round cell lying along Z with its + button toward +Z (the Blender-modelled cell, resized).
+function cell(r = 0.55, len = 2.1) {
+  return part('B_cell', { axis: 'z', scale: [r / 0.55, len / 2.1, r / 0.55] });
+}
+// The real pack is two rows of five cells, nested like oranges in a crate. Top row sits a quarter step left.
+const PITCH = 1.125, ROW = 0.974;
+const nest = (k) => { const j = k < 5 ? k : 9 - k; return new THREE.Vector3((j - 2) * PITCH + (k < 5 ? -1 : 1) * PITCH / 4, (k < 5 ? 1 : -1) * ROW / 2, 0); };
+const nickel = () => metal('#DADCD6', 0.28);
+// A welded nickel strip lying in XY, reaching `len` between two cell ends.
+function strip(len) {
+  const g = group(box(len + 0.46, 0.4, 0.035, nickel(), { r: 0.015 }));
+  for (const sx of [-1, 1]) for (const sy of [-1, 1]) g.add(cyl(0.035, 0.04, '#6B6F6C', { axis: 'z', seg: 10, pos: [sx * len / 2 + sy * 0.07, sy * 0.07, 0] }));
   return g;
 }
 
@@ -35,7 +40,8 @@ export default function battery(ctx) {
   const openUp = {
     id: 'open', tab: 'Open it up',
     title: 'Ten little batteries in a trench coat',
-    lead: 'The robot’s 12 V battery is not one battery. Slide to peel off the shrink wrap and you find <b>10 round cells</b>, each about the size of a fat marker cap, welded together in one long chain.',
+    lead: 'The robot’s 12 V battery is not one battery. Slide to peel off the shrink wrap and you find <b>10 round cells</b> in two nested rows, each about the size of a fat marker cap, welded together in one long chain.',
+    try: 'Drag the pink wrap upward on the model, or use the slider.',
     controls: [{ type: 'range', id: 'peel', label: 'Peel it open', min: 0, max: 100, value: 0, unit: '%' }],
     readouts: [['cells', 'Cells in the chain'], ['each', 'Each cell', 'nickel-metal hydride'], ['pack', 'Whole pack', '10 × 1.2 V']],
     more: [
@@ -45,67 +51,74 @@ export default function battery(ctx) {
       ['Why does it get its own plug shape?', 'The yellow XT30 plug only fits one way round. You cannot plug the battery in backwards, which would send current the wrong way through the Control Hub.'],
     ],
     build(st, S, ui) {
-      const R = 0.55, L = 2.1, GAP = 1.16;
+      const L = 2.1;
       const pack = group();
       const cells = [], strips = [];
-      // Chain order: top row left to right, then bottom row right to left.
+      // Chain order: top row left to right, then bottom row right to left. Every second cell is flipped.
       for (let k = 0; k < 10; k++) {
-        const col = k < 5 ? k : 9 - k, row = k < 5 ? 0 : 1;
-        const c = cell(R, L);
-        if (k % 2 === 1) c.rotation.y = Math.PI; // every second cell faces the other way
-        c.userData.home = new THREE.Vector3((col - 2) * GAP, (0.5 - row) * GAP, 0);
+        const c = cell();
+        if (k % 2 === 1) c.rotation.y = Math.PI;
+        c.userData.home = nest(k);
         cells.push(c);
         pack.add(c);
       }
       for (let k = 0; k < 9; k++) {
-        const a = cells[k].userData.home, b = cells[k + 1].userData.home;
-        const front = k % 2 === 0;
-        const vertical = Math.abs(a.x - b.x) < 0.01;
-        const s = box(vertical ? 0.42 : GAP + 0.5, vertical ? GAP + 0.5 : 0.42, 0.05, metal('#D9DBD6', 0.3), { r: 0.02 });
-        s.userData = { a: k, b: k + 1, z: (front ? 1 : -1) * (L / 2 + 0.07) };
+        const s = strip(PITCH);
+        s.userData = { a: k, b: k + 1, z: k % 2 === 0 ? L / 2 + 0.085 : -(L / 2 + 0.03) };
         strips.push(s);
         pack.add(s);
       }
-      // Leads leave from the back face: black from cell 1's minus, red (through the fuse) from cell 10's plus.
-      const zb = -(L / 2 + 0.1);
-      const blackPts = [[-2 * GAP, 0.5 * GAP, zb], [-2 * GAP, 0.9, zb - 0.9], [-0.6, 0.3, zb - 2.2], [0.15, 0, zb - 3.4]];
-      const redPts = [[-2 * GAP, -0.5 * GAP, zb], [-1.6, -0.9, zb - 0.9], [0.9, -0.3, zb - 2.2], [0.45, 0, zb - 3.4]];
-      const black = tube(blackPts, 0.09, C.black, { rough: 0.6 });
-      const red = tube(redPts, 0.09, C.red, { rough: 0.6 });
-      const fuse = group(box(0.5, 0.36, 0.7, '#E9C53A', { r: 0.06, opacity: 0.85 }), box(0.12, 0.05, 0.5, metal(C.steel)));
-      fuse.position.set(0.5, -0.62, zb - 1.55);
-      const plug = group(box(0.72, 0.5, 0.75, '#F2C230', { r: 0.08 }), cyl(0.09, 0.3, metal(C.brass), { axis: 'z', pos: [-0.16, 0, -0.45] }), cyl(0.09, 0.3, metal(C.brass), { axis: 'z', pos: [0.16, 0, -0.45] }));
-      plug.position.set(0.3, 0, zb - 3.6);
+      // Leads leave from the back: black from cell 1's minus, red (through the fuse) from cell 10's plus.
+      const zb = -(L / 2 + 0.06), h0 = nest(0), h9 = nest(9), zp = zb - 3.5;
+      const black = tube([[h0.x, h0.y, zb], [h0.x + 0.1, h0.y + 0.25, zb - 0.8], [-0.9, 0.35, zb - 2.0], [-0.21, 0, zp + 0.6]], 0.085, plastic(C.black, 0.5));
+      const red = tube([[h9.x, h9.y, zb], [h9.x + 0.2, h9.y - 0.3, zb - 0.8], [0.7, -0.5, zb - 1.7], [0.21, 0, zp + 0.6]], 0.085, plastic(C.red, 0.5));
+      const fuse = part('B_fuse', { scale: 1.5, pos: [0.62, -0.5, zb - 1.55] });
+      fuse.rotation.set(0.2, 0.5, 0);
+      const plug = part('B_xt30', { scale: 1.3, pos: [0, 0, zp] });
+      plug.rotation.x = -Math.PI / 2;
       const leads = group(black, red, fuse, plug);
-      const wrap = box(5 * GAP + 0.22, 2 * GAP + 0.22, L + 0.42, '#C42D6B', { r: 0.3, rough: 0.35 });
-      const band = box(5 * GAP + 0.26, 0.9, L + 0.46, '#1D2021', { r: 0.2, rough: 0.4 });
-      const skin = group(wrap, band);
-      st.add(pack, leads, skin);
+      const skin = group(part('B_wrap', { axis: 'z' }), part('B_label', { axis: 'z' }));
+      const handle = ghost(6.6, 2.6, 2.9);
+      st.add(pack, leads, skin, handle);
 
-      const real = ctx.fitReal(ctx.real(), 6.1);
-      if (real) { real.position.set(0, 0, 0); st.add(real); }
+      const real = ctx.fitReal(ctx.real(), 6.24);
+      if (real) {
+        // Turn the CAD part so its rows lean the same way as the cells inside.
+        real.updateMatrixWorld(true);
+        const v = new THREE.Vector3(); let top = 0, bot = 0, nt = 0, nb = 0;
+        real.traverse((o) => {
+          if (!o.isMesh) return;
+          const pos = o.geometry.attributes.position, step = Math.max(1, Math.floor(pos.count / 3000));
+          for (let i = 0; i < pos.count; i += step) { v.fromBufferAttribute(pos, i).applyMatrix4(o.matrixWorld); if (v.y > 0.3) { top += v.x; nt++; } else if (v.y < -0.3) { bot += v.x; nb++; } }
+        });
+        if (nt && nb && top / nt > bot / nb) real.rotation.y = Math.PI;
+        st.add(real);
+      }
 
       const lbl = {
-        cell: st.label('One cell: 1.2 V', cells[2], { off: new THREE.Vector3(0, 0.9, 0) }),
-        strip: st.label('Nickel strip, spot welded', strips[2], {}),
-        fuse: st.label('20 A fuse', fuse, { dy: 26 }),
-        plug: st.label('XT30 plug', plug, { dy: 30 }),
-        plus: st.label('+ end has a button', cells[0], { off: new THREE.Vector3(0, 0, L / 2 + 0.3), dy: -22 }),
-        real: st.label('The real part, from the robot’s CAD', new THREE.Vector3(0, 2.2, 0), { tone: 'volt' }),
+        cell: st.label('One cell: 1.2 V', cells[2], { off: new THREE.Vector3(0, 0.75, 0), tip: 'Each steel can is a complete little battery. Nickel-metal hydride chemistry always gives about <b>1.2 volts</b>, however big the can is.' }),
+        strip: st.label('Nickel strip', strips[2], { tip: 'Spot welded to the cell ends by a burst of current lasting a few thousandths of a second. It carries power from one cell to the next.' }),
+        fuse: st.label('20 A fuse', fuse, { dy: 22, tip: 'A deliberately weak link. Too many amps for too long and the thin metal inside melts, before the wires can overheat.' }),
+        plug: st.label('XT30 plug', plug, { dy: 26, tip: 'Shaped so it only fits one way. You cannot plug the battery in backwards.' }),
+        flip: st.label('Every second cell is flipped', cells[7], { off: new THREE.Vector3(0, -0.8, L / 2), dy: 8, tip: 'Flipping puts the plus end of one cell next to the minus end of its neighbour, so a short strip can join them into one long chain.' }),
+        real: st.label('The real part, from the robot’s CAD', new THREE.Vector3(0, 1.9, 0), { tone: 'volt' }),
       };
 
+      const at = new THREE.Vector3();
       function apply() {
         const k = S.peel / 100;
         const off = smooth(span(k, 0.0, 0.3)), spread = smooth(span(k, 0.3, 0.75)), lift = smooth(span(k, 0.55, 1));
         const swap = real ? smooth(span(k, 0.02, 0.1)) : 1; // the real CAD part hands over to the cutaway model
         if (real) fade(real, 1 - swap);
         fade(skin, swap * (1 - off));
-        skin.position.y = off * 3.2;
-        skin.scale.setScalar(1 + off * 0.08);
-        for (const c of cells) c.position.copy(c.userData.home).multiply(new THREE.Vector3(1 + spread * 0.42, 1 + spread * 0.9, 1));
+        skin.position.y = off * 3.4;
+        handle.position.y = off * 3.4;
+        for (const c of cells) c.position.copy(c.userData.home).multiply(at.set(1 + spread * 0.38, 1 + spread * 0.75, 1));
         for (const s of strips) {
           const a = cells[s.userData.a].position, b = cells[s.userData.b].position;
-          s.position.set((a.x + b.x) / 2, (a.y + b.y) / 2, s.userData.z * (1 + lift * 0.55));
+          s.position.set((a.x + b.x) / 2, (a.y + b.y) / 2, s.userData.z * (1 + lift * 0.5));
+          s.rotation.z = Math.atan2(b.y - a.y, b.x - a.x);
+          s.scale.x = lerp(a.distanceTo(b) / PITCH, 1, lift);
         }
         leads.position.z = -lift * 0.6;
         fade(leads, swap);
@@ -113,19 +126,20 @@ export default function battery(ctx) {
         lbl.real.show(!!real && k < 0.02);
         lbl.cell.show(k > 0.45);
         lbl.strip.show(k > 0.7);
-        lbl.plus.show(k > 0.85);
+        lbl.flip.show(k > 0.85);
         lbl.fuse.show(k > 0.3);
         lbl.plug.show(k > 0.3);
-        ui.out('cells', k > 0.3 ? '10' : '?');
-        ui.out('each', k > 0.3 ? '1.2 V' : '?');
+        ui.out('cells', k > 0.25 ? '10' : '?');
+        ui.out('each', k > 0.25 ? '1.2 V' : '?');
         ui.out('pack', '12 V');
-        ui.note(k < 0.02 ? 'This is the battery exactly as it sits on the robot. Drag the slider to open it.' : k < 0.5 ? 'The pink shrink wrap is just a plastic jacket. It keeps the cells together and stops metal touching the bare ends.' : 'Look at the ends: every second cell is flipped. That is how the plus of one cell reaches the minus of the next.');
+        ui.note(k < 0.02 ? 'This is the battery exactly as it sits on the robot. Notice the bumpy sides: you can already count the cells.' : k < 0.5 ? 'The pink shrink wrap is just a plastic jacket. Underneath, two rows of five cells are nested together to save space.' : 'Tap the <b>+</b> labels on the model. Look at the ends: every second cell is flipped, so plus meets minus all along the chain.');
       }
       apply();
       return {
-        view: { pos: [7.5, 5.2, 11.5], target: [0, 0.2, -0.6] },
+        view: { pos: [6.5, 4.6, 12.5], target: [0, 0.5, -0.6] },
         change: apply,
-        tick(dt, t) { pack.rotation.y = Math.sin(t * 0.35) * 0.05; },
+        handles: [{ obj: handle, id: 'peel', axis: 'y', span: 220, hint: 'Drag the wrap up', hintAt: skin }],
+        tick(dt, t) { pack.rotation.y = Math.sin(t * 0.35) * 0.04; },
       };
     },
   };
@@ -135,6 +149,7 @@ export default function battery(ctx) {
     id: 'cell', tab: 'Inside a cell',
     title: 'A cell is a rolled-up chemical sandwich',
     lead: 'Unroll one cell and you get three long ribbons: a <b>plus sheet</b>, a <b>minus sheet</b> and a paper-thin <b>separator</b> soaked in liquid. Chemicals on the minus sheet want to give away electrons. The only way across is the long way round: out of the cell, through your robot and back in.',
+    try: 'Drag the steel can down to cut it open, then switch what the cell is doing.',
     controls: [
       { type: 'seg', id: 'cellMode', label: 'What is the cell doing?', value: 'use', options: [['use', 'Powering the robot'], ['charge', 'On the charger'], ['rest', 'Switched off']] },
       { type: 'range', id: 'cut', label: 'Cut the can away', min: 0, max: 100, value: 70, unit: '%' },
@@ -167,10 +182,13 @@ export default function battery(ctx) {
       const loop = curveOf(loopPts);
       const wire = tube(loop, 0.07, C.copper, { metal: 0.6, rough: 0.4, steps: 120 });
       const flow = new Flow(loop, 26, { size: 0.11 });
-      const load = group(cyl(0.7, 1.1, C.dark, { axis: 'z' }), cyl(0.12, 1.7, metal(C.steel), { axis: 'z' }));
-      const fan = group(box(1.7, 0.16, 0.06, C.volt, { r: 0.02 }), box(0.16, 1.7, 0.06, C.volt, { r: 0.02 }));
-      fan.position.z = 0.82;
-      load.add(fan);
+      const lm = miniMotor(0.4, 0.6);
+      lm.g.rotation.y = -Math.PI / 2;
+      lm.g.position.z = -0.4;
+      const fan = group(cyl(0.5, 0.3, plastic(C.dark), { axis: 'x' }), box(0.12, 4.6, 0.5, plastic(C.volt), { r: 0.04 }), box(0.12, 0.5, 4.6, plastic(C.volt), { r: 0.04 }));
+      fan.position.x = 5.3;
+      lm.g.add(fan);
+      const load = group(lm.g);
       load.position.set(4.2, 0.3, 0);
       const charger = box(1.5, 1.9, 1.1, C.volt, { r: 0.18, glow: true, glowPower: 0.25 });
       charger.position.copy(load.position);
@@ -186,8 +204,8 @@ export default function battery(ctx) {
         st.add(m);
       }
       const lbl = {
-        pos: st.label('Plus sheet (nickel)', new THREE.Vector3(-0.5, H / 2 + 0.2, 0.5), { dy: -16 }),
-        neg: st.label('Minus sheet (holds hydrogen)', new THREE.Vector3(1.1, H / 2 - 0.1, -0.6), { dy: -34 }),
+        pos: st.label('Plus sheet (nickel)', new THREE.Vector3(-0.5, H / 2 + 0.2, 0.5), { dy: -16, tip: 'Coated in a nickel compound. This is where electrons come back in after doing their work in the motor.' }),
+        neg: st.label('Minus sheet (holds hydrogen)', new THREE.Vector3(1.1, H / 2 - 0.1, -0.6), { dy: -34, tip: 'A metal alloy that soaks up hydrogen like a sponge. Letting that hydrogen go is what frees the electrons.' }),
         ion: st.label('Ions hop across the separator', new THREE.Vector3(-1.5, H / 2 - 0.7, 0.9), { tone: 'teal' }),
         e: st.label('Electrons take the long way', new THREE.Vector3(4.2, 2.5, 0), { tone: 'volt' }),
         load: st.label('Motor', load, { dy: 44 }),
@@ -211,6 +229,7 @@ export default function battery(ctx) {
       return {
         view: { pos: [9, 6.5, 13], target: [1.3, 0.2, 0] },
         change: apply,
+        handles: [{ obj: can, id: 'cut', axis: 'y', invert: true, span: 240, hint: 'Drag the can down' }],
         dispose() { S.soc = soc; },
         tick(dt) {
           const mode = S.cellMode;
@@ -221,7 +240,7 @@ export default function battery(ctx) {
           const dir = mode === 'charge' ? -1 : 1;
           if (moving) flow.advance(dir * dt * 0.16);
           flow.object.visible = moving;
-          fan.rotation.z += moving && mode === 'use' ? dt * 9 : 0;
+          fan.rotation.x += moving && mode === 'use' ? dt * 9 : 0;
           for (const m of ions) {
             const u = m.userData;
             if (moving) u.p = (u.p + dt * 0.7) % 1;
@@ -251,6 +270,7 @@ export default function battery(ctx) {
     id: 'lab', tab: 'Volts, amps, watts',
     title: 'Build your own pack',
     lead: 'How you connect cells changes what the pack can do. Cells <b>in a chain</b> (plus to minus, called <i>series</i>) add up their volts. Chains <b>side by side</b> (called <i>parallel</i>) share the work, so the pack lasts longer. Build a pack and watch the numbers.',
+    try: 'Add cells to the chain, add chains, then turn the knob to make the motor pull harder.',
     controls: [
       { type: 'range', id: 'ser', label: 'Cells in each chain (series)', min: 1, max: 12, value: 10, fmt: (v) => `${v} cell${v === 1 ? '' : 's'}` },
       { type: 'range', id: 'par', label: 'Chains side by side (parallel)', min: 1, max: 3, value: 1, fmt: (v) => `${v} chain${v === 1 ? '' : 's'}` },
@@ -299,11 +319,13 @@ export default function battery(ctx) {
         packG.add(tube(curve, 0.07, C.copper, { metal: 0.6, rough: 0.4, steps: 140 }));
         flow = new Flow(curve, 30, { size: 0.1 });
         packG.add(flow.object);
-        motor = group(cyl(0.75, 1.5, C.dark, { axis: 'x' }), cyl(0.12, 2.2, metal(C.steel), { axis: 'x' }));
-        fan = group(box(0.07, 2.0, 0.2, C.volt, { r: 0.02 }), box(0.07, 0.2, 2.0, C.volt, { r: 0.02 }));
-        fan.position.x = 1.15;
+        const mm = miniMotor(0.42, 0.6);
+        motor = mm.g;
+        fan = group(cyl(0.5, 0.3, plastic(C.dark), { axis: 'x' }), box(0.12, 4.6, 0.5, plastic(C.volt), { r: 0.04 }), box(0.12, 0.5, 4.6, plastic(C.volt), { r: 0.04 }));
+        fan.position.x = 5.3;
         motor.add(fan);
-        motor.position.set(0, 0, zf);
+        motor.position.x = -0.5;
+        motor.position.z = zf;
         packG.add(motor);
         packLbl.to(new THREE.Vector3(0, Hc / 2 + 1.0, 0));
         st.setView([Math.max(7, n * 0.95), 6.5 + p, 12 + n * 0.75 + p * 1.5], [0, -0.2, zf * 0.42], 500);
@@ -355,6 +377,7 @@ export default function battery(ctx) {
     id: 'made', tab: 'How it’s made',
     title: 'From paste to pack',
     lead: 'Battery factories are mostly long machines that do one small job very fast. Step through the line that builds a pack like yours.',
+    try: 'Pick a station, then change the line speed.',
     controls: [
       { type: 'seg', id: 'bstep', label: 'Station', value: 0, options: STEPS.map((s, i) => [i, `${i + 1} ${s[0]}`]) },
       { type: 'range', id: 'bspeed', label: 'Line speed', min: 0, max: 200, value: 100, unit: '%' },
@@ -366,62 +389,75 @@ export default function battery(ctx) {
       ['What happens to old packs?', 'NiMH packs can be recycled. The nickel is valuable and gets melted down for stainless steel or new batteries. Never put one in the bin: take it to a battery drop-off.'],
     ],
     build(st, S, ui) {
-      const X = 7.2; // spacing between stations
+      const X = 0; // every station stands on the same spot; only the chosen one shows
+      const WHITE = '#D9DAD2';
       const stations = [];
-      const floor = box(X * 5 + 2, 0.2, 5, '#3A3F3E', { r: 0.08, pos: [X * 2, -1.6, 0], rough: 0.8 });
-      st.add(floor);
       for (let i = 0; i < 5; i++) {
         const g = group();
-        g.position.x = i * X;
         st.add(g);
         stations.push(g);
-        st.label(`${i + 1}. ${STEPS[i][0]}`, new THREE.Vector3(i * X, 3.4, 0), { tone: 'volt' });
+        st.label(`${i + 1}. ${STEPS[i][0]}`, g, { tone: 'volt', off: new THREE.Vector3(0, 3.6, 0) });
       }
-      // 1 Coat: foil strip runs under a roller and comes out dark.
-      const foil = box(5.2, 0.05, 1.6, metal('#D0D3D2', 0.3), { r: 0, pos: [0, -0.5, 0] });
-      const coat = box(2.6, 0.07, 1.5, '#2F3336', { r: 0, pos: [1.3, -0.47, 0], rough: 0.8 });
-      const roller = cyl(0.55, 1.9, metal(C.steel, 0.25), { axis: 'z', pos: [0, 0.1, 0] });
-      const hopper = mesh(new THREE.CylinderGeometry(0.9, 0.25, 1.1, 4, 1), mat(C.teal, { rough: 0.5 }), [-0.5, 1.3, 0]);
-      const drips = new Flow([[-0.5, 0.8, 0], [-0.45, 0.2, 0], [-0.3, -0.4, 0]], 5, { color: '#2F3336', size: 0.09 });
+      // 1 Coat: bare foil unwinds, passes under the coating head, dries in the oven, winds up dark.
+      const reel = (r, color, x, y) => group(cyl(r, 1.5, color, { axis: 'z', seg: 48, pos: [x, y, 0] }), cyl(0.2, 2.1, metal(C.iron, 0.4), { axis: 'z', pos: [x, y, 0] }), cyl(r + 0.12, 0.06, metal(C.alu, 0.35), { axis: 'z', seg: 48, pos: [x, y, 0.78] }), cyl(r + 0.12, 0.06, metal(C.alu, 0.35), { axis: 'z', seg: 48, pos: [x, y, -0.78] }));
+      const foil = box(7.0, 0.03, 1.4, nickel(), { r: 0, pos: [0, -0.5, 0] });
+      const coat = box(3.9, 0.05, 1.3, mat('#2A2D30', { rough: 0.85 }), { r: 0, pos: [1.55, -0.49, 0] });
+      const roller = cyl(0.42, 1.7, metal(C.steel, 0.22), { axis: 'z', seg: 40, pos: [-0.55, -0.94, 0] });
+      const head = mesh(plateGeo([[-1.0, 0.9], [-0.15, 0.9], [-0.15, 0.1], [-0.45, -0.38], [-0.65, -0.38], [-1.0, 0.1]], 1.6, [], 0.03), plastic(WHITE, 0.4));
+      const hopper = group(cyl(0.55, 1.1, plastic(C.teal), { pos: [-0.58, 2.35, 0], seg: 40 }), cyl([0.55, 0.1], 0.5, plastic(C.teal), { pos: [-0.58, 1.55, 0], seg: 40 }), cyl(0.09, 0.5, metal(C.steel), { pos: [-0.58, 1.1, 0] }), cyl(0.58, 0.08, metal(C.alu), { pos: [-0.58, 2.93, 0], seg: 40 }));
+      const drips = new Flow([[-0.58, 1.3, 0], [-0.58, 0.6, 0], [-0.55, -0.3, 0]], 5, { color: '#2A2D30', size: 0.08 });
+      const oven = group(cyl(1.0, 2.3, plastic(WHITE, 0.4), { axis: 'x', open: true, double: true, start: Math.PI, theta: Math.PI, seg: 40, pos: [1.6, -0.55, 0] }));
+      for (let i = 0; i < 4; i++) oven.add(cyl(0.05, 1.7, mat(C.hot, { glow: C.hot, glowPower: 2 }), { axis: 'z', seg: 8, pos: [0.8 + i * 0.55, 0.05, 0] }));
+      for (const x of [0.45, 2.75]) oven.add(mesh(new THREE.TorusGeometry(1.0, 0.07, 8, 32, Math.PI), plastic(C.volt), [x, -0.55, 0], [0, Math.PI / 2, 0]));
       const stripes = group();
-      for (let i = 0; i < 6; i++) stripes.add(box(0.06, 0.08, 1.5, '#55595B', { r: 0, pos: [0, -0.46, 0] }));
-      stations[0].add(foil, coat, roller, hopper, drips.object, stripes);
-      // 2 Roll: three ribbons feed a growing spiral.
+      for (let i = 0; i < 6; i++) stripes.add(box(0.05, 0.06, 1.3, '#4A4E51', { r: 0, pos: [0, -0.48, 0] }));
+      stations[0].add(foil, coat, roller, head, hopper, drips.object, oven, stripes, reel(0.7, nickel(), -3.5, -1.2), reel(0.7, mat('#2A2D30', { rough: 0.85 }), 3.5, -1.2), bench(8.6, 2.6, -1.95));
+      st.label('Wet paste', hopper, { off: new THREE.Vector3(-0.58, 2.3, 0), tip: 'The active chemicals, ground to a powder and mixed into a paste. The plus strip and the minus strip each get their own recipe.' });
+      st.label('Drying oven', oven, { off: new THREE.Vector3(1.6, 0.6, 0), dy: -6, tip: 'Hot air drives off the liquid so only a firm, even coat is left on the foil.' });
+      // 2 Roll: three ribbons feed a growing spiral on a spinning pin.
       const roll = mesh(spiralGeo(0.15, 1.1, 5, 0.12, 1.6, 0), mat('#2F3336', { rough: 0.7 }));
       const roll2 = mesh(spiralGeo(0.2, 1.15, 5, 0.05, 1.64, 0.15), mat('#F1EFE4', { rough: 0.9 }));
       const rollG = group(roll, roll2);
-      const feeds = group(box(3.2, 0.05, 1.5, '#2F3336', { r: 0, pos: [-2.2, 0.7, 0] }), box(3.2, 0.04, 1.5, '#F1EFE4', { r: 0, pos: [-2.2, 0.2, 0] }), box(3.2, 0.05, 1.5, '#7C8FA6', { r: 0, pos: [-2.2, -0.3, 0] }));
-      feeds.children[0].rotation.z = -0.22; feeds.children[2].rotation.z = 0.22;
-      stations[1].add(rollG, feeds);
+      const feeds = group(box(3.4, 0.05, 1.5, '#2F3336', { r: 0, pos: [-2.2, 0.62, 0] }), box(3.4, 0.04, 1.5, '#F1EFE4', { r: 0, pos: [-2.2, 0.1, 0] }), box(3.4, 0.05, 1.5, '#7C8FA6', { r: 0, pos: [-2.2, -0.42, 0] }));
+      feeds.children[0].rotation.z = -0.3; feeds.children[2].rotation.z = 0.3;
+      stations[1].add(rollG, feeds, cyl(0.1, 2.6, metal(C.steel, 0.2), { axis: 'z' }), reel(0.6, mat('#2F3336', { rough: 0.7 }), -4.1, 1.2), reel(0.5, mat('#F1EFE4', { rough: 0.9 }), -4.2, 0.1), reel(0.6, mat('#7C8FA6', { rough: 0.6, metal: 0.3 }), -4.1, -1.0),
+        box(7.4, 4.2, 0.14, plastic(WHITE, 0.4), { r: 0.05, pos: [-1.7, 0.2, -1.1] }), bench(8.2, 2.8, -1.95));
+      st.label('Separator', feeds.children[1], { tip: 'A paper-thin sheet that keeps the plus and minus strips from touching, while letting ions soak through.' });
       // 3 Can: the roll drops in, the cap presses on.
-      const can = cyl(0.75, 2.2, metal(C.steel, 0.3), { open: true, double: true, pos: [0, -0.4, 0] });
-      const canB = cyl(0.75, 0.08, metal(C.steel, 0.3), { pos: [0, -1.5, 0] });
-      const jr = cyl(0.66, 2.0, '#2F3336', { rough: 0.7 });
-      const capM = group(cyl(0.75, 0.1, metal(C.steel, 0.3)), cyl(0.26, 0.2, metal(C.steel, 0.25), { pos: [0, 0.14, 0] }));
-      const ram = cyl(0.3, 2.2, metal(C.iron, 0.4));
-      stations[2].add(can, canB, jr, capM, ram);
+      const can = cyl(0.75, 2.2, metal(C.steel, 0.3), { open: true, double: true, pos: [0, -0.4, 0], seg: 48 });
+      const canB = cyl(0.75, 0.08, metal(C.steel, 0.3), { pos: [0, -1.5, 0], seg: 48 });
+      const jr = group(cyl(0.66, 2.0, '#2F3336', { rough: 0.7 }), mesh(spiralGeo(0.1, 0.62, 5, 0.035, 0.03, 0), mat('#F1EFE4', { rough: 0.9 }), [0, 1.0, 0], [-Math.PI / 2, 0, 0]));
+      const capM = group(cyl(0.75, 0.1, metal(C.steel, 0.3), { seg: 48 }), cyl(0.26, 0.2, metal(C.steel, 0.25), { pos: [0, 0.14, 0] }), cyl(0.5, 0.03, '#F1EFE4', { pos: [0, 0.06, 0] }));
+      const ram = group(cyl(0.3, 2.2, metal(C.steel, 0.25)), cyl([0.5, 0.8], 0.4, plastic('#D0E80C'), { pos: [0, -1.1, 0], seg: 40 }));
+      stations[2].add(can, canB, jr, capM, ram, cyl(1.5, 0.3, mat('#2B2F30', { rough: 0.5, metal: 0.5 }), { pos: [0, -1.7, 0], seg: 48 }), cyl(0.95, 0.25, metal(C.alu, 0.35), { pos: [0, -1.5, 0], seg: 48, open: true, double: true }), bench(5, 3, -1.85),
+        cyl(0.22, 6.2, metal(C.alu, 0.35), { pos: [0, 1.2, -1.2] }), box(0.7, 0.5, 1.6, plastic(WHITE, 0.4), { r: 0.1, pos: [0, 4.2, -0.6] }));
       // 4 Weld: electrodes tap a strip onto two cells.
       const c1 = cell(0.55, 2.0); c1.rotation.x = -Math.PI / 2; c1.position.set(-0.6, -0.5, 0);
       const c2 = cell(0.55, 2.0); c2.rotation.x = Math.PI / 2; c2.position.set(0.6, -0.5, 0);
       const ws = box(1.7, 0.06, 0.42, metal('#D9DBD6', 0.3), { r: 0.02, pos: [0, 0.58, 0] });
       const e1 = cyl([0.14, 0.05], 1.6, metal(C.copper, 0.3), { pos: [-0.6, 1.6, 0] });
       const e2 = cyl([0.14, 0.05], 1.6, metal(C.copper, 0.3), { pos: [0.6, 1.6, 0] });
+      const whead = group(cyl(0.1, 1.9, metal(C.steel, 0.25), { axis: 'x', pos: [0, 0.75, 0] }), cyl(0.45, 0.9, plastic(WHITE, 0.4), { pos: [0, 1.3, 0], seg: 40 }), cyl(0.2, 2.4, metal(C.alu, 0.35), { pos: [0, 2.9, 0] }));
       const spark1 = ball(0.2, '#FFF3B0', { glow: '#FFD23A', glowPower: 3, pos: [-0.6, 0.66, 0] });
       const spark2 = ball(0.2, '#FFF3B0', { glow: '#FFD23A', glowPower: 3, pos: [0.6, 0.66, 0] });
-      stations[3].add(c1, c2, ws, e1, e2, spark1, spark2);
+      spark1.userData.noShadow = spark2.userData.noShadow = true;
+      stations[3].add(c1, c2, ws, e1, e2, whead, spark1, spark2, box(2.6, 0.5, 1.4, plastic(C.dark), { r: 0.08, pos: [0, -1.25, 0] }), bench(5, 3, -1.5));
+      st.label('Copper electrodes', e1, { dy: -40, tip: 'They squeeze the nickel strip onto the cell, then a burst of current melts a tiny dot of both metals together.' });
       // 5 Wrap: sleeve slides over, a meter checks the volts.
       const mini = group();
-      for (let i = 0; i < 5; i++) for (let j = 0; j < 2; j++) { const c = cell(0.3, 1.2); c.position.set((i - 2) * 0.63, (0.5 - j) * 0.63 - 0.6, 0); mini.add(c); }
-      const sleeve = box(3.4, 1.5, 1.5, '#C42D6B', { r: 0.2, opacity: 0.92 });
+      for (let k = 0; k < 10; k++) { const c = cell(0.55 * 0.56, 2.1 * 0.56), h = nest(k); if (k % 2) c.rotation.y = Math.PI; c.position.set(h.x * 0.56, h.y * 0.56 - 0.6, 0); mini.add(c); }
+      const sleeve = part('B_wrap', { axis: 'z', scale: 0.57 });
       const meter = group(box(1.6, 1.0, 0.3, C.dark, { r: 0.1 }), box(1.2, 0.5, 0.05, C.volt, { r: 0.04, pos: [0, 0.1, 0.16], glow: true, glowPower: 0.3 }));
       meter.position.set(0, 2.0, 0);
-      stations[4].add(mini, sleeve, meter);
+      stations[4].add(mini, sleeve, meter, bench(6, 3, -1.45));
       const meterLbl = st.label('12.6 V  pass', meter, { dy: -30 });
 
       let ph = 0, count = 0, lastCycle = 0;
       function focus() {
         const i = Number(S.bstep);
-        st.setView([i * X + 4.5, 4.2, 12.5], [i * X, 0.3, 0], 800);
+        stations.forEach((g, n) => { g.visible = n === i; });
+        st.ground(-3.2);
+        st.setView([5.5, 4.4, 13.5], [0, -0.4, 0], 0);
         ui.note(`<b>${STEPS[i][0]}.</b> ${STEPS[i][1]}`);
       }
       focus();
@@ -435,7 +471,7 @@ export default function battery(ctx) {
           // 1
           roller.rotation.z = -ph * 6;
           drips.advance(dt * (S.bspeed / 100) * 0.9);
-          stripes.children.forEach((s, i) => { s.position.x = ((i / 6 + k) % 1) * 2.6; });
+          stripes.children.forEach((s, i) => { s.position.x = -0.35 + ((i / 6 + k) % 1) * 0.75; });
           // 2
           rollG.rotation.z = ph * 5;
           rollG.scale.set(0.45 + k * 0.55, 0.45 + k * 0.55, 1);
@@ -444,10 +480,11 @@ export default function battery(ctx) {
           jr.position.y = lerp(2.4, -0.45, drop);
           capM.position.y = lerp(2.9, 0.72, smooth(span(k, 0.5, 0.75)));
           capM.visible = k > 0.42;
-          ram.position.y = lerp(4.2, 2.0, press);
+          ram.position.y = lerp(4.4, 2.05, press);
           // 4
           const tap = Math.sin(clamp((k % 0.5) / 0.5, 0, 1) * Math.PI);
           e1.position.y = e2.position.y = 1.9 - tap * 0.5;
+          whead.position.y = 1.9 - tap * 0.5;
           spark1.visible = spark2.visible = tap > 0.93;
           spark1.scale.setScalar(0.6 + Math.random() * 0.9); spark2.scale.setScalar(0.6 + Math.random() * 0.9);
           // 5
@@ -467,6 +504,7 @@ export default function battery(ctx) {
     id: 'robot', tab: 'On the robot',
     title: 'One battery, everything else',
     lead: 'Every motor, servo and sensor on the robot drinks from this one pack. Power leaves the battery, passes the fuse and the main switch, and reaches the <b>Control Hub</b>. The hub is the robot’s brain <i>and</i> its power board: your code tells it how much to send to each motor.',
+    try: 'Pick what the robot is doing, then drain the battery with the knob.',
     controls: [
       { type: 'seg', id: 'job', label: 'What is the robot doing?', value: 'drive', options: Object.entries(JOBS).map(([k, v]) => [k, v[1]]) },
       { type: 'knob', id: 'charge', label: 'Battery charge', min: 10, max: 100, value: 100, unit: '%' },
@@ -478,14 +516,18 @@ export default function battery(ctx) {
       ['A match is only 2.5 minutes. Why care about runtime?', 'Because sag matters more than the clock. A half-empty pack sags much more under load. The robot does not stop, it just gets sluggish right when you need a fast launcher wheel.'],
     ],
     build(st, S, ui) {
-      const batt = group(box(3.2, 1.3, 1.7, C.power, { r: 0.22, rough: 0.35 }), box(3.24, 0.5, 1.74, C.black, { r: 0.12 }));
+      const batt = group(part('B_wrap', { scale: 0.62 }), part('B_label', { scale: 0.62 }));
+      for (let k = 0; k < 10; k++) { const c = cell(0.55 * 0.62, 2.1 * 0.62), h = nest(k); c.rotation.x = k % 2 ? Math.PI / 2 : -Math.PI / 2; c.position.set(h.x * 0.62, 0, -h.y * 0.62); batt.add(c); }
       batt.position.set(-6.5, 0, 0);
-      const fuse = box(0.7, 0.5, 0.5, '#E9C53A', { r: 0.08, pos: [-3.9, 0.9, 0], opacity: 0.9 });
-      const sw = group(box(0.9, 0.5, 0.7, C.dark, { r: 0.08 }), box(0.3, 0.3, 0.3, C.red, { r: 0.05, pos: [0.15, 0.3, 0] }));
+      const fuseG = part('B_fuse', { scale: 1.5, pos: [-3.9, 0.9, 0] });
+      fuseG.rotation.set(-Math.PI / 2, 0, 0);
+      let fuse = null; fuseG.traverse((o) => { if (o.isMesh && o.material.name === 'fuse_yellow') { o.material = o.material.clone(); o.material.userData.shared = false; fuse = o; } });
+      const sw = group(box(0.95, 0.5, 0.75, plastic(C.dark), { r: 0.08 }), cyl(0.2, 0.12, metal(C.steel, 0.3), { pos: [0, 0.3, 0] }), cyl([0.07, 0.1], 0.5, plastic(C.red), { pos: [0.1, 0.52, 0], seg: 14 }));
+      sw.children[2].rotation.z = -0.4;
       sw.position.set(-2.5, 0.9, 0);
-      const hub = group(box(3.4, 0.9, 2.6, '#2B2F30', { r: 0.18 }), box(3.44, 0.14, 2.64, C.volt, { r: 0.05, pos: [0, 0.1, 0], glow: true, glowPower: 0.2 }), box(1.0, 0.1, 0.6, '#F07A2A', { r: 0.03, pos: [-0.9, 0.47, 0.6] }));
+      const hub = part('HUB');
       hub.position.set(0.6, 0, 0);
-      st.add(batt, fuse, sw, hub);
+      st.add(batt, fuseG, sw, hub);
       const feed = curveOf([[-5.0, 0.3, 0], [-4.4, 0.9, 0], [-3.9, 0.9, 0], [-2.5, 0.9, 0], [-1.6, 0.7, 0], [-1.1, 0.2, 0]]);
       const ret = curveOf([[-1.1, -0.2, 0.5], [-3, -0.7, 0.7], [-5.0, -0.3, 0.5]]);
       st.add(tube(feed, 0.08, C.red, { rough: 0.6 }), tube(ret, 0.08, C.black, { rough: 0.6 }));
@@ -495,9 +537,10 @@ export default function battery(ctx) {
       const names = ['Drive', 'Drive', 'Drive', 'Drive', 'Launcher', 'Intake'];
       const motors = names.map((nm, i) => {
         const z = (i - 2.5) * 1.55, x = 6.2 + (i % 2) * 0.5;
-        const body = group(cyl(0.5, 1.6, i < 4 ? '#2340A8' : i === 4 ? C.orange : C.teal, { axis: 'x', rough: 0.4 }), cyl(0.5, 0.5, C.dark, { axis: 'x', pos: [-1.0, 0, 0] }));
-        const wheel = group(cyl(0.62, 0.3, '#E6C83A', { axis: 'x', seg: 8 }), box(0.34, 0.16, 1.3, C.dark, { r: 0.03 }));
-        wheel.position.x = 1.05;
+        const mm = miniMotor(0.3, 1.3), body = mm.g;
+        const wheel = i < 4 ? part('W_mecanum', { axis: 'x', scale: 0.42 }) : group(cyl(0.7, 0.34, plastic(i === 4 ? C.orange : C.teal), { axis: 'x', seg: 36 }), box(0.36, 0.16, 1.2, C.dark, { r: 0.03 }));
+        wheel.position.x = 1.55 / 0.3;
+        wheel.scale.multiplyScalar(1 / 0.3);
         body.add(wheel);
         body.position.set(x, 0, z);
         st.add(body);
@@ -508,13 +551,13 @@ export default function battery(ctx) {
         return { body, wheel, f, nm };
       });
       st.label('Battery', batt, { dy: -42 });
-      st.label('Fuse', fuse, { dy: -24 });
-      st.label('Switch', sw, { dy: -30 });
-      st.label('Control Hub', hub, { dy: -40 });
+      st.label('Fuse', fuseG, { dy: -24, tip: 'Rated for 20 amps. Pick “Shoving a wall” and watch what happens to it.' });
+      st.label('Switch', sw, { dy: -34, tip: 'The main power switch. Off means the loop is broken and nothing can flow, so it is the first thing to hit if something goes wrong.' });
+      st.label('Control Hub', hub, { dy: -40, tip: 'The robot’s brain and its power board. It takes 12 volts in and hands each motor exactly the share your code asks for.' });
       st.label('4 drive motors', motors[1].body, { dy: 34 });
       st.label('Launcher', motors[4].body, { dy: 30 });
       st.label('Intake', motors[5].body, { dy: 30 });
-      const blownLbl = st.label('Fuse blown!', fuse, { dy: 26, tone: 'warn' });
+      const blownLbl = st.label('Fuse blown!', fuseG, { dy: 26, tone: 'warn' });
       let heat = 0, blown = false, v = 12, amps = 0;
       function apply(id) {
         if (id === 'job') { heat = 0; blown = false; fuse.material.color.set('#E9C53A'); }

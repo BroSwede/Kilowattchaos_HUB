@@ -1,10 +1,10 @@
 /* "How it's made" deep dives: a full-screen pop-up with a 3D stage and a chapter panel. */
 .dd-back { position: fixed; inset: 0; z-index: 96; background: rgba(18, 21, 20, 0.55); opacity: 0; transition: opacity var(--t-base) var(--ease); }
 .dd-back.is-on { opacity: 1; }
-.dd { position: fixed; z-index: 97; inset: 14px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(340px, 430px); gap: 10px; padding: 10px; border-radius: var(--r-frame); background: var(--app); color: var(--text); box-shadow: var(--shadow-frame), 0 0 0 1px var(--divider); opacity: 0; transform: translateY(14px) scale(0.985); transition: opacity var(--t-base) var(--ease), transform var(--t-base) var(--ease); }
+.dd { position: fixed; z-index: 97; inset: 14px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(310px, 380px); grid-template-rows: minmax(0, 1fr); gap: 10px; padding: 10px; border-radius: var(--r-frame); background: var(--app); color: var(--text); box-shadow: var(--shadow-frame), 0 0 0 1px var(--divider); opacity: 0; transform: translateY(14px) scale(0.985); transition: opacity var(--t-base) var(--ease), transform var(--t-base) var(--ease); }
 .dd.is-open { opacity: 1; transform: none; }
 
-.dd-stage { position: relative; min-height: 0; overflow: hidden; border-radius: 30px; background: radial-gradient(120% 90% at 50% 30%, var(--stage-hi), var(--stage-lo)); }
+.dd-stage { grid-column: 1; grid-row: 1; position: relative; min-height: 0; overflow: hidden; border-radius: 30px; background: radial-gradient(120% 90% at 50% 30%, var(--stage-hi), var(--stage-lo)); }
 .dd-stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; outline: none; cursor: grab; }
 .dd-stage canvas:active { cursor: grabbing; }
 .dd-stage canvas:focus-visible { box-shadow: inset 0 0 0 3px var(--solid); border-radius: 30px; }
@@ -14,15 +14,34 @@
 .dd-label.is-volt { background: var(--volt); color: var(--ink); }
 .dd-label.is-teal { background: #0E8F9E; }
 .dd-label.is-warn { background: var(--signal); }
-.dd-hud { position: absolute; left: 14px; top: 14px; right: 14px; display: flex; gap: 8px; flex-wrap: wrap; pointer-events: none; }
+/* Labels you can tap for a short explanation. */
+.dd-label.is-tip { border: 0; display: block; padding: 4px 11px 4px 5px; text-align: left; cursor: pointer; box-shadow: 0 4px 12px -6px rgba(0, 0, 0, 0.5); }
+.dd-label.is-tip.is-on { pointer-events: auto; }
+.dd-label.is-tip > span { display: inline-flex; align-items: center; gap: 6px; }
+.dd-label.is-tip > span::before { content: "+"; width: 16px; height: 16px; border-radius: 50%; display: grid; place-items: center; background: var(--volt); color: var(--ink); font: 600 13px/1 Inter, sans-serif; transition: transform var(--t-quick) var(--ease); }
+.dd-label.is-tip:not(.is-seen) > span::before { animation: dd-ping 1.8s var(--ease) infinite; }
+.dd-label.is-tip.is-open { z-index: 3; border-radius: 16px; padding: 6px 12px 10px 6px; white-space: normal; width: 236px; }
+.dd-label.is-tip.is-open > span::before { transform: rotate(45deg); }
+.dd-label .lt { display: none; padding: 6px 0 0 4px; font: 400 12.5px/18px Inter, sans-serif; color: rgba(255, 255, 255, 0.9); }
+.dd-label.is-open .lt { display: block; }
+.dd-label:focus-visible { outline: 3px solid var(--volt); outline-offset: 2px; }
+/* "Grab me" markers on parts of the model that can be dragged or tapped. */
+.dd-label.is-hand { background: var(--volt); color: var(--ink); font-weight: 600; padding: 5px 12px 5px 8px; box-shadow: 0 0 0 0 rgba(232, 245, 66, 0.7); animation: dd-halo 1.8s var(--ease) infinite; }
+.dd-label.is-hand > span { display: inline-flex; align-items: center; gap: 6px; }
+.dd-label.is-hand > span::before { content: ""; width: 14px; height: 14px; background: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 11V5.5a1.5 1.5 0 0 1 3 0V10m0 0V8.5a1.5 1.5 0 0 1 3 0V11m0-.5a1.5 1.5 0 0 1 3 0V15a6 6 0 0 1-6 6h-.6a6 6 0 0 1-4.7-2.3L4 15.2a1.6 1.6 0 0 1 2.4-2.1L9 15'/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 11V5.5a1.5 1.5 0 0 1 3 0V10m0 0V8.5a1.5 1.5 0 0 1 3 0V11m0-.5a1.5 1.5 0 0 1 3 0V15a6 6 0 0 1-6 6h-.6a6 6 0 0 1-4.7-2.3L4 15.2a1.6 1.6 0 0 1 2.4-2.1L9 15'/%3E%3C/svg%3E") center / contain no-repeat; }
+.dd-label.is-hand.is-used { display: none; }
+@keyframes dd-ping { 0%, 100% { box-shadow: 0 0 0 0 rgba(232, 245, 66, 0.8); } 60% { box-shadow: 0 0 0 7px rgba(232, 245, 66, 0); } }
+@keyframes dd-halo { 0%, 100% { box-shadow: 0 0 0 0 rgba(232, 245, 66, 0.7); } 60% { box-shadow: 0 0 0 10px rgba(232, 245, 66, 0); } }
+.dd-top { position: absolute; left: 14px; top: 14px; right: 14px; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; pointer-events: none; }
+.dd-hud { display: flex; gap: 8px; flex-wrap: wrap; pointer-events: none; }
 .dd-hud .chip { padding: 6px 12px; border-radius: var(--r-pill); background: var(--glass); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); font: 500 12px/16px Inter, sans-serif; color: var(--text); }
 .dd-hud .chip b { font: 500 14px/16px Outfit, sans-serif; font-variant-numeric: tabular-nums; }
 .dd-hud pre { margin: 0; padding: 10px 14px; border-radius: 14px; background: var(--graphite); color: #EDEEE8; font: 500 13px/20px "JetBrains Mono", ui-monospace, monospace; }
 .dd-hud pre i { font-style: normal; color: var(--volt); }
-.dd-hint { position: absolute; left: 14px; bottom: 14px; display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: var(--r-pill); font: 500 12px/16px Inter, sans-serif; color: var(--muted); pointer-events: none; }
+.dd-hint { position: absolute; right: 14px; top: 14px; opacity: 0.8; display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: var(--r-pill); font: 500 12px/16px Inter, sans-serif; color: var(--muted); pointer-events: none; }
 .dd-loading { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; text-align: center; font: 500 13px/18px Inter, sans-serif; color: var(--muted); }
 
-.dd-side { min-height: 0; display: flex; flex-direction: column; border-radius: 30px; background: var(--card); overflow: hidden; }
+.dd-side { grid-column: 2; grid-row: 1; min-height: 0; display: flex; flex-direction: column; border-radius: 30px; background: var(--card); overflow: hidden; }
 .dd-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 18px 18px 10px 22px; }
 .dd-head h2 { margin: 4px 0 0; font: 500 28px/34px Outfit, sans-serif; letter-spacing: -0.01em; }
 .dd-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--c); }
@@ -37,14 +56,24 @@
 .dd-body h3 { margin: -8px 0 0; font: 500 22px/28px Outfit, sans-serif; letter-spacing: -0.005em; }
 .dd-lead { margin: 0; font: 400 15px/22px Inter, sans-serif; }
 .dd-lead b { font-weight: 600; }
-.dd-controls { display: flex; flex-direction: column; gap: 14px; padding: 16px; border-radius: 20px; background: var(--raised); }
-.dd-segwrap { display: flex; flex-direction: column; gap: 6px; }
+/* The dock: controls float over the bottom of the stage, next to what they change. */
+.dd-dock { grid-column: 1; grid-row: 1; align-self: end; justify-self: center; z-index: 2; width: min(100% - 28px, 860px); margin-bottom: 14px; display: flex; flex-direction: column; gap: 10px; padding: 12px 14px 14px; border-radius: 26px; background: var(--glass); -webkit-backdrop-filter: blur(16px) saturate(1.3); backdrop-filter: blur(16px) saturate(1.3); box-shadow: 0 18px 40px -22px rgba(0, 0, 0, 0.55), 0 0 0 1px var(--divider); }
+.dd-dock[hidden] { display: none; }
+.dd-try { align-self: flex-start; display: inline-flex; align-items: center; gap: 7px; margin-top: -26px; padding: 5px 13px 5px 9px; border-radius: var(--r-pill); background: var(--volt); color: var(--ink); font: 400 13px/18px Inter, sans-serif; box-shadow: 0 6px 16px -8px rgba(0, 0, 0, 0.5); animation: dd-halo 2s var(--ease) infinite; }
+.dd-try b { font-weight: 600; margin-right: 2px; }
+.dd-dock.is-used .dd-try { animation: none; }
+.dd-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 22px; }
+.dd-controls > .ctrl { flex: 1 1 210px; min-width: 0; }
+.dd-ctrl label { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; font: 500 13px/18px Inter, sans-serif; }
+.dd-ctrl output { font: 500 16px/20px Outfit, sans-serif; font-variant-numeric: tabular-nums; }
+.dd-segwrap { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .dd-segwrap .lbl { font: 500 13px/18px Inter, sans-serif; }
 .dd-seg { flex-wrap: wrap; border-radius: 20px; align-self: flex-start; }
-.dd-act { align-self: flex-start; background: var(--volt); color: var(--ink); }
+.dd-seg button[aria-checked="true"] { background: var(--solid); color: var(--on-solid); }
+.dd-dock .dd-act { background: var(--solid); color: var(--on-solid); }
 
 .dd-knob { display: flex; align-items: center; gap: 14px; }
-.dd-knob .dial { position: relative; width: 84px; height: 84px; flex: none; border-radius: 50%; touch-action: none; cursor: grab; background: radial-gradient(circle at 50% 38%, var(--raised), var(--well)); box-shadow: inset 0 0 0 1px var(--divider), 0 3px 8px -4px rgba(0, 0, 0, 0.3); }
+.dd-knob .dial { position: relative; width: 68px; height: 68px; flex: none; border-radius: 50%; touch-action: none; cursor: grab; background: radial-gradient(circle at 50% 38%, var(--raised), var(--well)); box-shadow: inset 0 0 0 1px var(--divider), 0 3px 8px -4px rgba(0, 0, 0, 0.3); }
 .dd-knob .dial:active { cursor: grabbing; }
 .dd-knob svg { position: absolute; inset: -8px; width: calc(100% + 16px); height: calc(100% + 16px); }
 .dd-knob path { fill: none; stroke-width: 6; stroke-linecap: round; }
@@ -58,16 +87,18 @@
 .dd-knob .sr-range { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 .dd-knob:focus-within .dial { box-shadow: 0 0 0 3px var(--solid); }
 
-.dd-outs { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
-.dd-out { padding: 12px 14px; border-radius: 16px; background: var(--well); min-width: 0; }
-.dd-out .lab { font: 500 12px/16px Inter, sans-serif; color: var(--muted); }
-.dd-out .val { font: 500 24px/30px Outfit, sans-serif; letter-spacing: -0.01em; white-space: nowrap; }
-.dd-out .sub { min-height: 16px; font: 500 12px/16px Inter, sans-serif; color: var(--muted); }
+.dd-outs { display: flex; flex-wrap: wrap; gap: 8px; }
+.dd-out { padding: 8px 14px 9px; border-radius: 18px; background: var(--glass); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); box-shadow: 0 0 0 1px var(--divider); min-width: 104px; transition: background var(--t-quick) var(--ease), color var(--t-quick) var(--ease); }
+.dd-out .lab { font: 500 11.5px/15px Inter, sans-serif; color: var(--muted); }
+.dd-out .val { font: 500 23px/28px Outfit, sans-serif; letter-spacing: -0.01em; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.dd-out .sub { font: 500 11.5px/15px Inter, sans-serif; color: var(--muted); }
+.dd-out .sub:empty { display: none; }
 .dd-out[data-tone="warn"] { background: var(--signal); color: #fff; }
 .dd-out[data-tone="warn"] .lab, .dd-out[data-tone="warn"] .sub { color: rgba(255, 255, 255, 0.86); }
 .dd-out[data-tone="good"] { background: var(--volt); color: var(--ink); }
 .dd-out[data-tone="good"] .lab, .dd-out[data-tone="good"] .sub { color: #3F4236; }
-.dd-note { padding: 12px 14px; border-radius: 16px; background: var(--volt); color: var(--ink); font: 400 13px/19px Inter, sans-serif; }
+.dd-note { padding: 9px 13px; border-radius: 14px; background: var(--well); color: var(--text); font: 400 13px/19px Inter, sans-serif; }
+.dd-note[hidden] { display: none; }
 .dd-note b { font-weight: 600; }
 .dd-note[data-tone="warn"] { background: var(--signal); color: #fff; }
 
@@ -94,16 +125,28 @@
 .sheet-dive small { margin-left: auto; font: 500 12px/16px Inter, sans-serif; opacity: 0.75; }
 
 @media (max-width: 900px) {
-  .dd { inset: 0; border-radius: 0; grid-template-columns: 1fr; grid-template-rows: minmax(220px, 40vh) minmax(0, 1fr); gap: 8px; padding: 8px; padding-top: calc(8px + env(safe-area-inset-top, 0px)); }
-  .dd-stage, .dd-side { border-radius: 22px; }
+  /* Phone: the model stays pinned at the top, everything else scrolls under it. */
+  .dd { inset: 0; border-radius: 0; display: flex; flex-direction: column; gap: 8px; padding: 8px; padding-top: calc(8px + env(safe-area-inset-top, 0px)); overflow-y: auto; overscroll-behavior: contain; }
+  .dd-stage { flex: none; height: 42vh; min-height: 240px; position: sticky; top: 0; z-index: 3; border-radius: 22px; box-shadow: 0 10px 20px -14px rgba(0, 0, 0, 0.5); }
+  .dd-dock { flex: none; width: auto; margin: 14px 0 0; border-radius: 22px; background: var(--card); }
+  .dd-side { flex: none; border-radius: 22px; overflow: visible; }
+  .dd-body { overflow: visible; padding: 4px 16px 14px; }
   .dd-head { padding: 12px 12px 6px 16px; }
   .dd-head h2 { font: 500 22px/28px Outfit, sans-serif; }
   .dd-tabs { padding: 2px 12px 10px; }
-  .dd-body { padding: 4px 16px 14px; }
-  .dd-foot { padding: 10px 12px 12px; }
+  .dd-foot { padding: 10px 12px 12px; position: sticky; bottom: 0; background: var(--card); border-radius: 0 0 22px 22px; }
+  .dd #ddClose { position: fixed; z-index: 6; top: calc(16px + env(safe-area-inset-top, 0px)); right: 16px; background: var(--glass); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+  .dd-top { padding-right: 44px; }
   .dd-hint { display: none; }
+  .dd-top { left: 8px; top: 8px; right: 8px; }
+  .dd-outs { flex-wrap: nowrap; max-width: 100%; overflow-x: auto; scrollbar-width: none; gap: 6px; }
+  .dd-out { flex: none; min-width: 0; padding: 5px 10px 6px; border-radius: 14px; }
+  .dd-out .val { font: 500 17px/22px Outfit, sans-serif; }
+  .dd-out .sub { display: none; }
+  .dd-label.is-tip.is-open { width: 200px; }
   .dive-chip small { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
   .dd, .dd-back, .dd-label { transition: none; }
+  .dd-try, .dd-label.is-hand, .dd-label.is-tip > span::before { animation: none !important; }
 }

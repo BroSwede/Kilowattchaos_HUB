@@ -1,7 +1,7 @@
 // Motor deep dive: the goBILDA Yellow Jacket is a brushed DC motor bolted to a planetary gearbox.
 // Open it up, see why magnets and coils make it spin, play with the gearbox, see how the parts are made,
 // and find out how your code and the encoder talk to it.
-import { THREE, C, mat, metal, mesh, cyl, box, ball, group, tube, Flow, fade, arrow, gearGeo, ringGeo, plateGeo, clamp, lerp, smooth, span, TAU } from './kit.js';
+import { THREE, C, mat, metal, plastic, mesh, cyl, box, ball, bench, group, tube, Flow, fade, arrow, part, ghost, gearGeo, ringGeo, plateGeo, clamp, lerp, smooth, span, TAU } from './kit.js';
 
 const RING = 46;                     // teeth on the fixed ring gear of every Yellow Jacket stage
 const RATIOS = { '3.7': [17], '5.2': [11], '19.2': [17, 11], '50.9': [17, 17, 17] }; // sun teeth per stage
@@ -22,40 +22,49 @@ function laminationGeo(len) {
   }
   return plateGeo(pts, len);
 }
-// Returns { g, coils[] } with the axis along Z.
+// Returns { g, coils[] } with the axis along Z. The core and the wound coils are the Blender parts.
 function rotor(len = 2.4) {
-  const g = group(mesh(laminationGeo(len), metal('#8C9396', 0.5)));
+  const k = len / 2.4;
+  const g = group(part('M_stack', { axis: 'z', scale: [1, k, 1] }));
   const coils = [];
   for (let i = 0; i < 5; i++) {
     const a = (i / 5) * TAU;
-    const c = box(0.5, 0.62, len + 0.34, mat(C.copper, { metal: 0.7, rough: 0.35 }), { r: 0.14 });
-    c.position.set(Math.cos(a) * 0.7, Math.sin(a) * 0.7, 0);
+    const c = part('M_coil', { axis: 'z', scale: [1, k, 1] });
     c.rotation.z = a;
     c.userData.a = a;
+    c.anchor = new THREE.Object3D(); c.anchor.position.set(0.75, 0, 0); c.add(c.anchor);
+    c.setMat = (m) => c.traverse((o) => { if (o.isMesh) o.material = m; });
     coils.push(c);
     g.add(c);
   }
   return { g, coils };
 }
-function commutator(r = 0.4, len = 0.55) {
-  const g = group(cyl(r * 0.8, len, C.dark, { axis: 'z' }));
-  for (let i = 0; i < 5; i++) {
-    const seg = mesh(new THREE.CylinderGeometry(r, r, len, 10, 1, false, (i / 5) * TAU + 0.07, TAU / 5 - 0.14), metal(C.copper, 0.3));
-    seg.geometry.rotateX(Math.PI / 2);
-    g.add(seg);
-  }
+const commutator = (r = 0.4, len = 0.55) => part('M_commutator', { axis: 'z', scale: [r / 0.45, len / 0.58, r / 0.45] });
+// One curved magnet centred on +X, along Z. Returns the group with its own material in userData.m.
+function magnet(color, k = 1, len = 2.5) {
+  const g = part('M_magnet', { axis: 'z', scale: [k, len / 2.5, k], tint: color });
+  g.traverse((o) => { if (o.isMesh) g.userData.m = o.material; });
   return g;
 }
-// A curved permanent magnet: an arc of ring, centred on angle `mid`, along Z.
-function magnetGeo(rIn, rOut, sweep, len) {
-  const s = new THREE.Shape();
-  s.absarc(0, 0, rOut, -sweep / 2, sweep / 2, false);
-  s.absarc(0, 0, rIn, sweep / 2, -sweep / 2, true);
-  const g = new THREE.ExtrudeGeometry(s, { depth: len, bevelEnabled: false, curveSegments: 24 });
-  g.translate(0, 0, -len / 2);
-  return g;
+// A closed-up motor along X for scenes where it is a prop: can, end bell, gearbox, shaft. `spin` turns the shaft.
+export function miniMotor(k = 1, gearLen = 1.3, cap = true) {
+  const shaft = part('M_shaft', { axis: 'x', pos: [1.8 + gearLen + 1.2, 0, 0] });
+  const can = part('M_can', { axis: 'x' });
+  can.rotation.x = 2.2;
+  const core = group(part('M_stack', { axis: 'x' }));
+  if (k >= 0.5) for (let i = 0; i < 5; i++) { const c = part('M_coil', { axis: 'x' }); c.rotation.x = (i / 5) * TAU; core.add(c); } // wound coils only where the motor is big enough to see them
+  const g = group(
+    can, core,
+    part('M_endbell', { axis: 'x', pos: [-1.95, 0, 0] }),
+    cap ? part('M_enc_cap', { axis: 'x', pos: [-2.5, 0, 0] }) : null,
+    cyl(1.62, 0.16, plastic(C.volt, 0.45), { axis: 'x', pos: [1.86, 0, 0] }),
+    cyl(1.8, gearLen, metal('#4A5052', 0.42), { axis: 'x', seg: 64, pos: [1.94 + gearLen / 2, 0, 0] }),
+    part('M_front', { axis: 'x', pos: [1.94 + gearLen + 0.15, 0, 0] }),
+    shaft,
+  );
+  g.scale.setScalar(k);
+  return { g, shaft, core };
 }
-
 // ---- One planetary stage in the XY plane: sun in the middle, three planets, carrier plate behind.
 // update(sunAngle) turns everything so the teeth stay in mesh and returns the carrier angle.
 function planetStage(sunT, m, width, tint) {
@@ -119,6 +128,7 @@ export default function motor(ctx) {
     id: 'open', tab: 'Open it up',
     title: 'Two machines bolted together',
     lead: 'A Yellow Jacket is really two things. The back half is an <b>electric motor</b> that spins very fast but is easy to stop with your fingers. The front half is a <b>gearbox</b> that trades that speed for muscle. Slide to pull it apart.',
+    try: 'Drag the motor sideways to pull it apart, then tap the + labels.',
     controls: [{ type: 'range', id: 'boom', label: 'Pull it apart', min: 0, max: 100, value: 0, unit: '%' }],
     readouts: [['in', 'Motor spins at', 'no load, 12 V'], ['ratio', 'Gearbox'], ['out', 'Shaft comes out at']],
     more: [
@@ -131,25 +141,35 @@ export default function motor(ctx) {
       root.rotation.y = Math.PI / 2; // parts are modelled along Z; lay the motor along X
       st.add(root);
       const parts = []; // { o, z, dz } assembled z and how far it travels when exploded
-      const add = (o, z, dz, name, dy) => { o.position.z = z; root.add(o); const p = { o, z, dz: dz * 0.75 }; parts.push(p); if (name) p.lbl = st.label(name, o, { dy: dy ?? -44 }); return o; };
+      const add = (o, z, dz, name, dy) => { o.position.z = z; root.add(o); const p = { o, z, dz: dz * 0.75 }; parts.push(p); if (name) p.lbl = st.label(name, o, { dy: dy ?? -44, tip: tips[name] }); return o; };
+      const tips = {
+        'Encoder cover': 'A plastic cup that keeps dust and fingers off the encoder. The four-pin socket on its rim is where the encoder cable plugs in.',
+        'Encoder: magnet and sensors': 'A little magnet on the tail of the shaft spins past two sensor chips. Every pass is one "tick", so the robot can count turns.',
+        'Brushes': 'Two spring-loaded blocks of carbon. They rub on the spinning copper commutator to pass electricity into the rotor.',
+        'Steel can': 'More than a cover. The steel carries the magnetism round from one magnet to the other, which makes both stronger.',
+        'Magnets (stator)': 'Two curved permanent magnets glued inside the can. One faces the rotor with its north pole, the other with its south. They never move.',
+        'Rotor: steel core and copper coils': 'The part that spins. Five steel teeth, each wrapped in copper wire. Send current through a coil and its tooth becomes a magnet.',
+        'Output shaft': 'A hexagon, so a wheel or gear can slide on and cannot slip round.',
+      };
       // Encoder cap (rear, -Z)
-      const cap = group(cyl(1.5, 0.8, C.dark, { axis: 'z', open: true, double: true, rough: 0.5 }), cyl(1.5, 0.08, C.dark, { axis: 'z', pos: [0, 0, -0.4] }));
-      add(cap, -3.55, -4.2, 'Encoder cover', 52);
-      const enc = group(cyl(1.25, 0.08, '#1F7A45', { axis: 'z' }), box(0.3, 0.3, 0.12, C.black, { pos: [0.55, 0.3, 0.08] }), box(0.3, 0.3, 0.12, C.black, { pos: [0.55, -0.3, 0.08] }), cyl(0.42, 0.16, C.red, { axis: 'z', pos: [0, 0, 0.3] }), cyl(0.42, 0.16, C.blue, { axis: 'z', pos: [0, 0, 0.3], start: 0, theta: Math.PI }));
+      add(part('M_enc_cap', { axis: 'z' }), -3.55, -4.2, 'Encoder cover', 52);
+      const emag = group(cyl(0.42, 0.16, C.red, { axis: 'z' }), cyl(0.425, 0.162, C.blue, { axis: 'z', start: 0, theta: Math.PI }));
+      emag.position.z = 0.3;
+      const enc = group(part('M_enc_board', { axis: 'z' }), emag);
       add(enc, -3.35, -3.3, 'Encoder: magnet and sensors');
-      const brushes = group(cyl(1.62, 0.2, '#26292A', { axis: 'z' }), box(0.75, 0.3, 0.3, '#15171A', { pos: [0.85, 0, 0.25], r: 0.03 }), box(0.75, 0.3, 0.3, '#15171A', { pos: [-0.85, 0, 0.25], r: 0.03 }), cyl(0.1, 0.5, metal(C.brass), { pos: [1.35, 0, 0.25], axis: 'x' }), cyl(0.1, 0.5, metal(C.brass), { pos: [-1.35, 0, 0.25], axis: 'x' }));
-      add(brushes, -2.85, -2.4, 'Brushes', 50);
-      const can = group(cyl(1.75, 3.6, metal('#3B4042', 0.45), { axis: 'z', open: true, double: true, start: 4.67, theta: TAU * 0.68 }));
+      add(part('M_endbell', { axis: 'z' }), -2.85, -2.4, 'Brushes', 50);
+      const can = part('M_can', { axis: 'z' });
+      can.rotation.z = 2.5; // cutaway window toward the camera
       add(can, -0.9, -1.2, 'Steel can');
-      const mags = group(mesh(magnetGeo(1.36, 1.68, 2.2, 2.5), mat(C.red, { rough: 0.5 })), mesh(magnetGeo(1.36, 1.68, 2.2, 2.5), mat(C.blue, { rough: 0.5 })));
+      const mags = group(magnet(C.red), magnet(C.blue));
       mags.children[0].rotation.z = Math.PI / 2; mags.children[1].rotation.z = -Math.PI / 2;
       add(mags, -0.8, -1.2, 'Magnets (stator)', 60);
       const rot = rotor(2.4);
       const spin = group(rot.g, cyl(0.16, 6.2, metal(C.steel, 0.25), { axis: 'z', pos: [0, 0, -0.2] }));
-      const com = commutator(); com.position.z = -1.75; spin.add(com);
+      const com = commutator(); com.position.z = -1.72; spin.add(com);
       const pin = mesh(gearGeo({ teeth: 17, pitchR: 0.36, m: 0.042, width: 0.5 }), metal(C.volt, 0.4)); pin.position.z = 2.6; spin.add(pin);
       add(spin, -0.8, 2.6, 'Rotor: steel core and copper coils');
-      const face = group(cyl(1.75, 0.22, metal('#3B4042', 0.45), { axis: 'z' }));
+      const face = part('M_front', { axis: 'z' });
       add(face, 1.0, 4.0);
       // Gearbox: real tooth counts, stages packed close like the real thing.
       const suns = RATIOS[myRatio];
@@ -163,11 +183,13 @@ export default function motor(ctx) {
         sg.g.position.x = sg.g.position.y = 0;
       });
       const zEnd = 1.55 + suns.length * 0.8;
-      const out = group(cyl(1.75, 0.3, metal('#3B4042', 0.45), { axis: 'z' }), cyl(0.7, 0.5, metal(C.steel, 0.3), { axis: 'z', pos: [0, 0, 0.3] }), cyl(0.36, 2.0, metal(C.steel, 0.22), { axis: 'z', seg: 6, pos: [0, 0, 1.2] }));
+      const out = group(part('M_front', { axis: 'z' }), cyl(0.7, 0.3, metal(C.steel, 0.3), { axis: 'z', pos: [0, 0, 0.45] }), part('M_shaft', { axis: 'z', pos: [0, 0, 1.3] }));
       add(out, zEnd - 0.1, 5.2 + suns.length * 1.7 + 1.8, 'Output shaft', 40);
       // Shell that hides the insides until you start pulling.
-      const shell = group(cyl(1.78, 3.7, metal('#2E3234', 0.4), { axis: 'z', pos: [0, 0, -0.9] }), cyl(1.8, suns.length * 0.8 + 0.5, metal('#4A5052', 0.4), { axis: 'z', pos: [0, 0, 1.2 + suns.length * 0.4] }), cyl(1.6, 0.22, C.volt, { axis: 'z', pos: [0, 0, 0.6], rough: 0.5 }));
+      const shell = group(cyl(1.79, 3.7, metal('#2E3234', 0.4), { axis: 'z', seg: 64, pos: [0, 0, -0.9] }), cyl(1.8, suns.length * 0.8 + 0.5, metal('#4A5052', 0.4), { axis: 'z', seg: 64, pos: [0, 0, 1.2 + suns.length * 0.4] }), cyl(1.6, 0.22, plastic(C.volt), { axis: 'z', pos: [0, 0, 0.6] }));
       root.add(shell);
+      const handle = ghost(9, 3.8, 3.8, [0.6, 0, 0]);
+      st.add(handle);
       const real = ctx.fitReal(ctx.real(), 8.6, { shaft: true });
       if (real) { real.position.x = 0.6; st.add(real); }
       const realLbl = st.label('The real part, from the robot’s CAD', new THREE.Vector3(0, 2.8, 0), { tone: 'volt' });
@@ -182,16 +204,17 @@ export default function motor(ctx) {
         ui.out('in', `${FREE_RPM.toLocaleString('en-US')} rpm`);
         ui.out('ratio', `${myRatio} : 1`, `${suns.length} planetary stage${suns.length > 1 ? 's' : ''}`);
         ui.out('out', `${Math.round(outRpm)} rpm`, 'with about ' + Math.round(totalRatio(suns)) + '× the push');
-        ui.note(k < 0.02 ? 'This is the motor exactly as it sits on the robot. Drag the slider to see what is hiding inside.' : k < 0.5 ? 'The yellow band is where the motor ends and the gearbox begins.' : 'Everything on the long steel shaft spins together: rotor, commutator and the small yellow gear that feeds the gearbox.');
+        ui.note(k < 0.02 ? 'This is the motor exactly as it sits on the robot. Drag the slider to see what is hiding inside.' : k < 0.5 ? 'The yellow band is where the motor ends and the gearbox begins.' : 'Tap a <b>+</b> label to see what each part does. Everything on the long steel shaft spins together: rotor, commutator and the small yellow gear that feeds the gearbox.');
         st.setView([4 + k * 5, 5 + k * 3, 13 + k * (11 + suns.length * 2.5)], [0.6 + k * (0.6 + suns.length * 0.5), 0, 0], 0);
       }
       apply();
       return {
         change: apply,
+        handles: [{ obj: handle, id: 'boom', axis: 'x', span: 320, hint: 'Drag sideways to pull it apart' }],
         tick(dt) {
           th += dt * 2.2;
           spin.rotation.z = th;
-          enc.children[3].rotation.z = enc.children[4].rotation.z = th;
+          emag.rotation.z = th;
           const a = gb.update(th);
           out.children[2].rotation.z = a;
         },
@@ -204,6 +227,7 @@ export default function motor(ctx) {
     id: 'spin', tab: 'Why it spins',
     title: 'Magnets chasing magnets',
     lead: 'Run electricity through a coil of wire and it becomes a magnet you can switch on and off: an <b>electromagnet</b>. Each tooth of the rotor is one. The fixed magnets pull and push on them, the rotor turns, and just as a tooth arrives, the <b>commutator</b> flips its current so it gets shoved onward. It never catches up.',
+    try: 'Drag the rotor up or down to change the volts. Push it below zero to reverse.',
     controls: [
       { type: 'range', id: 'volts', label: 'Volts from the Control Hub', min: -12, max: 12, value: 6, fmt: (v) => `${v > 0 ? '+' : ''}${v} V` },
       { type: 'knob', id: 'load', label: 'Load on the shaft', min: 0, max: 100, step: 5, value: 20, unit: '%' },
@@ -218,17 +242,16 @@ export default function motor(ctx) {
     ],
     build(st, S, ui) {
       const can = mesh(plateGeo(ringPts(2.05), 2.2, [[0, 0, 1.78]]), metal('#3B4042', 0.45));
-      const mN = mesh(magnetGeo(1.4, 1.76, 2.2, 2.2), mat(C.red, { rough: 0.45 }));
-      const mS = mesh(magnetGeo(1.4, 1.76, 2.2, 2.2), mat(C.blue, { rough: 0.45 }));
+      const mN = magnet(C.red, 1.06, 2.2), mS = magnet(C.blue, 1.06, 2.2);
       mN.rotation.z = Math.PI;
       st.add(can, mN, mS);
       const rot = rotor(2.0);
       const spin = group(rot.g, cyl(0.16, 4.6, metal(C.steel, 0.25), { axis: 'z', pos: [0, 0, 0.5] }));
-      const com = commutator(0.42, 0.6); com.position.z = 1.75; spin.add(com);
+      const com = commutator(0.42, 0.6); com.rotation.y = Math.PI; com.position.z = 1.75; spin.add(com);
       st.add(spin);
-      const coilMats = rot.coils.map((c) => { c.material = mat(C.copper, { metal: 0.5, rough: 0.4, glow: C.copper, glowPower: 0 }); return c.material; });
-      const b1 = box(0.8, 0.34, 0.5, '#15171A', { r: 0.04, pos: [0.84, 0, 1.75] });
-      const b2 = box(0.8, 0.34, 0.5, '#15171A', { r: 0.04, pos: [-0.84, 0, 1.75] });
+      const coilMats = rot.coils.map((c) => { const m = mat(C.copper, { metal: 0.6, rough: 0.38, glow: C.copper, glowPower: 0 }); c.setMat(m); return m; });
+      const brush = (sx) => group(box(0.62, 0.3, 0.42, mat('#17191B', { rough: 0.85 }), { r: 0.03, pos: [sx * 0.76, 0, 1.75] }), box(0.4, 0.4, 0.5, metal(C.brass, 0.35), { r: 0.03, pos: [sx * 1.22, 0, 1.75] }));
+      const b1 = brush(1), b2 = brush(-1);
       const w1 = tube([[1.2, 0, 1.75], [2.3, 0, 2.0], [2.9, -1.2, 2.0], [2.9, -2.6, 1.2]], 0.07, C.red, { rough: 0.6 });
       const w2 = tube([[-1.2, 0, 1.75], [-2.3, 0, 2.0], [-2.9, -1.2, 2.0], [-2.9, -2.6, 1.2]], 0.07, C.black, { rough: 0.6 });
       st.add(b1, b2, w1, w2);
@@ -239,14 +262,17 @@ export default function motor(ctx) {
       push.forEach((a) => st.add(a));
       st.label('N', new THREE.Vector3(-1.58, 0, 1.2), { tone: 'warn' });
       st.label('S', new THREE.Vector3(1.58, 0, 1.2), {});
-      st.label('Fixed magnets (the stator)', new THREE.Vector3(-1.4, 1.6, 1.1), { dy: -26 });
-      st.label('Brush', b1, { dy: 26 });
-      st.label('Commutator', new THREE.Vector3(0, 0, 2.1), { dy: -24 });
-      const coilLbl = st.label('Coil = electromagnet', rot.coils[0], { tone: 'volt' });
+      st.label('Fixed magnets (the stator)', new THREE.Vector3(-1.4, 1.6, 1.1), { dy: -26, tip: 'Permanent magnets. North on one side, south on the other. They pull and push on whichever coils are switched on.' });
+      st.label('Brush', b1, { dy: 26, tip: 'A block of carbon on a spring. It rubs on the commutator to pass current from the wire into the spinning rotor.' });
+      st.label('Commutator', new THREE.Vector3(0, 0, 2.1), { dy: -24, tip: 'A ring of five copper bars, one pair per coil. As it turns, each bar slides from one brush to the other, which flips that coil’s current at exactly the right moment.' });
+      const coilLbl = st.label('Coil = electromagnet', rot.coils[0].anchor, { tone: 'volt' });
       let th = 0.3, rpm = 0, amps = 0;
       const nCol = new THREE.Color(C.red), sCol = new THREE.Color(C.blue), cu = new THREE.Color(C.copper);
+      const handle = ghost(2.7, 2.7, 2.2);
+      st.add(handle);
       return {
         view: { pos: [1.6, 1.4, 13], target: [0, -0.2, 0.6] },
+        handles: [{ obj: handle, id: 'volts', axis: 'y', span: 300, hint: 'Drag up for more volts', dy: 30 }],
         tick(dt) {
           const V = S.volts, load = S.load / 100, dir = Math.sign(V);
           const free = Math.abs(V) / 12;
@@ -300,6 +326,7 @@ export default function motor(ctx) {
     id: 'gears', tab: 'Planetary gears',
     title: 'Trading speed for muscle',
     lead: 'The small yellow <b>sun gear</b> spins fast. It drives three <b>planet gears</b> that roll around inside a fixed <b>ring gear</b>, like planets orbiting the sun. The planets drag a plate called the <b>carrier</b> round with them, much more slowly. Slower means stronger. Stack stages and the effect multiplies.',
+    try: 'Drag the gears sideways to change the motor speed. Follow the yellow bar.',
     controls: [
       { type: 'seg', id: 'ratio', label: 'Pick a gearbox', value: myRatio, options: Object.keys(RATIOS).map((k) => [k, `${k}:1`]) },
       { type: 'range', id: 'mrpm', label: 'Motor speed', min: 0, max: 6000, step: 100, value: 3000, fmt: (v) => `${v.toLocaleString('en-US')} rpm` },
@@ -340,9 +367,11 @@ export default function motor(ctx) {
         }
       }
       const lSun = st.label('Sun gear', new THREE.Vector3(), { tone: 'volt', dy: -4 });
-      const lPl = st.label('Planet gear', new THREE.Vector3(), { dy: -30 });
-      const lRing = st.label('Ring gear (does not turn)', new THREE.Vector3(), { dy: -16 });
-      const lCar = st.label('Carrier', new THREE.Vector3(), { dy: 20 });
+      const lPl = st.label('Planet gear', new THREE.Vector3(), { dy: -30, tip: 'Three of them share the load. Each one spins on its own pin while the whole set walks round inside the ring.' });
+      const lRing = st.label('Ring gear (does not turn)', new THREE.Vector3(), { dy: -16, tip: 'Teeth on the inside, 46 of them. It is fixed to the gearbox case, so the planets have something to push against.' });
+      const lCar = st.label('Carrier', new THREE.Vector3(), { dy: 20, tip: 'The plate that holds the planet pins. It turns at the speed the planets orbit, which is the slow, strong output of the stage.' });
+      const handle = ghost(9, 9, 4);
+      st.add(handle);
       function apply(id) {
         if (id !== 'mrpm' && id !== 'ringOn') rebuild();
         if (id === 'ringOn') ringLook();
@@ -360,6 +389,7 @@ export default function motor(ctx) {
       const v = new THREE.Vector3();
       return {
         change: apply,
+        handles: [{ obj: handle, id: 'mrpm', axis: 'x', span: 360, hint: 'Drag to change speed', dy: 60 }],
         tick(dt) {
           th += dt * (S.mrpm / 6000) * 5.5;
           const a = gb.update(th);
@@ -387,6 +417,7 @@ export default function motor(ctx) {
     id: 'made', tab: 'How it’s made',
     title: 'Stamped, wound, zapped and cut',
     lead: 'A motor has more than fifty parts, and almost every one is made by a machine doing a single job over and over. Step through the five big ones.',
+    try: 'Pick a station, then change the line speed.',
     controls: [
       { type: 'seg', id: 'mstep', label: 'Station', value: 0, options: STEPS.map((s, i) => [i, `${i + 1} ${s[0]}`]) },
       { type: 'range', id: 'mspeed', label: 'Line speed', min: 0, max: 200, value: 100, unit: '%' },
@@ -397,37 +428,42 @@ export default function motor(ctx) {
       ['Stamping shows up again', 'The motor’s steel can and end plates are stamped too: a press pushes flat sheet through dies to cup it into shape, the same deep-drawing trick used for battery cans.'],
     ],
     build(st, S, ui) {
-      const X = 7.5, stations = [];
-      st.add(box(X * 5 + 2, 0.2, 5.5, '#3A3F3E', { r: 0.08, pos: [X * 2, -1.8, 0], rough: 0.8 }));
+      const X = 0, stations = []; // every station stands on the same spot; only the chosen one shows
+      const WHITE = '#D9DAD2';
       for (let i = 0; i < 5; i++) {
-        const g = group(); g.position.x = i * X; st.add(g); stations.push(g);
-        st.label(`${i + 1}. ${STEPS[i][0]}`, new THREE.Vector3(i * X, 3.6, 0), { tone: 'volt' });
+        const g = group(); st.add(g); stations.push(g);
+        st.label(`${i + 1}. ${STEPS[i][0]}`, g, { tone: 'volt', off: new THREE.Vector3(0, i === 0 ? 4.2 : 3.6, 0) });
       }
       // 1 Stamp
-      const strip = box(6, 0.05, 2.2, metal('#AEB4B6', 0.35), { r: 0, pos: [0, -0.2, 0] });
-      const die = box(2.6, 0.5, 2.6, metal(C.iron, 0.5), { r: 0.06, pos: [0, -0.5, 0] });
-      const punch = group(box(2.4, 1.2, 2.4, metal('#5A6163', 0.4), { r: 0.08 }), cyl(0.45, 2.2, metal(C.steel, 0.3), { pos: [0, 1.6, 0] }));
-      const lam = mesh(laminationGeo(0.05), metal('#C3C8CA', 0.3)); lam.rotation.x = Math.PI / 2; lam.scale.setScalar(0.75);
+      const s1 = group(); s1.position.y = -0.65;
+      const strip = box(6, 0.05, 1.5, metal('#AEB4B6', 0.35), { r: 0, pos: [0, -0.2, 0] });
+      const press = part('F_press', { scale: 0.62, pos: [0, -0.27, 0] });
+      const punch = part('F_ram', { pos: [0, 1.6, 0] });
+      press.children[0].add(punch);
+      const lam = mesh(laminationGeo(0.05), metal('#C3C8CA', 0.3)); lam.rotation.x = Math.PI / 2; lam.scale.setScalar(0.55);
       const stack = group();
-      for (let i = 0; i < 14; i++) { const l = mesh(lam.geometry, lam.material); l.rotation.x = Math.PI / 2; l.scale.setScalar(0.75); l.position.set(2.6, -1.6 + i * 0.07, 1.4); stack.add(l); }
+      for (let i = 0; i < 14; i++) { const l = mesh(lam.geometry, lam.material); l.rotation.x = Math.PI / 2; l.scale.setScalar(0.55); l.position.set(2.6, -1.66 + i * 0.07, 1.6); stack.add(l); }
       const holes = group();
-      for (let i = 0; i < 4; i++) holes.add(cyl(0.9, 0.06, '#2A2D2E', { pos: [0, -0.2, 0], seg: 20 }));
-      stations[0].add(strip, die, punch, lam, stack, holes);
+      for (let i = 0; i < 4; i++) holes.add(cyl(0.66, 0.06, '#2A2D2E', { pos: [0, -0.2, 0], seg: 20 }));
+      s1.add(strip, lam, holes);
+      stations[0].add(s1, press, stack, cyl(0.75, 0.12, plastic(C.dark), { pos: [2.6, -1.72, 1.6], seg: 32 }));
+      st.label('Finished plates', stack, { off: new THREE.Vector3(2.6, -0.5, 1.6), tip: 'Each plate is about half a millimetre thick. A stack of them does the same job as a solid block, but wastes far less energy as heat.' });
       // 2 Wind
       const wr = rotor(2.0); wr.g.rotation.y = Math.PI / 2;
       const spool = group(cyl(0.7, 1.2, mat(C.copper, { metal: 0.7, rough: 0.35 }), { axis: 'z' }), cyl(0.9, 0.1, C.dark, { axis: 'z', pos: [0, 0, 0.65] }), cyl(0.9, 0.1, C.dark, { axis: 'z', pos: [0, 0, -0.65] }));
       spool.position.set(-2.6, 1.6, 0);
       const flyer = group(cyl(0.05, 1.6, metal(C.steel), { pos: [0, 0.8, 0] }), ball(0.12, C.volt, { pos: [0, 1.6, 0], glow: true }));
       const wireFlow = new Flow([[-2.6, 1.6, 0], [-1.2, 2.0, 0], [0, 1.5, 0]], 6, { color: C.copper, size: 0.08 });
-      stations[1].add(wr.g, spool, flyer, wireFlow.object);
+      stations[1].add(wr.g, spool, flyer, wireFlow.object, cyl(0.16, 4.4, metal(C.steel, 0.25), { axis: 'x' }), cyl(0.5, 0.7, plastic(WHITE, 0.4), { axis: 'x', pos: [2.3, 0, 0], seg: 40 }), box(0.5, 1.9, 1.2, plastic(WHITE, 0.4), { r: 0.1, pos: [2.9, -0.85, 0] }), cyl(0.12, 3.4, metal(C.alu, 0.35), { pos: [-2.6, -0.1, 0] }), bench(7.4, 3, -1.8));
+      st.label('Copper wire', spool, { dy: -34, tip: 'Coated in a paint-thin layer of enamel so the turns do not short against each other. Each tooth gets hundreds of turns.' });
       // 3 Magnetise
-      const mc = cyl(1.5, 2.4, metal('#3B4042', 0.45), { axis: 'z', open: true, double: true });
-      const mg1 = mesh(magnetGeo(1.15, 1.45, 2.2, 2.2), mat('#8B8F90', { rough: 0.6, glow: '#000000', glowPower: 0 })); mg1.rotation.z = Math.PI / 2;
-      const mg2 = mesh(magnetGeo(1.15, 1.45, 2.2, 2.2), mat('#8B8F90', { rough: 0.6, glow: '#000000', glowPower: 0 })); mg2.rotation.z = -Math.PI / 2;
+      const mc = part('M_can', { axis: 'z', scale: [0.86, 0.68, 0.86] }); mc.rotation.z = -0.4;
+      const mg1 = magnet('#8B8F90', 0.86, 2.2); mg1.rotation.z = Math.PI / 2;
+      const mg2 = magnet('#8B8F90', 0.86, 2.2); mg2.rotation.z = -Math.PI / 2;
       const zap = group();
       for (let i = 0; i < 5; i++) zap.add(mesh(new THREE.TorusGeometry(1.9, 0.12, 10, 40), mat(C.copper, { metal: 0.7, rough: 0.35, glow: '#FFD23A', glowPower: 0 }), [0, 0, (i - 2) * 0.5]));
-      stations[2].add(mc, mg1, mg2, zap);
-      const zapLbl = st.label('ZAP', new THREE.Vector3(2 * X, 2.4, 0), { tone: 'warn' });
+      stations[2].add(mc, mg1, mg2, zap, box(3.2, 0.5, 3.2, plastic(C.dark), { r: 0.1, pos: [0, -2.1, 0] }), cyl(0.5, 0.6, plastic(WHITE, 0.4), { pos: [0, -1.75, 0], seg: 32 }), bench(6, 4, -2.35, 0.7));
+      const zapLbl = st.label('ZAP', new THREE.Vector3(0, 2.4, 0), { tone: 'warn' });
       // 4 Hob a gear
       const blank = cyl(1.42, 0.7, metal('#9BA1A3', 0.4), { axis: 'z', seg: 48 });
       const cut = mesh(gearGeo({ teeth: 22, pitchR: 1.25, m: 0.114, width: 0.72, bore: 0.3 }), metal('#C3C8CA', 0.3));
@@ -435,20 +471,24 @@ export default function motor(ctx) {
       hob.rotation.x = Math.PI / 2; hob.position.set(1.95, 0, 0);
       const chips = new Flow([[1.4, 0, 0.2], [1.8, -0.8, 0.8], [2.0, -1.7, 1.4]], 7, { color: '#FFD23A', size: 0.06 });
       const gearG = group(blank, cut);
-      stations[3].add(gearG, hob, chips.object);
+      stations[3].add(gearG, hob, chips.object, cyl(0.3, 2.6, metal(C.steel, 0.25), { axis: 'z', pos: [0, 0, -1.2] }), cyl(1.0, 0.7, plastic(WHITE, 0.4), { axis: 'z', pos: [0, 0, -2.2], seg: 40 }), cyl(0.2, 3.6, metal(C.steel, 0.25), { pos: [1.95, 0, 0] }), cyl(0.6, 0.8, plastic(WHITE, 0.4), { pos: [1.95, 2.0, 0], seg: 40 }), box(5.5, 4.6, 0.3, plastic(WHITE, 0.4), { r: 0.1, pos: [0.6, 0.3, -2.7] }), bench(6.4, 4.2, -2.0, 0.8));
+      st.label('Hob', hob, { dy: -30, tip: 'A cutter shaped like a screw with teeth. It turns in step with the gear blank and carves every tooth as it feeds across.' });
       // 5 Test
-      const tm = group(cyl(0.9, 2.6, '#2E3234', { axis: 'x', metal: 0.6, rough: 0.4 }), cyl(0.92, 0.9, '#4A5052', { axis: 'x', metal: 0.6, rough: 0.4, pos: [1.7, 0, 0] }), cyl(0.82, 0.12, C.volt, { axis: 'x', pos: [1.25, 0, 0] }), cyl(0.2, 1.2, metal(C.steel, 0.25), { axis: 'x', seg: 6, pos: [2.6, 0, 0] }));
+      const tmm = miniMotor(0.5), tm = tmm.g;
       tm.position.set(-1.2, -0.6, 0);
       const disc = group(cyl(1.0, 0.25, C.dark, { axis: 'x' }), box(0.27, 1.7, 0.25, C.volt, { r: 0.04 }));
-      disc.position.set(2.0, -0.6, 0);
+      disc.position.set(1.5, -0.6, 0);
+      const cradle = group(box(0.5, 0.75, 2.0, metal(C.iron, 0.5), { r: 0.05, pos: [-1.6, -1.1, 0] }), box(0.5, 0.75, 2.0, metal(C.iron, 0.5), { r: 0.05, pos: [-0.2, -1.1, 0] }));
       const stand = box(4.6, 0.3, 2.2, metal(C.iron, 0.5), { r: 0.06, pos: [0, -1.55, 0] });
-      stations[4].add(tm, disc, stand);
-      const testLbl = st.label(`${Math.round(outRpm)} rpm  pass`, new THREE.Vector3(4 * X + 0.5, 1.4, 0), {});
+      stations[4].add(tm, disc, stand, cradle);
+      const testLbl = st.label(`${Math.round(outRpm)} rpm  pass`, new THREE.Vector3(0.5, 1.4, 0), {});
       let ph = 0;
       const grey = new THREE.Color('#8B8F90'), red = new THREE.Color(C.red), blue = new THREE.Color(C.blue);
       function focus() {
         const i = Number(S.mstep);
-        st.setView([i * X + 4.5, 4.5, 12.5], [i * X, 0.2, 0], 800);
+        stations.forEach((g, n) => { g.visible = n === i; });
+        st.ground(-3.2);
+        st.setView(i === 0 ? [7, 5, 16.5] : [5.5, 4.4, 13.5], [0, i === 0 ? 0.6 : -0.4, 0], 0);
         ui.note(`<b>${STEPS[i][0]}.</b> ${STEPS[i][1]}`);
       }
       focus();
@@ -460,9 +500,9 @@ export default function motor(ctx) {
           const k = ph % 1;
           // 1: punch comes down, a plate drops out, the strip moves on
           const hit = Math.sin(clamp(span(k, 0.1, 0.5), 0, 1) * Math.PI);
-          punch.position.y = 1.9 - hit * 1.2;
+          punch.position.y = 1.6 - hit * 1.1;
           lam.visible = k > 0.3 && k < 0.95;
-          lam.position.set(lerp(0, 2.6, smooth(span(k, 0.45, 0.9))), lerp(-0.9, -0.6, Math.sin(span(k, 0.45, 0.9) * Math.PI)) - smooth(span(k, 0.8, 0.95)) * 0.1, lerp(0, 1.4, smooth(span(k, 0.45, 0.9))));
+          lam.position.set(lerp(0, 2.6, smooth(span(k, 0.45, 0.9))), -0.3 + Math.sin(span(k, 0.45, 0.9) * Math.PI) * 0.6 + smooth(span(k, 0.45, 0.9)) * 0.3, lerp(0, 1.6, smooth(span(k, 0.45, 0.9))));
           holes.children.forEach((h, i) => { h.position.x = (i + smooth(span(k, 0.55, 1))) * 1.9 - (k > 0.3 ? 0 : 1.9) * 0; h.visible = i > 0 || k > 0.3; });
           // 2: flyer arm whirls round one tooth, the spool pays out wire
           flyer.rotation.x = ph * 22;
@@ -473,8 +513,8 @@ export default function motor(ctx) {
           const z = span(k, 0.45, 0.55), lit = z > 0 && z < 1;
           zap.children.forEach((t) => { t.material.emissiveIntensity = lit ? 2.5 : smooth(span(k, 0.1, 0.45)) * 0.5; });
           const done = smooth(span(k, 0.5, 0.6)) * (1 - smooth(span(k, 0.95, 1)));
-          mg1.material.color.copy(grey).lerp(red, done);
-          mg2.material.color.copy(grey).lerp(blue, done);
+          mg1.userData.m.color.copy(grey).lerp(red, done);
+          mg2.userData.m.color.copy(grey).lerp(blue, done);
           zapLbl.show(lit && Number(S.mstep) === 2);
           // 4: hob turns, the blank shrinks away to leave teeth
           gearG.rotation.z = ph * 1.2;
@@ -485,7 +525,7 @@ export default function motor(ctx) {
           chips.advance(dt * sp * 1.5);
           chips.object.visible = k > 0.05 && k < 0.85;
           // 5
-          disc.rotation.x = ph * 14;
+          disc.rotation.x = tmm.shaft.rotation.x = tmm.core.rotation.x = ph * 14;
           testLbl.show(k > 0.5 && Number(S.mstep) === 4);
         },
       };
@@ -499,6 +539,7 @@ export default function motor(ctx) {
     id: 'robot', tab: 'On the robot',
     title: 'Your code is the throttle',
     lead: `The Control Hub does not just switch this motor on and off. Your code asks for a power between -1 and 1, and the hub flicks the battery on and off thousands of times a second to deliver that fraction. Meanwhile the <b>encoder</b> on the back counts every turn, so your code knows exactly how far the ${drives ? 'wheel' : job === 'launcher' ? 'flywheel' : 'intake'} has gone.`,
+    try: 'Drag the wheel up or down, or turn the knob. Watch the sensors blink.',
     controls: [
       { type: 'knob', id: 'pow', label: 'Power in your code', min: -1, max: 1, step: 0.05, value: 0.6, fmt: (v) => v.toFixed(2) },
       { type: 'button', id: 'zero', label: 'Reset the tick counter' },
@@ -511,45 +552,41 @@ export default function motor(ctx) {
       ['How does half power work?', 'It is called PWM: pulse width modulation. For half power the hub connects the battery for half of each tiny slice of time. The motor is too heavy to follow the flicker, so it just feels half the push.'],
     ],
     build(st, S, ui) {
-      const body = group(
-        cyl(1.1, 3.0, '#2E3234', { axis: 'x', metal: 0.6, rough: 0.4, pos: [-0.6, 0, 0] }),
-        cyl(1.12, 1.2, '#4A5052', { axis: 'x', metal: 0.6, rough: 0.4, pos: [1.5, 0, 0] }),
-        cyl(1.0, 0.14, C.volt, { axis: 'x', pos: [0.92, 0, 0] }),
-      );
-      const cap = cyl(1.0, 0.9, C.dark, { axis: 'x', open: true, double: true, opacity: 0.28, pos: [-2.55, 0, 0] });
-      const board = cyl(0.9, 0.06, '#1F7A45', { axis: 'x', pos: [-2.9, 0, 0] });
-      const hallA = box(0.14, 0.26, 0.26, C.black, { pos: [-2.8, 0.55, 0.22], glow: C.volt, glowPower: 0 });
-      const hallB = box(0.14, 0.26, 0.26, C.black, { pos: [-2.8, 0.55, -0.22], glow: C.volt, glowPower: 0 });
+      const mm = miniMotor(0.62, 1.3, false), body = mm.g, shaft = mm.shaft;
+      const cap = cyl(1.0, 0.9, C.dark, { axis: 'x', open: true, double: true, opacity: 0.28, pos: [-2.0, 0, 0] });
+      const board = part('M_enc_board', { axis: 'x', scale: 0.72, pos: [-2.32, 0, 0] });
+      const hallA = box(0.14, 0.26, 0.26, C.black, { pos: [-2.22, 0.55, 0.22], glow: C.volt, glowPower: 0 });
+      const hallB = box(0.14, 0.26, 0.26, C.black, { pos: [-2.22, 0.55, -0.22], glow: C.volt, glowPower: 0 });
       const mag = group();
       for (let i = 0; i < 14; i++) {
         const sgm = mesh(new THREE.CylinderGeometry(0.45, 0.45, 0.22, 6, 1, false, (i / 14) * TAU, TAU / 14), mat(i % 2 ? C.blue : C.red, { rough: 0.5 }));
         sgm.geometry.rotateZ(-Math.PI / 2);
         mag.add(sgm);
       }
-      mag.position.x = -2.45;
-      const shaft = cyl(0.26, 2.2, metal(C.steel, 0.22), { axis: 'x', seg: 6, pos: [3.0, 0, 0] });
+      mag.position.x = -1.95;
       const wheel = group();
       if (drives) {
-        wheel.add(cyl(1.9, 0.9, '#E6C83A', { axis: 'x', seg: 40, rough: 0.5 }), cyl(1.3, 0.94, '#2A2D2E', { axis: 'x' }));
-        for (let i = 0; i < 9; i++) { const a = (i / 9) * TAU; const r = cyl(0.3, 1.25, '#2A2D2E', { axis: 'x', seg: 12, rough: 0.8 }); r.position.set(0, Math.cos(a) * 1.9, Math.sin(a) * 1.9); r.rotation.set(a, 0.7, 0); wheel.add(r); }
+        wheel.add(part('W_mecanum', { axis: 'x' }));
       } else {
         wheel.add(cyl(1.7, 0.7, job === 'launcher' ? C.orange : C.teal, { axis: 'x', seg: 40, rough: 0.6 }), box(0.72, 3.0, 0.3, C.dark, { r: 0.05 }));
       }
-      wheel.position.x = 3.9;
-      st.add(body, cap, board, hallA, hallB, mag, shaft, wheel);
-      st.label('Encoder magnet', mag, { dy: 36 });
-      const la = st.label('Hall sensor A', hallA, { dy: -28 });
+      wheel.position.x = 3.45;
+      st.add(body, cap, board, hallA, hallB, mag, wheel);
+      st.label('Encoder magnet', mag, { dy: 36, tip: 'A ring of tiny north and south poles on the tail of the motor shaft. It spins with the rotor.' });
+      const la = st.label('Hall sensor A', hallA, { dy: -28, tip: 'A chip that notices a magnetic field. It blinks on each time a pole passes. A second sensor next to it fires slightly later, which tells the hub which way the shaft is turning.' });
       st.label(drives ? 'Mecanum wheel' : job === 'launcher' ? 'Flywheel' : 'Intake', wheel, { dy: -84 });
       let th = 0, ticks = S.tickCount || 0;
       const name = drives ? 'leftFront' : job;
       return {
         view: { pos: [-2.5, 4.5, 13.5], target: [0.6, 0, 0] },
         change(id) { if (id === 'zero') ticks = 0; },
+        handles: [{ obj: wheel, id: 'pow', axis: 'y', span: 260, hint: 'Drag the wheel to set the power', dy: -20 }],
         dispose() { S.tickCount = ticks; },
         tick(dt) {
           const p = S.pow, rpm = p * outRpm;
           th += dt * p * 2.4;
           wheel.rotation.x = shaft.rotation.x = th;
+          mm.core.rotation.x = th * 3.1;
           mag.rotation.x = th * 3.1; // the motor end turns many times faster; slowed here so you can see it
           const pole = Math.floor(((mag.rotation.x / TAU) * 14 % 2 + 2) % 2);
           hallA.material.emissiveIntensity = pole === 0 && p !== 0 ? 2 : 0;

@@ -1,7 +1,7 @@
 // "How it's made" deep dives: click a part on the robot, open it up, and learn how it works,
 // how it was manufactured and what it does for the rest of the robot.
 // This file is the pop-up shell (chapters, sliders, knobs, readouts). Each topic models its own 3D.
-import { createStage, THREE, clamp } from './kit.js';
+import { createStage, loadParts, THREE, clamp } from './kit.js';
 
 const TOPICS = {
   battery: { load: () => import('./battery.js'), name: 'Battery', sys: 'power', blurb: 'Cells, volts, amps and watts' },
@@ -86,10 +86,14 @@ export async function openDive(key, opts = {}) {
     <div class="dd-stage" id="ddStage">
       <canvas id="ddCanvas" tabindex="0" aria-label="3D model for this chapter. Drag to turn it, scroll or pinch to zoom."></canvas>
       <div class="dd-labels" id="ddLabels" aria-hidden="true"></div>
-      <div class="dd-hud" id="ddHud" aria-live="off"></div>
-      <div class="dd-hint glass">${ICON('reset', 'i sm')}Drag to turn · scroll to zoom</div>
+      <div class="dd-top">
+        <div class="dd-outs" id="ddOuts" aria-live="off"></div>
+        <div class="dd-hud" id="ddHud" aria-live="off"></div>
+      </div>
+      <div class="dd-hint">${ICON('reset', 'i sm')}Drag empty space to turn · scroll to zoom</div>
       <div class="dd-loading" id="ddLoading">Building the model</div>
     </div>
+    <div class="dd-dock" id="ddDock" hidden></div>
     <div class="dd-side">
       <header class="dd-head">
         <div>
@@ -140,7 +144,7 @@ export async function openDive(key, opts = {}) {
   let topic;
   try {
     stage = createStage({ canvas: $('#ddCanvas'), wrap: $('#ddStage'), labels: $('#ddLabels'), reduced });
-    const mod = await T.load();
+    const [mod] = await Promise.all([T.load(), loadParts()]);
     if (closed) return;
     topic = mod.default({ part: opts.part || null, real: opts.real || (() => null), fitReal });
   } catch (err) {
@@ -198,7 +202,7 @@ export async function openDive(key, opts = {}) {
     if (tell && inst && inst.change) inst.change(c.id);
   }
   function wire(ch) {
-    const body = $('#ddBody');
+    const body = $('#ddDock');
     for (const c of ch.controls || []) {
       if (c.type === 'seg') {
         body.querySelector(`.dd-seg[data-id="${c.id}"]`).addEventListener('click', (e) => {
@@ -246,7 +250,7 @@ export async function openDive(key, opts = {}) {
       n.dataset.tone = tone || '';
     },
     hud(html) { const h = $('#ddHud'); if (h.dataset.html !== html) { h.innerHTML = html; h.dataset.html = html; } },
-    set(id, v) { const c = (chapters[at].controls || []).find((x) => x.id === id); if (c) setValue(c, v, false); },
+    set(id, v, tell = false) { const c = (chapters[at].controls || []).find((x) => x.id === id); if (c) setValue(c, v, tell); },
     label(id, text) { const b = $(`#dd-${id}`); if (b && b.tagName === 'BUTTON') b.textContent = text; },
   };
 
@@ -262,30 +266,51 @@ export async function openDive(key, opts = {}) {
     for (const c of ch.controls || []) if (S[c.id] === undefined && c.type !== 'button') S[c.id] = c.value;
     el.querySelectorAll('#ddTabs button').forEach((b, n) => { b.setAttribute('aria-selected', String(n === i)); if (n === i) b.scrollIntoView({ block: 'nearest', inline: 'center', behavior: reduced ? 'auto' : 'smooth' }); });
     const ctl = (ch.controls || []).map((c) => (c.type === 'knob' ? knobHtml(c) : c.type === 'seg' ? segHtml(c) : c.type === 'button' ? `<button class="btn soft pill dd-act" type="button" id="dd-${c.id}">${esc(c.label)}</button>` : rangeHtml(c))).join('');
+    // Controls and live numbers sit on the 3D stage, next to the thing they change.
+    const dock = $('#ddDock');
+    dock.hidden = !ctl;
+    dock.innerHTML = `
+      <div class="dd-try">${ICON('reset', 'i sm')}<span><b>Try it</b> ${ch.try || 'Move a control and watch the model.'}</span></div>
+      ${ctl ? `<div class="dd-controls">${ctl}</div>` : ''}
+      <div class="dd-note" id="ddNote" hidden></div>`;
+    dock.classList.remove('is-used');
+    $('#ddOuts').innerHTML = (ch.readouts || []).map(([id, lab, sub]) => `<div class="dd-out"><div class="lab">${esc(lab)}</div><div class="val num" data-out="${id}"><span>–</span></div><div class="sub">${esc(sub || '')}</div></div>`).join('');
     $('#ddBody').innerHTML = `
       <div class="dd-kicker">Chapter ${i + 1} of ${chapters.length}</div>
       <h3>${esc(ch.title)}</h3>
       <p class="dd-lead">${ch.lead}</p>
-      ${ctl ? `<div class="dd-controls">${ctl}</div>` : ''}
-      ${(ch.readouts || []).length ? `<div class="dd-outs">${ch.readouts.map(([id, lab, sub]) => `<div class="dd-out"><div class="lab">${esc(lab)}</div><div class="val num" data-out="${id}"><span>–</span></div><div class="sub">${esc(sub || '')}</div></div>`).join('')}</div>` : ''}
-      <div class="dd-note" id="ddNote" hidden></div>
       ${(ch.more || []).length ? `<div class="dd-mores"><div class="dd-mh">Dig deeper</div>${ch.more.map(([q, a]) => `<details class="dd-more"><summary>${esc(q)}${ICON('plus', 'i sm')}</summary><div class="a">${a}</div></details>`).join('')}</div>` : ''}`;
     $('#ddBody').scrollTop = 0;
     $('#ddStep').textContent = `${i + 1} / ${chapters.length}`;
     $('#ddPrev').disabled = i === 0;
     $('#ddNext').textContent = i === chapters.length - 1 ? 'Done' : `Next: ${chapters[i + 1].tab}`;
+    stage.setInset(() => (dock.hidden || getComputedStyle(dock).gridRow === 'auto' || window.innerWidth <= 900 ? 0 : dock.offsetHeight + 20));
     try {
       inst = ch.build(stage, S, ui) || {};
       const v = inst.view || ch.view;
       if (v) stage.setView(v.pos, v.target, at === i && stage.time > 0.3 ? 700 : 0);
       if (inst.tick) stage.onTick(inst.tick);
+      if (inst.ground !== false) stage.ground(inst.groundY);
+      for (const tp of inst.taps || []) stage.grab(tp.obj, { hint: tp.hint, hintAt: tp.hintAt, off: tp.off, dy: tp.dy, onTap: tp.onTap, onStart() { dock.classList.add('is-used'); } });
+      // Parts of the model that drive a control when you drag them.
+      for (const h of inst.handles || []) {
+        const c = (ch.controls || []).find((x) => x.id === h.id);
+        if (!c) continue;
+        let from = 0;
+        stage.grab(h.obj, {
+          hint: h.hint, hintAt: h.hintAt, off: h.off, dy: h.dy, cursor: h.axis === 'x' ? 'ew-resize' : 'ns-resize',
+          onStart() { from = S[c.id]; dock.classList.add('is-used'); },
+          onDrag(dx, dy) { setValue(c, from + ((h.axis === 'x' ? dx : -dy) / (h.span || 240)) * (c.max - c.min) * (h.invert ? -1 : 1)); },
+        });
+      }
     } catch (err) {
       console.error(err);
       ui.note(`This chapter's 3D model hit a snag (${esc((err && err.message) || 'unknown error')}). The text still works.`, 'warn');
     }
     wire(ch);
   }
+  $('#ddDock').addEventListener('pointerdown', () => { $('#ddDock').classList.add('is-used'); for (const h of el.querySelectorAll('.dd-label.is-hand')) h.classList.add('is-used'); });
   const first = Math.max(0, chapters.findIndex((c) => c.id === opts.startAt));
   go(first);
-  window.__dive = { go, S, stage, close };
+  window.__dive = { go, S, stage, close, set: (id, v) => ui.set(id, v, true) };
 }
