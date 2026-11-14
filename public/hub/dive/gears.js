@@ -14,20 +14,17 @@ export default function gears() {
     id: 'ratio', tab: 'Speed or muscle',
     title: 'A small gear driving a big one',
     big: 'Gears trade speed for turning force: slow the output down 3 times and it pushes 3 times harder.',
-    lead: 'When a small gear drives a big gear, the big one turns <b>slower</b>, because the small gear has to go round several times to move all of the big gear’s teeth. But the big gear turns with more <b>turning force</b>, which engineers call <b>torque</b>. Count the teeth and divide: that number is the <b>gear ratio</b>.',
-    real: 'Our intake does the opposite on purpose: a <b>100-tooth</b> gear drives a <b>20-tooth</b> gear, so the intake shaft spins 5 times faster than its motor, with one fifth of the force.',
-    try: 'Make the driven gear bigger and watch the load it can lift, and how slowly it lifts it.',
+    lead: 'When a small gear drives a big gear, the big one turns <b>slower</b> but with more <b>turning force</b>, called <b>torque</b>. Count the teeth and divide: that number is the <b>gear ratio</b>.',
+    real: 'Our intake does the opposite: 100 teeth drive 20, so it spins 5 times faster.',
+    try: 'Make the driven gear bigger and watch how much it lifts, and how slowly.',
+    fixed: { gr_a: 20, gr_rpm: 120 },
     controls: [
-      { id: 'gr_a', label: 'Teeth on the motor’s gear', min: 10, max: 40, step: 2, value: 20 },
       { id: 'gr_b', label: 'Teeth on the driven gear', min: 10, max: 100, step: 2, value: 60 },
-      { type: 'knob', id: 'gr_rpm', label: 'Motor speed', min: 30, max: 312, step: 6, value: 120, unit: ' rpm' },
     ],
-    readouts: [['gr_r', 'Gear ratio', 'driven teeth ÷ motor teeth'], ['gr_o', 'Output speed', 'motor speed ÷ ratio'], ['gr_t', 'Turning force', 'compared with the motor'], ['gr_w', 'Can lift', 'blocks on the rope']],
+    readouts: [['gr_o', 'Output speed', 'motor speed ÷ ratio'], ['gr_t', 'Turning force', 'compared with the motor']],
     more: [
       ['Show me the math', '60 teeth ÷ 20 teeth = <b>3</b>. The small gear must turn 3 times to push all 60 teeth of the big gear past. So 120 rpm in gives 120 ÷ 3 = <b>40 rpm</b> out, with <b>3 times</b> the turning force.'],
       ['Why is nothing free?', 'Power is speed times force. Gears cannot add power, they only swap one for the other. A little is even lost to rubbing teeth, so you always get slightly less out than you put in.'],
-      ['Which way does the big gear turn?', 'The opposite way. Two gears that touch always turn in opposite directions. Put a third gear in between and the last one turns the same way as the first.'],
-      ['What is torque?', 'Turning force. Think of a spanner on a nut: push harder, or use a longer spanner, and you get more torque. A motor’s torque is what lets a wheel shove the robot forward.'],
     ],
     build(st, S, ui) {
       const M = 0.1, Y = 4.5;
@@ -90,19 +87,17 @@ export default function gears() {
     id: 'planet', tab: 'Inside the gearbox',
     title: 'Same ratio, a third of the size',
     big: 'A planetary gearbox gets a big ratio in a small space by stacking small stages and sharing the load between three gears.',
-    lead: 'Two plain gears side by side are called <b>spur gears</b>. To slow a motor 19 times with just two of them, one gear would need 19 times more teeth than the other. It would be wider than your hand. A <b>planetary</b> gearbox does the same job inside the motor’s own tube: a small centre gear turns three <b>planet gears</b> that walk around inside a toothed ring.',
-    real: 'Each of our drive motors has <b>two planetary stages</b> stacked up: one slows it 3.7 times, the next 5.2 times. 3.7 × 5.2 = <b>19.2</b>.',
-    try: 'Switch between one stage and both. Compare how big the plain gear on the right has to be.',
+    lead: 'To slow a motor 19 times with two plain gears, one would need 19 times more teeth: wider than your hand. A <b>planetary</b> gearbox does it inside the motor’s own tube, with small stages stacked up.',
+    real: 'Our drive motors stack two stages: 3.7 × 5.2 = 19.2.',
+    try: 'Switch between one stage and both, and compare with the plain gear.',
+    fixed: { gp_rpm: 6000 },
     controls: [
       { type: 'seg', id: 'gp_st', label: 'Planetary stages', value: 'both', options: [['a', 'One stage: 3.7'], ['b', 'One stage: 5.2'], ['both', 'Both: 19.2 (ours)']] },
-      { type: 'knob', id: 'gp_rpm', label: 'Motor speed', min: 600, max: 6000, step: 100, value: 6000, unit: ' rpm' },
     ],
-    readouts: [['gp_r', 'Ratio'], ['gp_o', 'Output speed', 'both gearboxes'], ['gp_p', 'Planetary is', 'across'], ['gp_s', 'Plain gears are', 'across']],
+    readouts: [['gp_r', 'Ratio'], ['gp_s', 'Plain gears are', 'across']],
     more: [
-      ['Where do 3.7 and 5.2 come from?', 'Count teeth. The ring has 46. With a 17-tooth centre gear, one stage slows things by 1 + 46 ÷ 17 = <b>3.7</b>. With an 11-tooth centre gear it is 1 + 46 ÷ 11 = <b>5.2</b>.'],
       ['Why does stacking multiply?', 'The slow output of the first stage is the input of the second. Slow something 3.7 times, then slow that 5.2 times, and you have slowed it 3.7 × 5.2 = 19.2 times in total.'],
       ['Why three planets?', 'They share the push, so each tooth carries a third of the load and the teeth can be small. Two plain gears only ever touch at one tooth.'],
-      ['So are plain gears bad?', 'No. They are simple, cheap and easy to see and fix, which is why our intake uses a 100-tooth and a 20-tooth gear out in the open. They are just a poor fit for big ratios in small spaces.'],
     ],
     build(st, S, ui) {
       const M = 0.1, MM = 6; // one scene unit is about 6 mm
@@ -161,19 +156,17 @@ export default function gears() {
     id: 'drive', tab: 'Why 19.2 to 1?',
     title: 'Picking the gearing for a drivetrain',
     big: 'The best drive gearing is fast enough to cross the field, and strong enough that the tyres slip before the motors give up.',
-    lead: 'The same motor comes with different gearboxes. A <b>low ratio</b> is fast but weak: load it and it slows right down, or stops. A <b>high ratio</b> is strong but slow. A robot can also only push as hard as its tyres <b>grip</b>. Past that point the wheels just spin, so more gearing buys nothing except a slower robot.',
-    real: 'Our four drive motors are <b>19.2 to 1</b>, 312 rpm, on 104 mm wheels: about 1.7 metres a second. At that ratio the wheels slip before the motors stall, which is the safe way round.',
-    try: 'Pick a low ratio and make the box heavy until the motors stall. Then try ours.',
+    lead: 'The same motor comes with different gearboxes. A <b>low ratio</b> is fast but weak. A <b>high ratio</b> is strong but slow. And a robot can only push as hard as its tyres <b>grip</b>.',
+    real: 'Ours is 19.2 to 1: about 1.7 metres a second, and the wheels slip before the motors stall.',
+    try: 'Pick each ratio and see whether the robot can push the box.',
+    fixed: { gd_box: 14 },
     controls: [
       { type: 'seg', id: 'gd_r', label: 'Gearbox ratio', value: '19.2', options: RATIOS.map((r) => [r, r === '19.2' ? '19.2 (ours)' : r]) },
-      { id: 'gd_box', label: 'Box to push', min: 0, max: 30, step: 1, value: 8, unit: ' kg' },
     ],
-    readouts: [['gd_v', 'Top speed', 'with nothing to push'], ['gd_f', 'Motors can push', 'all four, just before they stall'], ['gd_g', 'Tyres can push', 'before they slip'], ['gd_n', 'With this box']],
+    readouts: [['gd_v', 'Top speed', 'with nothing to push'], ['gd_n', 'With this box']],
     more: [
-      ['Show me the math for top speed', 'The bare motor spins 6,000 rpm. Divide by 19.2 and the wheel turns 312 rpm, which is 5.2 turns a second. One turn of a 104 mm wheel is 327 mm. 5.2 × 327 mm = <b>1.7 m/s</b>.'],
       ['What is a stall, and why is it bad?', 'The motor is pushing as hard as it can and not turning. It pulls its biggest current, about 9 amps each, and all of that energy turns into heat. Four stalled drive motors can blow the 20 amp fuse or cook themselves.'],
       ['Why is slipping the “safe” limit?', 'When the tyres slip, the motors are still turning, so the current stays lower and nothing overheats. A drivetrain geared so that grip runs out first protects itself.'],
-      ['Is 19.2 the only good answer?', 'No. Some teams pick 13.7 to 1 for more speed and accept higher current and twitchier driving. These numbers assume a robot of about 10 kg and fairly grippy wheels, which are estimates. Mecanum wheels grip less than plain ones.'],
     ],
     build(st, S, ui) {
       const floor = box(26, 0.2, 8, mat('#8D9391', { rough: 0.9 }), { r: 0.04, pos: [2, -0.1, 0] });

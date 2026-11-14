@@ -85,18 +85,17 @@ export default function fix() {
     id: 'safe', tab: 'Safe first',
     title: 'Power off before hands on',
     big: 'Look with the power on, touch with the power off.',
-    lead: 'A robot that is switched on can move at any moment: a bumped gamepad, a bug, an OpMode still running. So there is one rule before any fix. You may <b>look</b> and read the Driver Hub with the power on. Before you <b>touch</b> a wire, a plug or anything that moves, switch the robot <b>off</b> and wait for the light on the Control Hub to go out.',
-    real: 'Our main power switch is the first thing to find on the robot. Say “power off” out loud before you reach in, so the person holding the Driver Hub knows too.',
-    try: 'Pick something to do with the power on. Then switch it off and try again.',
+    lead: 'A robot that is switched on can move at any moment. So you may <b>look</b> with the power on. Before you <b>touch</b> a wire or anything that moves, switch it <b>off</b> and wait for the hub’s light to go out.',
+    real: 'Say “power off” out loud before you reach in, so the driver knows too.',
+    try: 'Someone wants to re-seat a plug. Switch the power off and see when it is safe.',
+    fixed: { fs_do: 'plug' },
     controls: [
       { type: 'seg', id: 'fs_sw', label: 'Robot power', value: 'on', options: [['on', 'On'], ['off', 'Off']] },
-      { type: 'seg', id: 'fs_do', label: 'You want to', value: 'look', options: Object.entries(DO).map(([k, v]) => [k, v[0]]) },
     ],
     readouts: [['fs_s', 'Robot'], ['fs_v', 'Verdict']],
     more: [
       ['Why not plug things in with the power on?', 'A plug that goes in crooked can touch the wrong pins for a moment. With the power on, that can damage the port or the sensor. With the power off, nothing happens.'],
       ['The robot was stopped. Why is it still dangerous?', 'Stopped is not the same as off. If the hub has power, one tap on the Driver Hub or a stuck stick can start the motors. Gears and wheels do not care that a finger is in the way.'],
-      ['What else is part of “safe”?', 'Safety glasses in the pit. Long hair tied back. Never pick the robot up by a mechanism. And if a wire, motor or battery is hot or smells odd, power off and tell a mentor.'],
     ],
     build(st, S, ui) {
       const f = field(13, 4, { wall: false });
@@ -145,18 +144,17 @@ export default function fix() {
     id: 'find', tab: 'What do I check?',
     title: 'Something is wrong. Where do I look?',
     big: 'Most faults are simple ones, so check the easy things in the same order every time: power, plugs, configuration, then code.',
-    lead: 'Good troubleshooters do not guess. They start with what the robot is <b>doing wrong</b>, called the <b>symptom</b>, and work through a short list from the most likely and easiest thing to check, to the least. Pick a symptom, then step through the checks. The last step shows what the fault turned out to be.',
-    real: 'These six are common ones for FIRST Tech Challenge robots like ours. Write what you found in the session note, so the next person starts from your answer instead of from zero.',
-    try: 'Pick a symptom, then slide through checks 1 to 4 and on to what we found.',
+    lead: 'Good troubleshooters do not guess. Start with what the robot is doing wrong, the <b>symptom</b>, then check the easy things in the same order every time: power, plugs, configuration, then code.',
+    real: 'Write what you found in the session note, so the next person starts from your answer.',
+    try: 'Pick a symptom, then slide through the checks to see what we found.',
     controls: [
       { type: 'seg', id: 'fx_sym', label: 'Symptom', value: 'wheel', options: Object.entries(CASES).map(([k, v]) => [k, v.name]) },
       { id: 'fx_step', label: 'Step', min: 1, max: 5, step: 1, value: 1, fmt: (v) => (v > 4 ? 'What we found' : `Check ${v} of 4`) },
     ],
-    readouts: [['fx_w', 'Look at'], ['fx_p', 'Power for this check'], ['fx_n', 'Checks done']],
+    readouts: [['fx_w', 'Look at'], ['fx_n', 'Checks done']],
     more: [
       ['Why this order?', 'Because it follows what breaks most often. Loose plugs and flat batteries cause far more trouble than bad code or dead parts. And the early checks take seconds.'],
       ['What if none of these find it?', 'Change <b>one thing at a time</b> and test after each change. If you change three things and it works, you do not know which one mattered. The next chapter is about exactly that.'],
-      ['What should I write down?', 'The symptom, what you checked, what you found and what fixed it. Four short lines. A fault that comes back in a match is much faster to fix the second time.'],
     ],
     build(st, S, ui) {
       const f = field(13, 4, { wall: false });
@@ -203,19 +201,17 @@ export default function fix() {
     id: 'swap', tab: 'Swap one thing',
     title: 'Is it the motor, the cable or the port?',
     big: 'Swap one part with a working one: if the fault moves with it, that part is the culprit.',
-    lead: 'A wheel is dead. Three things are in the chain: the <b>port</b> on the hub, the <b>cable</b>, and the <b>motor</b>. Any of them could be broken, and they all look fine. The trick is a <b>swap test</b>. Trade one part with the same part from a wheel that works, then see which wheel is dead now. If the fault <b>follows</b> the part you moved, you have found it.',
-    real: 'Keep a spare motor cable in the pit box for exactly this. Always switch the robot off before you move a plug, and put everything back where it was before the match, or the code will drive the wrong wheel.',
-    try: 'Try each swap, watch which wheel is dead, then make your guess.',
+    lead: 'A wheel is dead. It could be the <b>port</b>, the <b>cable</b> or the <b>motor</b>, and they all look fine. Swap one part with a working one. If the fault <b>moves</b> with it, that part is the culprit.',
+    real: 'Keep a spare motor cable in the pit box for exactly this test.',
+    try: 'Try each swap, see which wheel is dead, then make your guess.',
     controls: [
       { type: 'seg', id: 'fw_test', label: 'Wiring', value: 'built', options: [['built', 'As built'], ['cables', 'Swap the two cables'], ['ports', 'Swap the two ports']] },
       { type: 'seg', id: 'fw_guess', label: 'The broken part is', value: 'none', options: [['none', 'Not sure yet'], ['motor', 'The motor'], ['cable', 'The cable'], ['port', 'The port']] },
-      { type: 'button', id: 'fw_new', label: 'New mystery' },
     ],
-    readouts: [['fw_d', 'Dead wheel now'], ['fw_m', 'Did the fault move?'], ['fw_g', 'Your guess']],
+    readouts: [['fw_d', 'Dead wheel now'], ['fw_m', 'Did the fault move?']],
     more: [
       ['How do I read the result?', 'The fault moved when you swapped the <b>cables</b>: it is the cable. It moved when you swapped the <b>ports</b>: it is the port (or its configuration). It never moved: it is the <b>motor</b> itself.'],
       ['Why only one swap at a time?', 'If you swap the cable and the port together and the fault moves, you cannot tell which one carried it. One change, one test, one answer.'],
-      ['Does this work for other things?', 'Yes. Servos, sensors, gamepads, batteries, even lines of code. Swap in something you know is good and see whether the problem stays or goes.'],
     ],
     build(st, S, ui) {
       const table = box(22, 0.3, 13, mat('#8D9391', { rough: 0.9 }), { r: 0.05, pos: [1, -0.15, 0] });
@@ -234,8 +230,7 @@ export default function fix() {
       return {
         view: { pos: [1, 20, 17], target: [0.6, 0.4, 0.4] },
         groundY: -0.3,
-        change(id) { if (id === 'fw_new') { fault = PARTS[Math.floor(Math.random() * 3)]; ui.set('fw_test', 'built'); ui.set('fw_guess', 'none'); key = ''; } },
-        tick(dt) {
+                tick(dt) {
           const test = S.fw_test, guess = S.fw_guess;
           if (key !== test) {
             key = test;
@@ -249,14 +244,13 @@ export default function fix() {
           const d = dead(test), moved = d === 1;
           units.forEach((u, i) => { if (i !== d) u.th += dt * 5; u.w.spin.rotation.x = u.th; lw[i].text(i === d ? 'Dead' : 'Turning'); lw[i].el.classList.toggle('is-warn', i === d); });
           const right = guess === fault;
-          ui.label('fw_new', 'New mystery');
           ui.out('fw_d', d ? 'Bottom wheel' : 'Top wheel');
           ui.out('fw_m', test === 'built' ? 'Nothing swapped yet' : moved ? 'Yes, it moved' : 'No, same wheel');
           ui.tone('fw_m', test !== 'built' && moved ? 'good' : '');
           ui.out('fw_g', guess === 'none' ? '–' : right ? 'Correct' : 'Not that one');
           ui.tone('fw_g', guess === 'none' ? '' : right ? 'good' : 'warn');
           ui.hud('<span class="chip">Power off before you move a plug</span>');
-          ui.note(guess !== 'none' ? (right ? `<b>Correct: the ${fault}.</b> ${fault === 'motor' ? 'The fault never moved, whatever you swapped, so it has to be the motor itself.' : `The fault jumped to the other wheel only when you swapped the ${fault}s.`} Press New mystery for another.` : `<b>Not the ${guess}.</b> Look again at which swap makes the dead wheel change.`)
+          ui.note(guess !== 'none' ? (right ? `<b>Correct: the ${fault}.</b> ${fault === 'motor' ? 'The fault never moved, whatever you swapped, so it has to be the motor itself.' : `The fault jumped to the other wheel only when you swapped the ${fault}s.`}` : `<b>Not the ${guess}.</b> Look again at which swap makes the dead wheel change.`)
             : test === 'built' ? '<b>The top wheel is dead.</b> Motor, cable or port? You cannot tell by looking. Try a swap.'
             : moved ? `<b>The fault moved</b> to the bottom wheel when you swapped the ${test}. What does that tell you?`
             : `<b>Still the top wheel.</b> Swapping the ${test} changed nothing, so the ${test === 'cables' ? 'cable' : 'port'} is fine. Try the other swap.`, guess !== 'none' && right ? 'good' : guess !== 'none' ? 'warn' : '');

@@ -2,7 +2,7 @@
 // FIRST facts, lessons and links are real content. Progress, badges and glossary suggestions are saved team data.
 import { $, $$, esc, clamp, icon, tag, strip, av, avStack, bar, seg, wireSeg, acc, copyText, codeBlock, drawer, closeDrawer, gl, GLOSSARY } from './common.js';
 import { api, session, isMentor, me } from '../api.js';
-import { DIVES } from '../dive/index.js';
+import { DIVES, LEVELS } from '../dive/index.js';
 
 const TYPE_IC = { Read: 'book', Do: 'wrench', Quiz: 'check', Sim: 'sliders', Explore: 'focus', Challenge: 'trophy' };
 const soft = 'background:var(--raised);color:var(--text)';
@@ -799,6 +799,9 @@ function glossary(view, ctx) {
 // ================================================================= How it works
 // The 3D explainers for the systems and the math, separate from "How it's made".
 const HW_ART = {
+  motor: '<rect x="60" y="44" width="112" height="48" rx="10" fill="var(--solid)"/><rect x="136" y="44" width="14" height="48" fill="var(--volt)"/><rect x="172" y="62" width="34" height="12" rx="4" fill="currentColor" opacity=".5"/><g transform="translate(226 68)"><g class="a-spin"><path d="M0-22v44M-22 0h44M-15-15l30 30M-15 15l30-30" stroke="var(--solid)" stroke-width="7" stroke-linecap="round"/><circle r="13" fill="var(--volt)"/></g></g><path class="a-dash" d="M30 56h24M30 80h24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-dasharray="2 8"/>',
+  battery: '<rect x="44" y="36" width="170" height="64" rx="14" fill="var(--solid)"/><g fill="var(--volt)"><rect x="56" y="48" width="24" height="40" rx="8"/><rect x="88" y="48" width="24" height="40" rx="8"/><rect x="120" y="48" width="24" height="40" rx="8"/><rect x="152" y="48" width="24" height="40" rx="8" opacity=".55"/><rect x="184" y="48" width="18" height="40" rx="8" opacity=".25"/></g><path class="a-dash" d="M214 58h22v20h-22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/><rect x="236" y="58" width="12" height="20" rx="4" fill="var(--solid)"/>',
+  frame: '<path d="M36 46h208v52H36zM48 58v40h184V58z" fill="var(--solid)" fill-rule="evenodd"/><rect x="48" y="58" width="184" height="40" fill="var(--volt)" opacity=".22"/><g fill="var(--volt)"><circle cx="72" cy="78" r="8"/><circle cx="106" cy="78" r="8"/><circle cx="140" cy="78" r="8"/><circle cx="174" cy="78" r="8"/><circle cx="208" cy="78" r="8"/></g><path class="a-dash" d="M140 14v24M132 30l8 10 8-10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>',
   hubs: '<rect x="150" y="38" width="96" height="68" rx="12" fill="var(--solid)"/><rect x="164" y="50" width="68" height="34" rx="6" fill="var(--raised)" opacity=".18"/><g fill="var(--volt)"><rect x="162" y="92" width="10" height="8" rx="2"/><rect x="178" y="92" width="10" height="8" rx="2"/><rect x="194" y="92" width="10" height="8" rx="2"/><rect x="210" y="92" width="10" height="8" rx="2"/></g><rect x="28" y="46" width="72" height="50" rx="9" fill="var(--solid)"/><rect x="35" y="53" width="58" height="36" rx="4" fill="var(--volt)"/><path class="a-dash" d="M112 56c8 8 8 22 0 30M122 48c13 14 13 32 0 46M132 40c18 20 18 42 0 62" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>',
   wheels: '<g transform="translate(78 72)"><circle r="40" fill="var(--solid)"/><g class="a-spin"><g stroke="var(--volt)" stroke-width="9" stroke-linecap="round"><path d="M-8-30 8-18M14-22 28-8M22 6 30 22M-2 24 14 32M-28 10-16 26M-32-14-22 2"/></g><circle r="9" fill="var(--volt)"/></g></g><g fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M150 72h88M222 58l16 14-16 14"/><path d="M176 108V36M162 52l14-16 14 16" opacity=".45"/></g>',
   sensors: '<rect x="26" y="50" width="34" height="44" rx="8" fill="var(--solid)"/><circle cx="52" cy="62" r="5" fill="var(--volt)"/><circle cx="52" cy="82" r="5" fill="var(--volt)" opacity=".5"/><path d="M62 62 214 40v64L62 82z" fill="var(--volt)" opacity=".28"/><path class="a-dash" d="M66 66h140M206 78H66" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-dasharray="2 10"/><rect x="218" y="26" width="12" height="92" rx="5" fill="var(--solid)"/>',
@@ -811,17 +814,22 @@ const HW_ART = {
   math: '<path d="M30 20v96h220" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity=".5"/><path d="M30 46h220" stroke="var(--solid)" stroke-width="2.5" stroke-dasharray="7 7"/><path d="M30 116c26-4 40-96 70-88 22 6 20 30 40 26 16-3 18-10 34-9 20 1 36 1 76 1" fill="none" stroke="var(--solid)" stroke-width="5" stroke-linecap="round"/><circle cx="100" cy="28" r="7" fill="var(--volt)" stroke="var(--solid)" stroke-width="2.5"/>',
 };
 function howItWorks(view) {
-  const works = DIVES.filter((d) => d.kind === 'works'), made = DIVES.filter((d) => d.kind === 'made');
+  const tagOf = (d) => (d.kind === 'made' ? '<span class="tag">How it’s made</span>' : '');
+  const open = (d) => `<div class="card-foot"><span class="cap">${d.tabs.length} short chapters</span><button class="btn primary pill" type="button" data-opendive="${d.key}">${icon('play', 'i sm')}Open</button></div>`;
+  // The first path gets big picture cards. The other two are plain, so the page says "start at the top".
+  const big = (d) => `<article class="card c3 stretch hw-card">
+      <button class="hw-art" type="button" data-opendive="${d.key}" aria-label="Open ${esc(d.name)}"><svg viewBox="0 0 280 136" aria-hidden="true">${HW_ART[d.key] || ''}</svg></button>
+      <div class="card-head"><span class="oc2 volt">${icon(d.icon, 'i sm')}</span><h3 class="card-title">${esc(d.name)}</h3>${tagOf(d)}</div>
+      <p>${esc(d.blurb)}.</p>${open(d)}
+    </article>`;
+  const small = (d) => `<article class="card c4 stretch hw-card hw-mini">
+      <div class="card-head"><span class="oc2 volt">${icon(d.icon, 'i sm')}</span><h3 class="card-title">${esc(d.name)}</h3>${tagOf(d)}</div>
+      <p>${esc(d.blurb)}.</p>${open(d)}
+    </article>`;
   view.innerHTML = `<div class="zv">
-    ${strip('How the robot actually works: the brain, the wheels, the sensors, the launcher and intake, gears, power, code, and what to check when it breaks. Each one is a 3D model you can turn, with knobs and sliders that change it while you watch. No reading wall, about 10 minutes each.', [tag(`${works.length} explainers`), tag(`${works.reduce((a, d) => a + d.tabs.length, 0)} chapters`)])}
-    ${works.map((d) => `<article class="card c6 stretch hw-card">
-      <button class="hw-art" type="button" data-opendive="${d.key}" aria-label="Open ${esc(d.name)}"><svg viewBox="0 0 280 136" aria-hidden="true">${HW_ART[d.key] || ''}</svg><span class="hw-3d">${icon('sliders', 'i sm')}3D, hands-on</span></button>
-      <div class="card-head"><span class="oc2 volt">${icon(d.icon, 'i sm')}</span><h3 class="card-title">${esc(d.name)}</h3><span class="tag">${d.tabs.length} chapters</span></div>
-      <p>${esc(d.blurb)}.</p>
-      <div class="hw-chips">${d.tabs.map(([id, t], i) => `<button class="chip" type="button" data-opendive="${d.key}" data-chapter="${id}"><b>${i + 1}</b>${esc(t)}</button>`).join('')}</div>
-      <div class="card-foot"><span class="cap">Opens full screen</span><button class="btn primary pill" type="button" data-opendive="${d.key}">${icon('play', 'i sm')}Open</button></div>
-    </article>`).join('')}
-    <div class="hw-made"><span class="cap">Want to see inside the parts instead? How it’s made:</span>${made.map((d) => `<button class="dive-chip" type="button" data-opendive="${d.key}"><span class="oc">${icon('sparkle', 'i sm')}</span>${esc(d.name)}<small>${esc(d.blurb)}</small></button>`).join('')}</div>
+    ${strip('How our robot works, in 3D you can turn and play with. Each one has a few short chapters with one thing to try. New here? Do the four under Start here, in order.', [tag(`${DIVES.length} explainers`), tag('about 5 minutes each')])}
+    ${LEVELS.map(([lv, name, sub], n) => `<div class="hw-step${n ? '' : ' is-first'}"><b>${n + 1}</b><h3 class="card-title">${name}</h3><span class="cap">${sub}</span></div>
+    ${DIVES.filter((d) => d.level === lv).map(n ? small : big).join('')}`).join('')}
   </div>`;
 }
 

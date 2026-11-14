@@ -41,15 +41,16 @@ export default function battery(ctx) {
     id: 'open', tab: 'Open it up',
     title: 'Ten little batteries in a trench coat',
     big: 'The 12 V battery is really ten small cells welded into one chain.',
-    lead: 'The robot’s 12 V battery is not one battery. Slide to peel off the shrink wrap and you find <b>10 round cells</b> in two nested rows, each about the size of a fat marker cap, welded together in one long chain.',
-    try: 'Drag the pink wrap upward on the model, or use the slider.',
-    controls: [{ type: 'range', id: 'peel', label: 'Peel it open', min: 0, max: 100, value: 0, unit: '%' }],
-    readouts: [['cells', 'Cells in the chain'], ['each', 'Each cell', 'nickel-metal hydride'], ['pack', 'Whole pack', '10 × 1.2 V']],
+    lead: 'The robot’s 12 V battery is not one battery. Peel off the wrap and you find <b>10 round cells</b>, welded end to end in one long chain. Each one gives 1.2 volts.',
+    real: 'This pack feeds everything on our robot through one 20 amp fuse.',
+    try: 'Drag the pink wrap upward, or use the slider.',
+    controls: [
+      { type: 'range', id: 'peel', label: 'Peel it open', min: 0, max: 100, value: 0, unit: '%' },
+    ],
+    readouts: [['each', 'Each cell', 'nickel-metal hydride'], ['pack', 'Whole pack', '10 × 1.2 V']],
     more: [
       ['Why 10 cells?', 'One nickel-metal hydride (NiMH) cell makes about 1.2 volts no matter how big it is. That number comes from the chemicals inside, not the size. To get 12 volts you chain 10 of them so their pushes add up: 10 × 1.2 = 12.'],
-      ['What are the shiny strips?', 'Thin strips of nickel. A machine spot-welds them to the cell ends with a tiny, very fast burst of electricity. Solder would work too, but the heat from soldering can hurt a cell. A spot weld is over in a few thousandths of a second.'],
       ['What does the fuse do?', 'The fuse is a deliberately weak link. If more than 20 amps flows for too long (a shorted wire, a jammed mechanism), a thin piece of metal inside the fuse melts and breaks the circuit before the wires get hot enough to burn.'],
-      ['Why does it get its own plug shape?', 'The yellow XT30 plug only fits one way round. You cannot plug the battery in backwards, which would send current the wrong way through the Control Hub.'],
     ],
     build(st, S, ui) {
       const L = 2.1;
@@ -150,16 +151,15 @@ export default function battery(ctx) {
     id: 'cell', tab: 'Inside a cell',
     title: 'A cell is a rolled-up chemical sandwich',
     big: 'A cell pushes electrons out of one end, and their only way back is through your robot.',
-    lead: 'Unroll one cell and you get three long ribbons: a <b>plus sheet</b>, a <b>minus sheet</b> and a paper-thin <b>separator</b> soaked in liquid. Chemicals on the minus sheet want to give away electrons. The only way across is the long way round: out of the cell, through your robot and back in.',
-    try: 'Drag the steel can down to cut it open, then switch what the cell is doing.',
+    lead: 'Each cell is three long ribbons rolled up: a <b>plus sheet</b>, a <b>minus sheet</b> and a thin <b>separator</b>. The minus sheet wants to give away electrons. Their only way across is out through your robot and back.',
+    real: 'Every time a wheel turns, electrons are making this trip.',
+    try: 'Switch between powering the robot, charging and switched off.',
+    fixed: { cut: 70 },
     controls: [
       { type: 'seg', id: 'cellMode', label: 'What is the cell doing?', value: 'use', options: [['use', 'Powering the robot'], ['charge', 'On the charger'], ['rest', 'Switched off']] },
-      { type: 'range', id: 'cut', label: 'Cut the can away', min: 0, max: 100, value: 70, unit: '%' },
     ],
-    readouts: [['soc', 'Charge left'], ['cv', 'Cell voltage'], ['dir', 'Electrons flow']],
+    readouts: [['cv', 'Cell voltage'], ['dir', 'Electrons flow']],
     more: [
-      ['What are the layers made of?', 'The plus sheet is coated in a nickel compound (nickel oxyhydroxide). The minus sheet is a metal alloy that soaks up hydrogen like a sponge, which is where "metal hydride" comes from. The liquid is potassium hydroxide in water. It lets charged atoms (ions) move between the sheets but will not let electrons through.'],
-      ['Why roll it up?', 'More sheet area means more chemical reactions at once, which means more amps. Rolling 50 cm of ribbon into a spiral packs a big area into a small can. Engineers call it a "jelly roll".'],
       ['Which way does electricity really flow?', 'Electrons leave the minus end and come back in the plus end. Long ago, before anyone knew electrons existed, scientists guessed current flowed from plus to minus. Circuit diagrams still draw it that way. Both describe the same loop.'],
       ['What does charging do?', 'The charger pushes electrons backwards through the cell. That drives the chemical reaction in reverse and parks the hydrogen back on the minus sheet, ready to go again. A good NiMH cell can do this hundreds of times.'],
     ],
@@ -272,19 +272,18 @@ export default function battery(ctx) {
     id: 'lab', tab: 'Volts, amps, watts',
     title: 'Build your own pack',
     big: 'Cells in a chain add up their volts. Chains side by side add running time.',
-    lead: 'How you connect cells changes what the pack can do. Cells <b>in a chain</b> (plus to minus, called <i>series</i>) add up their volts. Chains <b>side by side</b> (called <i>parallel</i>) share the work, so the pack lasts longer. Build a pack and watch the numbers.',
-    try: 'Add cells to the chain, add chains, then turn the knob to make the motor pull harder.',
+    lead: 'Cells joined <b>in a chain</b> add up their volts: more push. Chains <b>side by side</b> share the work, so the pack runs for longer. Build a pack and watch the numbers.',
+    real: 'Ten cells in one chain give our robot its 12 volts.',
+    try: 'Add cells to the chain and watch the volts, then add a second chain.',
+    fixed: { amps: 6 },
     controls: [
       { type: 'range', id: 'ser', label: 'Cells in each chain (series)', min: 1, max: 12, value: 10, fmt: (v) => `${v} cell${v === 1 ? '' : 's'}` },
       { type: 'range', id: 'par', label: 'Chains side by side (parallel)', min: 1, max: 3, value: 1, fmt: (v) => `${v} chain${v === 1 ? '' : 's'}` },
-      { type: 'knob', id: 'amps', label: 'How hard the motor pulls', min: 1, max: 30, value: 6, fmt: (v) => `${v} amps` },
     ],
-    readouts: [['v', 'Volts', 'the push'], ['a', 'Amps', 'the flow'], ['w', 'Watts', 'volts × amps'], ['t', 'Runs for', 'at this pull']],
+    readouts: [['v', 'Volts', 'the push'], ['t', 'Runs for', 'at this pull']],
     more: [
       ['Volts, amps and watts with a water slide', 'Think of a water slide. <b>Volts</b> are how tall the slide is: the push. <b>Amps</b> are how much water is flowing. <b>Watts</b> are the total power of the splash at the bottom: height times flow. A tall slide with a trickle and a short slide with a flood can make the same splash.'],
-      ['Why do volts drop when the motor pulls hard?', 'Every cell has a little resistance inside, like a narrow pipe. The more amps you pull, the more push gets used up just getting out of the cell. The pack "sags". Chains side by side split the amps between them, so each one sags less. Watch the volts as you turn the knob.'],
       ['What does 3000 mAh mean?', 'It is the size of the fuel tank. 3000 milliamp-hours means the pack can give 3 amps for one hour, or 6 amps for half an hour, or 30 amps for 6 minutes. Chains side by side add their tanks together. More cells in one chain do not: the same electrons pass through every cell in the chain.'],
-      ['Why can’t we just add more cells for more power?', 'FIRST Tech Challenge allows one approved 12 V pack. Motors, the Control Hub and servos are all built for about 12 volts. Too many volts and parts overheat or fail. Too few and the motors are weak. Engineers pick a voltage and design everything around it.'],
     ],
     build(st, S, ui) {
       const packG = group();
@@ -349,7 +348,7 @@ export default function battery(ctx) {
         ui.tone('a', over ? 'warn' : '');
         ui.tone('v', open > 12.5 ? 'warn' : '');
         packLbl.text(`${n} × 1.2 V = ${open.toFixed(1)} V`);
-        ui.note(over ? `<b>Fuse blown.</b> Each chain is being asked for ${(a / p).toFixed(0)} amps, more than the 20 amp fuse allows. Add a chain or ease off the knob.`
+        ui.note(over ? `<b>Fuse blown.</b> Each chain is being asked for ${(a / p).toFixed(0)} amps, more than the 20 amp fuse allows. Add a chain to share the load.`
           : open > 12.5 ? `<b>${open.toFixed(1)} volts is over the limit.</b> The motors would spin faster, but the robot’s electronics are built for a 12 V pack and FTC rules allow nothing bigger.`
           : n === 10 && p === 1 ? '<b>This is the pack on your robot:</b> 10 cells in one chain. 12 volts, 3 amp-hours.'
           : p > 1 ? 'Side by side chains do <b>not</b> add volts. They share the amps, so the pack sags less and lasts longer. It is also heavier.'
@@ -380,16 +379,15 @@ export default function battery(ctx) {
     id: 'made', tab: 'How it’s made',
     title: 'From paste to pack',
     big: 'A battery pack is built by a line of machines, each doing one small job very fast.',
-    lead: 'Battery factories are mostly long machines that do one small job very fast. Step through the line that builds a pack like yours.',
-    try: 'Pick a station, then change the line speed.',
+    lead: 'A battery factory is a long line of machines, each doing one small job very fast. Step through the line that builds a pack like ours.',
+    try: 'Pick a station and watch it work.',
+    fixed: { bspeed: 100 },
     controls: [
       { type: 'seg', id: 'bstep', label: 'Station', value: 0, options: STEPS.map((s, i) => [i, `${i + 1} ${s[0]}`]) },
-      { type: 'range', id: 'bspeed', label: 'Line speed', min: 0, max: 200, value: 100, unit: '%' },
     ],
     readouts: [['made', 'Cells made while you watched']],
     more: [
       ['Where do the materials come from?', 'Nickel is mined in places like Indonesia, the Philippines and Canada. The hydrogen-absorbing alloy uses "rare earth" metals such as lanthanum. The can is ordinary steel with a thin nickel plating so it does not rust.'],
-      ['Why are cans drawn, not welded?', 'The can starts as a flat steel disc. A press pushes it through a series of ring-shaped dies, stretching it into a cup, a bit like pushing your thumb into clay. This is called deep drawing. It makes a can with no seam that could leak.'],
       ['What happens to old packs?', 'NiMH packs can be recycled. The nickel is valuable and gets melted down for stainless steel or new batteries. Never put one in the bin: take it to a battery drop-off.'],
     ],
     build(st, S, ui) {
@@ -607,5 +605,5 @@ export default function battery(ctx) {
     },
   };
 
-  return { title: 'The 12 V battery', chapters: [openUp, inside, lab, made, onRobot] };
+  return { title: 'The 12 V battery', chapters: [openUp, inside, lab, made] };
 }

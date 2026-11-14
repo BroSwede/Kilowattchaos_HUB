@@ -3,24 +3,25 @@
 // This file is the pop-up shell (chapters, sliders, knobs, readouts). Each topic models its own 3D.
 import { createStage, loadParts, THREE, clamp } from './kit.js';
 
+// Three ordered paths, so nobody has to pick from thirteen things: start, score, deeper.
+export const LEVELS = [['start', 'Start here', 'The four things every team member should know first'], ['score', 'Make it score', 'How the robot picks up balls and shoots them'], ['deeper', 'Go deeper', 'For when you want to know why']];
 const TOPICS = {
-  battery: { load: () => import('./battery.js'), name: 'Battery', sys: 'power', blurb: 'Cells, volts, amps and watts', kind: 'made', chapters: 5 },
-  motor: { load: () => import('./motor.js'), name: 'Motor', sys: 'drivetrain', blurb: 'Magnets, coils and planetary gears', kind: 'made', chapters: 5 },
-  frame: { load: () => import('./frame.js'), name: 'Frame', sys: 'structure', blurb: 'From rock to a drilled channel', kind: 'made', chapters: 6 },
-  // "How it works": the systems and the math, separate from how the parts are made.
-  hubs: { load: () => import('./hubs.js'), name: 'Control Hub and Driver Hub', sys: 'hardware', blurb: 'Open up the robot\u2019s brain: chips, ports, and how a stick push reaches a wheel', kind: 'works', icon: 'bot', tabs: [['two', 'Two boxes'], ['ports', 'Ports tour'], ['inside', 'Open it up'], ['motor', 'Motor port'], ['servo', 'Servo port'], ['sensor', 'Sensor ports'], ['signal', 'Stick to wheel'], ['power', 'Power']] },
-  wheels: { load: () => import('./wheels.js'), name: 'Mecanum wheels', sys: 'drivetrain', blurb: 'Why our robot can drive sideways, and the math for each wheel', kind: 'works', icon: 'focus', tabs: [['size', 'Wheel size'], ['roller', 'The rollers'], ['four', 'Four wheels'], ['tank', 'Tank or mecanum']] },
-  sensors: { load: () => import('./sensors.js'), name: 'Sensors', sys: 'intake', blurb: 'Encoders, the gyro, distance and colour: how the robot feels the world', kind: 'works', icon: 'zap', tabs: [['enc', 'Encoder'], ['imu', 'IMU (gyro)'], ['dist', 'Distance'], ['color', 'Colour']] },
-  launcher: { load: () => import('./launcher.js'), name: 'The launcher', sys: 'launcher', blurb: 'How a spinning wheel throws a ball, and why the same shot can land short', kind: 'works', icon: 'flag', tabs: [['speed', 'Wheel to ball'], ['arc', 'Angle and arc'], ['recover', 'Spin back up'], ['steady', 'Same shot every time']] },
-  intake: { load: () => import('./intake.js'), name: 'Intake and ball path', sys: 'intake', blurb: 'Soft wheels that grab a ball, the squeeze that grips or jams, and the trip to the flywheel', kind: 'works', icon: 'layers', tabs: [['grab', 'The squeeze'], ['speed', 'Fast enough?'], ['path', 'One at a time'], ['jam', 'Jams']] },
-  gears: { load: () => import('./gears.js'), name: 'Gears', sys: 'drivetrain', blurb: 'Trading speed for muscle, and why our drive motors are geared 19.2 to 1', kind: 'works', icon: 'reset', tabs: [['ratio', 'Speed or muscle'], ['planet', 'Inside the gearbox'], ['drive', 'Why 19.2 to 1?']] },
-  power: { load: () => import('./power.js'), name: 'Power budget', sys: 'power', blurb: 'How many amps each motor pulls, the 20 amp fuse, and how long a battery lasts', kind: 'works', icon: 'sun', tabs: [['one', 'One motor'], ['budget', 'Power budget'], ['match', 'Will it last?']] },
-  math: { load: () => import('./math.js'), name: 'Algorithms and math', sys: 'ballpath', blurb: 'Deadzones, the robot loop and control that steers itself', kind: 'works', icon: 'code', tabs: [['stick', 'Joystick math'], ['loop', 'The loop'], ['pid', 'Turn to 90°'], ['drive', 'Drive a distance']] },
-  code: { load: () => import('./code.js'), name: 'How the code flows', sys: 'hardware', blurb: 'Autonomous then TeleOp, names that must match, and why a plan needs sensors', kind: 'works', icon: 'commit', tabs: [['clock', 'The match clock'], ['names', 'Names must match'], ['plan', 'Plan an autonomous']] },
-  fix: { load: () => import('./fix.js'), name: 'Troubleshooting', sys: 'structure', blurb: 'Something is wrong: what to check, in what order, with the power off first', kind: 'works', icon: 'wrench', tabs: [['safe', 'Safe first'], ['find', 'What do I check?'], ['swap', 'Swap one thing']] },
+  hubs: { load: () => import('./hubs.js'), name: 'Control Hub and Driver Hub', sys: 'hardware', blurb: 'The robot\u2019s brain, and how a stick push reaches a wheel', kind: 'works', level: 'start', icon: 'bot', tabs: [['two', 'Two boxes'], ['ports', 'Ports tour'], ['motor', 'Motor port'], ['signal', 'Stick to wheel']] },
+  wheels: { load: () => import('./wheels.js'), name: 'Mecanum wheels', sys: 'drivetrain', blurb: 'Why our robot can drive sideways', kind: 'works', level: 'start', icon: 'focus', tabs: [['size', 'Wheel size'], ['roller', 'The rollers'], ['four', 'Four wheels'], ['tank', 'Tank or mecanum']] },
+  motor: { load: () => import('./motor.js'), name: 'Motor', sys: 'drivetrain', blurb: 'Magnets, coils and gears: what makes a wheel turn', kind: 'made', level: 'start', icon: 'sliders', tabs: [['open', 'Open it up'], ['spin', 'Why it spins'], ['gears', 'Planetary gears'], ['made', 'How it\u2019s made']] },
+  battery: { load: () => import('./battery.js'), name: 'Battery', sys: 'power', blurb: 'Ten small cells, and what volts and amps mean', kind: 'made', level: 'start', icon: 'bulb', tabs: [['open', 'Open it up'], ['cell', 'Inside a cell'], ['lab', 'Volts, amps, watts'], ['made', 'How it\u2019s made']] },
+  launcher: { load: () => import('./launcher.js'), name: 'The launcher', sys: 'launcher', blurb: 'How a spinning wheel throws a ball', kind: 'works', level: 'score', icon: 'flag', tabs: [['speed', 'Wheel to ball'], ['arc', 'Angle and arc'], ['recover', 'Spin back up'], ['steady', 'Same shot every time']] },
+  intake: { load: () => import('./intake.js'), name: 'Intake and ball path', sys: 'intake', blurb: 'Soft wheels that grab a ball and feed it to the launcher', kind: 'works', level: 'score', icon: 'layers', tabs: [['grab', 'The squeeze'], ['speed', 'Fast enough?'], ['path', 'One at a time'], ['jam', 'Jams']] },
+  sensors: { load: () => import('./sensors.js'), name: 'Sensors', sys: 'intake', blurb: 'How the robot feels the world', kind: 'works', level: 'score', icon: 'zap', tabs: [['enc', 'Encoder'], ['imu', 'IMU (gyro)'], ['dist', 'Distance'], ['color', 'Colour']] },
+  gears: { load: () => import('./gears.js'), name: 'Gears', sys: 'drivetrain', blurb: 'Trading speed for muscle', kind: 'works', level: 'deeper', icon: 'reset', tabs: [['ratio', 'Speed or muscle'], ['planet', 'Inside the gearbox'], ['drive', 'Why 19.2 to 1?']] },
+  power: { load: () => import('./power.js'), name: 'Power budget', sys: 'power', blurb: 'Amps, the 20 amp fuse, and how long a battery lasts', kind: 'works', level: 'deeper', icon: 'sun', tabs: [['one', 'One motor'], ['budget', 'Power budget'], ['match', 'Will it last?']] },
+  code: { load: () => import('./code.js'), name: 'How the code flows', sys: 'hardware', blurb: 'Autonomous, TeleOp, and names that must match', kind: 'works', level: 'deeper', icon: 'commit', tabs: [['clock', 'The match clock'], ['names', 'Names must match'], ['plan', 'Plan an autonomous']] },
+  math: { load: () => import('./math.js'), name: 'Algorithms and math', sys: 'ballpath', blurb: 'The robot loop, and control that steers itself', kind: 'works', level: 'deeper', icon: 'code', tabs: [['stick', 'Joystick math'], ['loop', 'The loop'], ['pid', 'Turn to 90\u00b0'], ['drive', 'Drive a distance']] },
+  frame: { load: () => import('./frame.js'), name: 'Frame', sys: 'structure', blurb: 'From red rock to a drilled channel', kind: 'made', level: 'deeper', icon: 'home', tabs: [['ore', 'Rock to metal'], ['extrude', 'Squeeze it'], ['holes', 'Add the holes'], ['shape', 'Why a U?']] },
+  fix: { load: () => import('./fix.js'), name: 'Troubleshooting', sys: 'structure', blurb: 'What to check, in what order, with the power off first', kind: 'works', level: 'deeper', icon: 'wrench', tabs: [['safe', 'Safe first'], ['find', 'What do I check?'], ['swap', 'Swap one thing']] },
 };
 const KIND = { made: 'How it\u2019s made and how it works', works: 'How it works' };
-export const DIVES = Object.entries(TOPICS).map(([key, t]) => ({ key, name: t.name, sys: t.sys, blurb: t.blurb, kind: t.kind || 'made', icon: t.icon || 'sparkle', tabs: t.tabs || [], chapters: (t.tabs || []).length || t.chapters || 0 }));
+export const DIVES = Object.entries(TOPICS).map(([key, t]) => ({ key, name: t.name, sys: t.sys, blurb: t.blurb, kind: t.kind || 'made', level: t.level || 'deeper', icon: t.icon || 'sparkle', tabs: t.tabs || [], chapters: (t.tabs || []).length || t.chapters || 0 }));
 
 // Which deep dive, if any, explains this part of the robot.
 export function topicFor(info) {
@@ -100,9 +101,10 @@ export async function openDive(key, opts = {}) {
       <div class="dd-labels" id="ddLabels" aria-hidden="true"></div>
       <div class="dd-top">
         <div class="dd-outs" id="ddOuts" aria-live="off"></div>
+        <button class="btn soft pill sm dd-codebtn" type="button" id="ddCodeBtn" aria-expanded="false" hidden>Show the code</button>
         <div class="dd-hud" id="ddHud" aria-live="off"></div>
       </div>
-      <div class="dd-hint">${ICON('reset', 'i sm')}Drag empty space to turn · scroll to zoom</div>
+      <div class="dd-hint" id="ddHint">${ICON('reset', 'i sm')}Drag empty space to turn · scroll to zoom</div>
       <div class="dd-loading" id="ddLoading">Building the model</div>
     </div>
     <div class="dd-dock" id="ddDock" hidden></div>
@@ -261,11 +263,22 @@ export async function openDive(key, opts = {}) {
       n.hidden = !html;
       n.dataset.tone = tone || '';
     },
-    hud(html) { const h = $('#ddHud'); if (h.dataset.html !== html) { h.innerHTML = html; h.dataset.html = html; } },
+    // Kept quiet on purpose: code sits behind a closed "Show the code" button, and the little
+    // chips only show on chapters that keep score (hud: true).
+    hud(html) {
+      const h = $('#ddHud'), code = /<pre/.test(html);
+      if (code) html = html.replace(/<span class="chip">.*?<\/span>/g, '');
+      else if (!chapters[at].hud) html = '';
+      if (h.dataset.html !== html) { h.innerHTML = html; h.dataset.html = html; }
+      h.classList.toggle('is-code', code);
+      $('#ddCodeBtn').hidden = !code;
+    },
     set(id, v, tell = false) { const c = (chapters[at].controls || []).find((x) => x.id === id); if (c) setValue(c, v, tell); },
     label(id, text) { const b = $(`#dd-${id}`); if (b && b.tagName === 'BUTTON') b.textContent = text; },
   };
 
+  const setCode = (on) => { $('#ddHud').classList.toggle('is-open', on); const b = $('#ddCodeBtn'); b.setAttribute('aria-expanded', String(on)); b.textContent = on ? 'Hide the code' : 'Show the code'; };
+  $('#ddCodeBtn').addEventListener('click', () => setCode(!$('#ddHud').classList.contains('is-open')));
   function go(i) {
     i = clamp(i, 0, chapters.length - 1);
     if (i === at) return;
@@ -275,6 +288,10 @@ export async function openDive(key, opts = {}) {
     inst = null;
     stage.clear();
     ui.hud('');
+    setCode(false);
+    $('#ddHint').hidden = i !== 0;
+    // Controls a chapter used to have are now fixed at one sensible value.
+    Object.assign(S, ch.fixed || {});
     for (const c of ch.controls || []) if (S[c.id] === undefined && c.type !== 'button') S[c.id] = c.value;
     el.querySelectorAll('#ddTabs button').forEach((b, n) => { b.setAttribute('aria-selected', String(n === i)); if (n === i) b.scrollIntoView({ block: 'nearest', inline: 'center', behavior: reduced ? 'auto' : 'smooth' }); });
     const ctl = (ch.controls || []).map((c) => (c.type === 'knob' ? knobHtml(c) : c.type === 'seg' ? segHtml(c) : c.type === 'button' ? `<button class="btn soft pill dd-act" type="button" id="dd-${c.id}">${esc(c.label)}</button>` : rangeHtml(c))).join('');
@@ -286,18 +303,18 @@ export async function openDive(key, opts = {}) {
       ${ctl ? `<div class="dd-controls">${ctl}</div>` : ''}
       <div class="dd-note" id="ddNote" hidden></div>`;
     dock.classList.remove('is-used');
-    $('#ddOuts').innerHTML = (ch.readouts || []).map(([id, lab, sub]) => `<div class="dd-out"><div class="lab">${esc(lab)}</div><div class="val num" data-out="${id}"><span>–</span></div><div class="sub">${esc(sub || '')}</div></div>`).join('');
+    $('#ddOuts').innerHTML = (ch.readouts || []).slice(0, 2).map(([id, lab, sub]) => `<div class="dd-out"><div class="lab">${esc(lab)}</div><div class="val num" data-out="${id}"><span>–</span></div><div class="sub">${esc(sub || '')}</div></div>`).join('');
     $('#ddBody').innerHTML = `
       <div class="dd-kicker">Chapter ${i + 1} of ${chapters.length}</div>
       <h3>${esc(ch.title)}</h3>
       ${ch.big ? `<p class="dd-big"><span>Big idea</span>${ch.big}</p>` : ''}
       <p class="dd-lead">${ch.lead}</p>
       ${ch.real ? `<p class="dd-real"><span>On our robot</span>${ch.real}</p>` : ''}
-      ${(ch.more || []).length ? `<div class="dd-mores"><div class="dd-mh">Dig deeper</div>${ch.more.map(([q, a]) => `<details class="dd-more"><summary>${esc(q)}${ICON('plus', 'i sm')}</summary><div class="a">${a}</div></details>`).join('')}</div>` : ''}`;
+      ${(ch.more || []).length ? `<div class="dd-mores"><div class="dd-mh">Dig deeper</div>${ch.more.slice(0, 2).map(([q, a]) => `<details class="dd-more"><summary>${esc(q)}${ICON('plus', 'i sm')}</summary><div class="a">${a}</div></details>`).join('')}</div>` : ''}`;
     $('#ddBody').scrollTop = 0;
     $('#ddStep').textContent = `${i + 1} / ${chapters.length}`;
     $('#ddPrev').disabled = i === 0;
-    $('#ddNext').textContent = i === chapters.length - 1 ? 'Done' : `Next: ${chapters[i + 1].tab}`;
+    $('#ddNext').innerHTML = i === chapters.length - 1 ? 'Done' : `<span>Next: ${esc(chapters[i + 1].tab)}</span>${ICON('arrow', 'i sm')}`;
     stage.setInset(() => (dock.hidden || getComputedStyle(dock).gridRow === 'auto' || window.innerWidth <= 900 ? 0 : dock.offsetHeight + 20));
     try {
       inst = ch.build(stage, S, ui) || {};

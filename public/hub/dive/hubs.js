@@ -97,20 +97,17 @@ export default function hubs() {
     id: 'two', tab: 'Two boxes',
     title: 'One in your hands, one on the robot',
     big: 'Two boxes run the robot: one in the drivers’ hands and one on the robot, joined by Wi-Fi.',
-    lead: 'The touchscreen the drive team holds is the <b>Driver Hub</b>. The gamepads plug into it. The box bolted to the robot is the <b>Control Hub</b>. It is the robot’s brain: it runs your code and feeds every motor. The two talk by <b>Wi-Fi</b>, so no wire joins the drivers and the robot.',
-    real: 'At the start of a match a driver taps <b>Init</b>, then <b>Start</b>, on the Driver Hub. If the robot ever does something scary, <b>Stop</b> is on the same screen.',
-    try: 'Turn the stick knob. Watch the message cross the gap and the wheel answer.',
+    lead: 'The touchscreen the drivers hold is the <b>Driver Hub</b>. The box on the robot is the <b>Control Hub</b>: it runs your code and feeds every motor. They talk by <b>Wi-Fi</b>, so no wire joins the drivers and the robot.',
+    real: 'To begin a match, a driver taps <b>Init</b>, then <b>Start</b>, on the Driver Hub.',
+    try: 'Turn the stick knob and watch the message cross the gap.',
+    fixed: { hb_look: 'both', hb_run: 'start' },
     controls: [
       { type: 'knob', id: 'hb_stick', label: 'Push the stick', min: -1, max: 1, step: 0.05, value: 0.5, fmt: (v) => fmt(v) },
-      { type: 'seg', id: 'hb_look', label: 'Look at', value: 'both', options: [['both', 'Both'], ['dh', 'Driver Hub'], ['ch', 'Control Hub']] },
-      { type: 'seg', id: 'hb_run', label: 'Driver Station', value: 'start', options: [['init', 'Init'], ['start', 'Start'], ['stop', 'Stop']] },
     ],
-    readouts: [['hb_s', 'Stick says', 'a number from -1 to 1'], ['hb_m', 'Messages', 'per second, over Wi-Fi'], ['hb_p', 'Motor power', 'set by your code']],
+    readouts: [['hb_s', 'Stick says', 'a number from -1 to 1'], ['hb_p', 'Motor power', 'set by your code']],
     more: [
       ['Why two boxes and not one?', 'Rules and safety. Nobody may touch the robot during a match, so the drivers need something in their hands that is not on the robot. The Driver Hub also has the big Start and Stop buttons that the field crew trusts.'],
-      ['Is the Control Hub a computer?', 'Yes. Inside is a small Android computer, like a phone with no screen, joined to a board full of motor drivers. Your Java OpMode is an app running on it.'],
       ['What do Init, Start and Stop do?', '<b>Init</b> gets the robot ready without moving. <b>Start</b> begins the loop: from now on the gamepads drive the robot. <b>Stop</b> ends the program and cuts motor power. At a competition the field crew calls each one.'],
-      ['What if the Wi-Fi drops?', 'The Control Hub notices that messages have stopped and cuts power to the motors on its own. A robot that keeps driving with nobody in control would be dangerous.'],
     ],
     build(st, S, ui) {
       const K = 0.05;
@@ -171,18 +168,16 @@ export default function hubs() {
     id: 'ports', tab: 'Ports tour',
     title: 'Every plug on the Control Hub',
     big: 'Everything on the robot plugs into one box, and every plug has a number that your code uses.',
-    lead: 'Every motor, servo and sensor plugs into this box, and <b>every port has a number</b>. Your code uses the same numbers to say which motor is which. This is REV’s real 3D model, so what you see is what is on our robot. Pick a group, then tap the labels.',
-    real: 'Each drive motor has its own port number. If the robot spins when it should drive straight, two plugs are probably swapped. Check the numbers first.',
-    try: 'Pick a group, tap a label, then slide the cable into its port.',
+    lead: 'Every motor, servo and sensor plugs into this box, and <b>every port has a number</b>. Your code uses those numbers to tell the motors apart. This is REV’s real 3D model of the hub.',
+    real: 'If the robot spins when it should drive straight, two motor plugs are probably swapped.',
+    try: 'Pick a group of ports, then tap a label.',
+    fixed: { hp_plug: 100 },
     controls: [
       { type: 'seg', id: 'hp_grp', label: 'Show me the ports for', value: 'all', options: Object.entries(GROUPS).map(([k, g]) => [k, g.label]) },
-      { id: 'hp_plug', label: 'Plug in a cable', min: 0, max: 100, value: 0, unit: '%' },
     ],
-    readouts: [['hp_n', 'Ports in this group'], ['hp_w', 'What plugs in'], ['hp_c', 'The wire carries']],
+    readouts: [['hp_n', 'Ports in this group'], ['hp_w', 'What plugs in']],
     more: [
       ['What is the IMU, and where is it?', 'IMU means inertial measurement unit. It is a tiny chip soldered inside the hub that feels which way the hub is turned, like the sensor that rotates your phone screen. There is no plug for it because it is already inside. The Sensors dive shows how to use it.'],
-      ['How does the code know which port is which?', 'On the Driver Hub you fill in a <b>configuration</b>: "motor port 0 is called frontLeft". Your code then asks for <code>frontLeft</code> by name. If a wire is in the wrong port, the wrong wheel spins.'],
-      ['Why are the plugs different shapes?', 'So you cannot plug a 12 volt motor wire into a 3.3 volt sensor port and burn it. Motor plugs are big, sensor plugs are small, and most are keyed so they only fit one way round.'],
       ['Only 4 motor ports. We have more motors.', 'Add a REV Expansion Hub. It links to the Control Hub through an RS485 port and brings 4 more motor ports, 6 more servo ports and more sensor ports.'],
     ],
     build(st, S, ui) {
@@ -359,19 +354,17 @@ export default function hubs() {
     id: 'motor', tab: 'Motor port',
     title: 'Four switches make a motor obey',
     big: 'A motor port is four fast switches: which pair is closed sets the direction, and how long they stay closed sets the speed.',
-    lead: 'A motor port has two pins. Behind them sit four fast switches wired like a letter H, with the motor as the crossbar. This is an <b>H-bridge</b>. Close one diagonal pair and the motor runs forwards. Close the other pair and it reverses. For half speed, the hub flicks the switches on and off very fast and leaves them on half the time. That trick is called <b>PWM</b>.',
-    real: 'When our code sets a drive wheel to power 0.5, this is what happens: the switches are on half the time. Brake mode is why the robot stops quickly instead of coasting.',
+    lead: 'Behind each motor port sit four fast switches. Close one pair and the motor runs forwards. Close the other pair and it reverses. For half speed, the hub flicks them on and off, on half the time. That is <b>PWM</b>.',
+    real: 'Power 0.5 in our code means exactly this: switches on half the time.',
     try: 'Turn the power knob through zero and watch which switches close.',
+    fixed: { hm_zero: 'brake' },
     controls: [
       { type: 'knob', id: 'hm_pow', label: 'motor.setPower', min: -1, max: 1, step: 0.05, value: 0.5, fmt: (v) => fmt(v) },
-      { type: 'seg', id: 'hm_zero', label: 'At power 0', value: 'brake', options: [['brake', 'Brake'], ['float', 'Float']] },
     ],
-    readouts: [['hm_d', 'Switch is on', 'of the time'], ['hm_v', 'Motor feels', 'on average'], ['hm_s', 'Switches closed']],
+    readouts: [['hm_d', 'Switch is on', 'of the time'], ['hm_v', 'Motor feels', 'on average']],
     more: [
       ['What does PWM stand for?', 'Pulse width modulation. "Pulse width" is how long each ON burst lasts. Wide pulses mean lots of power, thin pulses mean a little. The motor is too heavy to follow each flick, so it settles at the average.'],
-      ['How fast is the flicking really?', 'Thousands of times every second, far too fast to see or hear. This model slows it down so one on-off cycle takes about a second.'],
       ['What is the difference between Brake and Float?', 'At power 0, <b>Brake</b> closes both bottom switches. That joins the motor’s two wires together, and a spinning motor with its wires joined fights its own motion and stops fast. <b>Float</b> opens all four, so the motor just coasts. In code: <code>setZeroPowerBehavior(BRAKE)</code>.'],
-      ['Why must the two switches on one side never close together?', 'That would connect 12 volts straight to ground with no motor in between: a short circuit. The driver chip is built so it can never happen.'],
     ],
     build(st, S, ui) {
       const sw = (x, y) => {
@@ -648,19 +641,16 @@ export default function hubs() {
     id: 'signal', tab: 'Stick to wheel',
     title: 'How a push on the stick reaches a wheel',
     big: 'A stick push makes a short trip with several stops, and every stop adds a little delay.',
-    lead: 'You push the stick and the wheel turns. In between, the message travels: <b>gamepad</b>, <b>Driver Hub</b>, through the air by <b>Wi-Fi</b>, into the <b>Control Hub</b>, where your program’s <b>loop</b> reads it and picks a motor power. Each stop takes a few thousandths of a second (<b>milliseconds, ms</b>). Added up, that delay is called <b>lag</b>.',
-    real: 'At a busy event the air is full of Wi-Fi, so lag can grow. That is one reason drivers practise with the real Driver Hub and the real robot.',
-    try: 'Flick the stick knob, then make the Wi-Fi slow and flick again.',
+    lead: 'A stick push makes a trip: <b>gamepad</b>, <b>Driver Hub</b>, <b>Wi-Fi</b>, <b>Control Hub</b>, then your code’s <b>loop</b> picks a motor power. Each stop takes a few thousandths of a second. Added up, that delay is called <b>lag</b>.',
+    real: 'At a busy event the air is full of Wi-Fi, so lag can grow.',
+    try: 'Make the Wi-Fi slow and watch the wheel fall behind the stick.',
+    fixed: { hs_stick: 0.8, hs_loop: 20 },
     controls: [
-      { type: 'knob', id: 'hs_stick', label: 'Stick', min: -1, max: 1, step: 0.05, value: 0.8, fmt: (v) => fmt(v) },
       { id: 'hs_wifi', label: 'Wi-Fi delay', min: 2, max: 150, value: 10, unit: ' ms' },
-      { id: 'hs_loop', label: 'Your loop takes', min: 5, max: 100, value: 20, unit: ' ms' },
     ],
-    readouts: [['hs_lag', 'Lag, worst case', 'stick to wheel'], ['hs_hz', 'Loops per second'], ['hs_far', 'Robot rolls on', 'at 1.5 m/s before it reacts']],
+    readouts: [['hs_lag', 'Lag, worst case', 'stick to wheel'], ['hs_far', 'Robot rolls on', 'at 1.5 m/s before it reacts']],
     more: [
-      ['Where does the lag formula come from?', 'Worst case = Wi-Fi delay + one whole loop + about 3 ms for the hub to tell the motor. The message can arrive just after your loop looked, so it waits for the next lap. On average it waits half a loop.'],
       ['What makes a loop slow?', 'Reading lots of sensors one at a time, using <code>sleep()</code>, or running camera vision in the same loop. A good TeleOp loop takes 10 to 30 ms.'],
-      ['What makes Wi-Fi slow?', 'Many robots and phones on the same channel at a competition, or metal between the two hubs. That is why teams turn phone hotspots off at events.'],
       ['Can a human even feel 50 ms?', 'Barely. Under 50 ms feels instant. At 150 ms the robot feels like it is on ice, because it keeps doing the old command while you already changed your mind.'],
     ],
     build(st, S, ui) {
@@ -698,7 +688,8 @@ export default function hubs() {
       return {
         view: { pos: [0.4, 10, 31], target: [0.4, 1.4, 0] },
         tick(dt) {
-          const wifi = S.hs_wifi, loop = S.hs_loop, stick = S.hs_stick;
+          // The stick flicks on and off by itself, so the only thing to play with is the Wi-Fi.
+          const wifi = S.hs_wifi, loop = S.hs_loop, stick = Math.floor(ts / 320) % 2 ? 0 : 0.8;
           ts += (dt * 1000) / SLOW;
           pad.setStick(0, 0, stick);
           if (ts >= nextSend) { nextSend = ts + 14; msgs.push({ born: ts, val: stick }); }
@@ -841,5 +832,5 @@ export default function hubs() {
     },
   };
 
-  return { title: 'Control Hub and Driver Hub', chapters: [two, ports, inside, motorPort, servoPort, sensorPorts, signal, power] };
+  return { title: 'Control Hub and Driver Hub', chapters: [two, ports, motorPort, signal] };
 }

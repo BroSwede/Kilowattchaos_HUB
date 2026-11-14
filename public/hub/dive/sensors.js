@@ -14,16 +14,14 @@ export default function sensors() {
     id: 'enc', tab: 'Encoder',
     title: 'Counting turns to measure distance',
     big: 'An encoder counts tiny clicks as the motor turns, and counting clicks tells you distance.',
-    lead: 'A motor cannot see how far the robot has gone, but it can <b>count</b>. On the back of each drive motor is a ring of tiny magnets and two sensors that click each time a magnet passes. That is an <b>encoder</b>, and each click is one <b>tick</b>. Our motors give <b>537.7 ticks</b> for one turn of the wheel. Count the ticks and you know the distance.',
-    real: 'Every Yellow Jacket motor on our robot has one, the launcher motor too. That is how code can know the flywheel’s speed before it fires.',
+    lead: 'A motor cannot see how far the robot has gone, but it can <b>count</b>. A ring of tiny magnets on the motor clicks a sensor as it turns. Each click is a <b>tick</b>: 537.7 ticks for one turn of the wheel.',
+    real: 'Every motor on our robot has an encoder, the launcher motor too.',
     try: 'Drag the wheel along the floor and watch the ticks add up.',
     controls: [
       { id: 'se_turn', label: 'Turn the wheel', min: 0, max: 2, step: 0.01, value: 0.5, fmt: (v) => `${v.toFixed(2)} turns` },
     ],
-    readouts: [['se_t', 'Ticks counted'], ['se_w', 'Wheel turns', 'ticks ÷ 537.7'], ['se_d', 'Distance rolled', 'turns × π × 104 mm'], ['se_m', 'Ticks in 1 metre']],
+    readouts: [['se_t', 'Ticks counted'], ['se_d', 'Distance rolled', 'turns × π × 104 mm']],
     more: [
-      ['Why 537.7 and not a round number?', 'The magnet ring makes 28 ticks for each turn of the little motor inside. The gearbox makes that motor turn 19.2 times for one turn of the wheel. 28 × 19.2 = 537.6, and the exact gear teeth make it 537.7.'],
-      ['Why two sensors?', 'With one sensor you can count, but you cannot tell forwards from backwards. Two sensors sit a little apart. Whichever one clicks first tells the hub which way the shaft is turning, so the count goes up or down.'],
       ['Show me the distance math', 'One wheel turn rolls π × 104 mm = 327 mm. So one tick is 327 ÷ 537.7 = <b>0.61 mm</b>. To drive 1 metre you need 1000 ÷ 0.61 = about <b>1,646 ticks</b>.'],
       ['Can the encoder be wrong?', 'The count is exact, but the wheel is not. If a wheel slips on the floor or the robot is bumped sideways, the wheel turned without the robot moving that far. Mecanum wheels slip a lot when strafing, which is why teams add other sensors.'],
     ],
@@ -71,7 +69,6 @@ export default function sensors() {
       st.label('A', hA.g, { dy: -22, tone: 'volt' });
       st.label('B', hB.g, { dy: -22, tone: 'volt' });
       const lt = st.label('0 ticks', w.g, { dy: -84, tone: 'volt' });
-      st.label('Each mark: 20 ticks', new THREE.Vector3(x0 + 0.5 * cu, 0, 2.4), { dy: 6 });
       let shown = S.se_turn;
       return {
         view: { pos: [0, 9, 27], target: [0, 2.4, 0] },
@@ -108,20 +105,17 @@ export default function sensors() {
     id: 'imu', tab: 'IMU (gyro)',
     title: 'Which way am I facing?',
     big: 'A chip feels how fast the robot is turning and adds it all up, so the robot knows which way it faces.',
-    lead: 'Inside the Control Hub is a motion chip called an <b>IMU</b>. One part of it feels how fast the robot is turning: a <b>gyroscope</b>. The hub adds up all those little turns to answer one question: <b>how many degrees have I turned since the start?</b> That number is the <b>heading</b>. Turning left counts up, turning right counts down.',
-    real: 'In autonomous, “turn to face the goal” uses this number. It only works if the robot starts the match pointing the way the code expects.',
-    try: 'Spin the robot with the knob. Then let time pass and watch the two arrows drift apart.',
+    lead: 'Inside the Control Hub is a motion chip called an <b>IMU</b>. It feels how fast the robot is turning and adds it all up into one number: the <b>heading</b>, in degrees. Small mistakes add up too, so it slowly <b>drifts</b>.',
+    real: '“Turn to face the goal” in autonomous uses this number.',
+    try: 'Spin the robot with the knob and compare the two arrows.',
+    fixed: { si_time: 60, si_rate: 3 },
     controls: [
       { type: 'knob', id: 'si_turn', label: 'Turn the robot', min: -180, max: 180, step: 1, value: 35, unit: '°' },
-      { id: 'si_time', label: 'Time since the reset', min: 0, max: 150, step: 1, value: 0, unit: ' s' },
-      { id: 'si_rate', label: 'Gyro drift', min: 0, max: 10, step: 0.5, value: 3, unit: '° a minute' },
     ],
-    readouts: [['si_true', 'Really facing'], ['si_imu', 'IMU says'], ['si_err', 'Off by']],
+    readouts: [['si_true', 'Really facing'], ['si_imu', 'IMU says']],
     more: [
       ['Why does the heading drift?', 'The gyro never measures the angle itself, only how fast the robot is turning. The hub adds up thousands of tiny readings a second. Each one is off by a hair, and the hairs pile up. After a 2.5 minute match the answer can be a few degrees wrong.'],
       ['How do teams fix drift?', 'Reset the heading when the robot is squared up against a wall, or check it against something that does not drift, like a camera looking at an AprilTag on the field wall.'],
-      ['What is it used for?', 'Turning to an exact angle in autonomous, driving in a straight line, and <b>field-centric</b> driving, where pushing the stick away from you always sends the robot away from you, whichever way it is facing.'],
-      ['What else can an IMU feel?', 'Tipping forward and back (pitch), tipping side to side (roll) and speeding up (acceleration). Your phone uses the same kind of chip to rotate the screen.'],
     ],
     build(st, S, ui) {
       const plate = cyl(6.6, 0.24, mat('#8D9391', { rough: 0.9 }), { pos: [0, -0.12, 0], seg: 72 });
@@ -168,7 +162,7 @@ export default function sensors() {
           ui.out('si_imu', `${says.toFixed(1)}°`);
           ui.out('si_err', `${err.toFixed(1)}°`, err < 1 ? 'spot on' : err < 4 ? 'small, but growing' : 'enough to miss a shot');
           ui.tone('si_err', err >= 4 ? 'warn' : err < 1 ? 'good' : '');
-          ui.note(err < 0.4 ? 'Just reset: the IMU and the real robot agree. Slide <b>Time since the reset</b> to the right.' : `After ${S.si_time} s the IMU is <b>${err.toFixed(1)}° off</b>. At 3 metres from the goal, that aims the launcher ${(Math.tan((err * Math.PI) / 180) * 300).toFixed(0)} cm to one side.`, err >= 4 ? 'warn' : '');
+          ui.note(err < 0.4 ? 'Just reset: the IMU and the real robot agree.' : `${S.si_time} seconds after a reset, the IMU is <b>${err.toFixed(1)}° off</b>. At 3 metres from the goal, that aims the launcher ${(Math.tan((err * Math.PI) / 180) * 300).toFixed(0)} cm to one side.`, err >= 4 ? 'warn' : '');
         },
       };
     },
@@ -184,19 +178,17 @@ export default function sensors() {
     id: 'dist', tab: 'Distance',
     title: 'Timing a flash of light',
     big: 'A distance sensor times how long a flash of light takes to bounce back.',
-    lead: 'A distance sensor is a stopwatch for light. It fires a tiny flash of invisible infrared light, then times how long the flash takes to bounce off something and come back. This is called <b>time of flight</b>. Light is absurdly fast: about <b>30 cm every nanosecond</b> (a billionth of a second). So it has to be a very good stopwatch.',
-    real: 'A robot like ours could use one to measure how far it is from the goal, then pick the flywheel speed to match.',
-    try: 'Drag the wall closer and further. Then swap what it is made of.',
+    lead: 'A distance sensor is a stopwatch for light. It fires a tiny flash of invisible light and times how long it takes to bounce back. Light covers about <b>30 cm every nanosecond</b>, so the stopwatch must be very good.',
+    real: 'A sensor like this could tell our robot how far it is from the goal.',
+    try: 'Drag the wall closer and further away.',
+    fixed: { sd_surf: 'white' },
     controls: [
       { id: 'sd_d', label: 'Distance to the wall', min: 5, max: 200, step: 1, value: 90, unit: ' cm' },
-      { type: 'seg', id: 'sd_surf', label: 'The wall is', value: 'white', options: Object.entries(SURF).map(([k, v]) => [k, v.label]) },
     ],
-    readouts: [['sd_t', 'Round trip', 'out and back'], ['sd_r', 'Sensor reads'], ['sd_b', 'Light that came back']],
+    readouts: [['sd_t', 'Round trip', 'out and back'], ['sd_r', 'Sensor reads']],
     more: [
       ['Show me the math', 'The light goes there <b>and</b> back, so it travels twice the distance. Time = 2 × distance ÷ speed. For 90 cm: 2 × 90 ÷ 30 = <b>6 nanoseconds</b>. The sensor does it the other way round: distance = time × 30 ÷ 2.'],
       ['How can a chip time a nanosecond?', 'It does not time one flash. It fires many thousands of flashes and measures how the returning light lines up with the outgoing light, then averages. That is how a chip the size of a grain of rice gets within a centimetre or two.'],
-      ['Why does black foam work worse?', 'Black soaks up most of the light, so only a little comes back, and from far away that little is too faint to find. Clear plastic lets the flash go straight through, so the sensor may see whatever is behind it instead.'],
-      ['Which sensor is this?', 'The REV 2m Distance Sensor. It plugs into an I2C port, reads from about 5 cm to 2 metres, and sees a narrow cone, not a single dot.'],
     ],
     build(st, S, ui) {
       const U = 1 / 12.5, sx = -8.4, y = 1.5;
@@ -277,20 +269,17 @@ export default function sensors() {
     id: 'color', tab: 'Colour',
     title: 'Three numbers for every colour',
     big: 'A colour sensor turns a colour into three numbers: how much red, green and blue bounces back.',
-    lead: 'A colour sensor shines white light on whatever is in front of it and measures what bounces back through three tiny filters: <b>red</b>, <b>green</b> and <b>blue</b>. Those three numbers are called <b>RGB</b>. A purple ball sends back lots of red and blue but little green. Your code reads the numbers and decides which game piece it is.',
-    real: 'Placed in the ball path, a colour sensor could tell the robot which ball is next in line before it launches.',
-    try: 'Pick a game piece, then lift the sensor away and watch the numbers fade.',
+    lead: 'A colour sensor shines white light and measures what bounces back through three filters: <b>red</b>, <b>green</b> and <b>blue</b>. A purple ball sends back lots of red and blue but little green. Code reads the three numbers and decides.',
+    real: 'In the ball path, a colour sensor could tell the robot which ball is next.',
+    try: 'Pick a game piece and watch the numbers change.',
+    fixed: { sc_gap: 2, sc_led: 'on' },
     controls: [
       { type: 'seg', id: 'sc_pick', label: 'Game piece', value: 'purple', options: Object.entries(PIECES).map(([k, v]) => [k, v[0]]) },
-      { id: 'sc_gap', label: 'Sensor height above it', min: 1, max: 10, step: 0.5, value: 2, unit: ' cm' },
-      { type: 'seg', id: 'sc_led', label: 'Sensor light', value: 'on', options: [['on', 'On'], ['off', 'Off']] },
     ],
-    readouts: [['sc_r', 'Red'], ['sc_g', 'Green'], ['sc_b', 'Blue'], ['sc_n', 'Robot decides']],
+    readouts: [['sc_n', 'Robot decides']],
     more: [
       ['What is hue?', 'Hue is one number for "which colour", as an angle round the colour wheel: red is 0°, green is 120°, blue is 240°, purple is near 280°. It stays almost the same whether the piece is close or far, bright or dim, so it is easier to test in code than three numbers.'],
       ['Why does the sensor have its own light?', 'So the answer does not depend on the room. A gym at a competition is lit very differently from our shop. With its own white light and the piece held close, the sensor sees the same colours everywhere.'],
-      ['Why do the numbers drop so fast with height?', 'The light spreads out on the way down and again on the way back, so each centimetre further costs a lot. Colour sensors work best 1 to 3 cm from the thing they are looking at.'],
-      ['Which sensor is this?', 'The REV Color Sensor V3. It plugs into an I2C port, and as a bonus it can also tell how close something is, up to about 10 cm.'],
     ],
     build(st, S, ui) {
       const tile = box(11, 0.2, 7, mat('#8D9391', { rough: 0.9 }), { r: 0.04, pos: [1.2, -0.1, 0] });

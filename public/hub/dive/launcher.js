@@ -137,20 +137,17 @@ export default function launcher() {
     id: 'speed', tab: 'Wheel to ball',
     title: 'The ball leaves at half the wheel’s speed',
     big: 'A spinning wheel squeezes the ball against a still wall, and the ball comes out at about half the speed of the wheel’s rim.',
-    lead: 'Our launcher is one fast wheel, called a <b>flywheel</b>, next to a curved wall called a <b>hood</b>. The ball is pinched between them. The side touching the wheel is dragged along at the rim’s speed. The side touching the hood is not moving at all. The middle of the ball goes at the average of the two: <b>half</b>. So the ball rolls out, spinning backwards.',
-    real: 'Our flywheel is a <b>96 mm Hogback wheel</b> and the balls are 76 mm (3 in.) across. The launcher mount holds the gap fixed, so every ball gets the same squeeze.',
-    try: 'Turn the flywheel speed up. Then make the squeeze too loose or too tight.',
+    lead: 'Our launcher is one fast wheel, a <b>flywheel</b>, next to a curved wall called a <b>hood</b>. The ball is pinched between them. One side is dragged by the wheel, the other is held still, so the ball leaves at <b>half</b> the rim’s speed.',
+    real: 'Our flywheel is a 96 mm wheel, and the balls are 76 mm across.',
+    try: 'Turn the flywheel speed up and watch the ball leave faster.',
+    fixed: { la_wheel: '96', la_cmp: 12 },
     controls: [
       { type: 'knob', id: 'la_rpm', label: 'Flywheel speed', min: 500, max: 6000, step: 50, value: TARGET, unit: ' rpm' },
-      { type: 'seg', id: 'la_wheel', label: 'Wheel', value: '96', options: [['96', '96 mm (ours)'], ['72', '72 mm']] },
-      { id: 'la_cmp', label: 'Squeeze on the ball', min: 2, max: 24, step: 1, value: 12, unit: ' mm' },
     ],
-    readouts: [['la_vs', 'Rim speed', 'π × diameter × turns a second'], ['la_v', 'Ball leaves at', 'about half the rim speed'], ['la_k', 'That is', 'kilometres an hour'], ['la_spin', 'Backspin', 'turns a second']],
+    readouts: [['la_vs', 'Rim speed', 'π × diameter × turns a second'], ['la_v', 'Ball leaves at', 'about half the rim speed']],
     more: [
       ['Show me the math', 'A 96 mm wheel is 0.096 m across, so one turn of the rim is 3.14 × 0.096 = <b>0.30 m</b>. At 2,400 rpm it makes 40 turns a second. 40 × 0.30 = <b>12 m/s</b> at the rim. Half of that is <b>6 m/s</b> for the ball, about 22 km/h.'],
       ['Why exactly half?', 'Think of a pencil rolling under your flat hand on a desk. Your hand moves 10 cm, the pencil only moves 5 cm. The desk side of the pencil is stuck, the hand side moves with your hand, and the middle splits the difference. The hood is the desk and the flywheel is your hand.'],
-      ['How do you get more than half?', 'Use two wheels, one on each side, spinning toward each other. Now both sides of the ball are moving, so it leaves at nearly the full rim speed. It costs a second motor, and both wheels must match.'],
-      ['Why does squeeze matter?', 'Too loose and the wheel slips across the ball like a tyre on ice. Too tight and the energy goes into squashing the ball instead of throwing it. About 12 mm of squeeze is a good place to start. Rule of thumb, not a law: test it on real balls.'],
     ],
     build(st, S, ui) {
       const U = 1 / 20, rB = (BALL / 2) * U; // scene units per millimetre
@@ -231,18 +228,16 @@ export default function launcher() {
     id: 'arc', tab: 'Angle and arc',
     title: 'Speed and angle decide where it lands',
     big: 'Once the ball leaves, only gravity steers it, so its speed and its angle at the start decide the whole flight.',
-    lead: 'After the ball leaves the wheel, nothing pushes it any more. Gravity pulls it down the whole way, so its path is a curve called an <b>arc</b>. Two numbers pick the arc: <b>how fast</b> it leaves and at <b>what angle</b>. A steep angle goes high and drops in from above. A flat angle is quick but skims the edge. More speed stretches the whole arc.',
-    real: 'The hood sets our launch angle and the code sets the flywheel speed. If drivers shoot from a new spot, one of the two has to change, or the same shot lands short or long.',
-    try: 'Get the ball in the goal. Then move the robot back and get it in again.',
+    lead: 'Once the ball leaves the wheel, only gravity acts on it, so it flies in a curve called an <b>arc</b>. The launch <b>angle</b> shapes the arc: steep goes high and drops in, flat is quick but skims the edge.',
+    real: 'The hood sets our launch angle, and the code sets the flywheel speed.',
+    try: 'Change the angle until the ball drops into the goal.',
+    fixed: { la_rpm: 2400, la_far: 2.65 },
     controls: [
-      { type: 'knob', id: 'la_rpm', label: 'Flywheel speed', min: 500, max: 6000, step: 50, value: TARGET, unit: ' rpm' },
-      { id: 'la_ang', label: 'Launch angle', min: 20, max: 70, step: 1, value: 48, unit: '°' },
-      { id: 'la_far', label: 'Distance to the goal', min: 1.5, max: 4.5, step: 0.05, value: 2.65, fmt: (v) => `${v.toFixed(2)} m` },
+      { id: 'la_ang', label: 'Launch angle', min: 20, max: 70, step: 1, value: 30, unit: '°' },
     ],
-    readouts: [['lb_v', 'Ball leaves at', 'half the rim speed'], ['lb_h', 'Highest point', 'above the floor'], ['lb_d', 'Height at the goal', 'the opening is 0.9 to 1.2 m up'], ['lb_r', 'Result']],
+    readouts: [['lb_d', 'Height at the goal', 'the opening is 0.9 to 1.2 m up'], ['lb_r', 'Result']],
     more: [
       ['Why is 45° not always best?', 'On flat ground 45° throws furthest. But our goal is <b>up high</b> and has an opening on top. A steeper shot comes down into the opening, like a basketball shot. A flat shot has to squeeze in past the front edge, so it has less room for error.'],
-      ['Two ways to hit the same spot', 'Try 2,400 rpm at 48°. Now try a steeper angle with more speed. Both can land in the goal. The steeper one drops in from above and forgives small speed mistakes. The flatter one gets there sooner.'],
       ['What does this leave out?', 'Air. A real ball is slowed by the air and its backspin lifts it a little. So real shots usually fall a bit shorter than this. The goal here is a sample box, not the real field goal: always tune on the real field.'],
     ],
     build(st, S, ui) {
@@ -254,7 +249,7 @@ export default function launcher() {
         ui.out('lb_d', r.yFar > 0 ? `${r.yFar.toFixed(2)} m` : 'on the floor');
         ui.out('lb_r', r.hit ? 'In' : r.short ? 'Short' : 'Over');
         ui.tone('lb_r', r.hit ? 'good' : 'warn');
-        ui.note(r.hit ? '<b>In the goal.</b> Write down the speed, angle and distance. On the real robot that is a line in the session note.' : r.short ? '<b>Short.</b> The ball is too low by the time it reaches the goal. Add flywheel speed, or try a different angle.' : '<b>Over.</b> The ball is still too high when it reaches the goal. Take some speed off, or change the angle.', r.hit ? 'good' : 'warn');
+        ui.note(r.hit ? '<b>In the goal.</b> Write down the speed, angle and distance. On the real robot that is a line in the session note.' : r.short ? '<b>Short.</b> The ball is too low by the time it reaches the goal. Try a different angle.' : '<b>Over.</b> The ball is still too high when it reaches the goal. Change the angle.', r.hit ? 'good' : 'warn');
       };
       fresh();
       return {
@@ -271,17 +266,17 @@ export default function launcher() {
     id: 'recover', tab: 'Spin back up',
     title: 'Every shot steals speed from the wheel',
     big: 'The ball’s energy comes out of the spinning wheel, so the wheel slows down with every shot and needs a moment to speed up again.',
-    lead: 'A spinning wheel stores energy, like a wound-up toy. Throwing a ball <b>spends</b> some of it, so the wheel slows down. Then the motor has to top it up again. Fire the next ball too soon and the wheel is still slow, so that ball comes out slower and <b>lands short</b>. The dips on the graph are the shots.',
-    real: 'This is why our hopper servo lets balls through <b>one at a time</b>, with a short wait. Three balls in one second sounds great, but the second and third would fall short.',
-    try: 'Shorten the time between shots until balls start missing the hoop. Then try a heavier wheel.',
+    lead: 'A spinning wheel stores energy. Throwing a ball <b>spends</b> some of it, so the wheel slows down and the motor must top it up. Fire the next ball too soon and it comes out slow and <b>lands short</b>.',
+    real: 'This is why our hopper servo lets balls through one at a time.',
+    try: 'Shorten the time between shots until balls start missing.',
+    fixed: { lr_mass: '1' },
+    hud: true,
     controls: [
       { id: 'lr_gap', label: 'Time between shots', min: 0.2, max: 2, step: 0.05, value: 1, fmt: (v) => `${v.toFixed(2)} s` },
-      { type: 'seg', id: 'lr_mass', label: 'Flywheel', value: '1', options: [['0.5', 'Lighter'], ['1', 'Like ours'], ['2', 'Heavier']] },
     ],
-    readouts: [['lr_now', 'Flywheel now', `target ${TARGET.toLocaleString('en-US')} rpm`], ['lr_drop', 'One shot costs', 'of the wheel’s speed'], ['lr_rec', 'Back to speed in', 'to within 3%'], ['lr_last', 'Last ball left at', 'of full speed']],
+    readouts: [['lr_now', 'Flywheel now', `target ${TARGET.toLocaleString('en-US')} rpm`], ['lr_last', 'Last ball left at', 'of full speed']],
     more: [
       ['Where does the energy go?', 'Into the ball: moving forward, and spinning. A little is lost squashing it. With numbers like ours the wheel holds roughly 5 joules at 2,400 rpm and each ball takes something like 1 to 1.5 joules. These are estimates: we have not weighed our wheel or the balls.'],
-      ['Why does a heavier wheel help?', 'A heavy wheel stores more energy at the same speed, so one ball takes a smaller slice and the dip is smaller. The price: the motor needs longer to spin it up from a stop at the start of the match.'],
       ['How does the code know it is ready?', 'The encoder on the launcher motor reports the speed. Good code checks “is the flywheel within a few percent of the target?” before it lets the servo feed the next ball.'],
     ],
     build(st, S, ui) {
@@ -370,16 +365,15 @@ export default function launcher() {
     id: 'steady', tab: 'Same shot every time',
     title: 'A tired battery throws short',
     big: 'Tell the motor a speed, not a power, and the shot stays the same even as the battery runs down.',
-    lead: 'Set the launcher motor to a fixed <b>power</b> and its speed depends on the battery. A fresh battery spins it fast. Two minutes into a match the voltage has dropped, the wheel turns slower and shots land <b>short</b>. The fix is <b>velocity control</b>: the code reads the wheel’s real speed from the encoder and keeps adding power until it matches the speed you asked for.',
-    real: 'Our launcher motor has an encoder on the back, so the code can ask for a speed in ticks per second instead of a power. It is the same “how wrong am I?” idea as the Turn to 90° chapter in Algorithms and math.',
-    try: 'Turn the battery down with fixed power and watch the shot fall short. Then switch to velocity control.',
+    lead: 'At a fixed <b>power</b>, the wheel’s speed depends on the battery. As the battery drains, shots land <b>short</b>. <b>Velocity control</b> fixes it: the code reads the wheel’s real speed and adds power until it matches the speed you asked for.',
+    real: 'Our launcher motor has an encoder, so the code can ask for a speed.',
+    try: 'Turn the battery down until the shot falls short, then switch to velocity control.',
     controls: [
       { type: 'knob', id: 'ls_v', label: 'Battery', min: 11, max: 13.5, step: 0.1, value: 12.8, fmt: (v) => `${v.toFixed(1)} V` },
       { type: 'seg', id: 'ls_mode', label: 'The code sets', value: 'power', options: [['power', 'A fixed power'], ['speed', 'A speed (velocity control)']] },
     ],
-    readouts: [['ls_p', 'Motor power', 'what the code sends'], ['ls_rpm', 'Flywheel', `target ${TARGET.toLocaleString('en-US')} rpm`], ['ls_d', 'Height at the goal', 'the opening is 0.9 to 1.2 m up'], ['ls_r', 'Result']],
+    readouts: [['ls_rpm', 'Flywheel', `target ${TARGET.toLocaleString('en-US')} rpm`], ['ls_r', 'Result']],
     more: [
-      ['Why does the voltage drop?', 'A battery is strongest just off the charger. As it empties, and whenever lots of motors pull at once, its voltage sags. Driving hard while shooting makes it sag more.'],
       ['How does velocity control work?', 'Many times a second the code compares the speed it wants with the speed the encoder reports. Too slow? Add power. Too fast? Take some away. With a tired battery it simply ends up sending a higher power to reach the same speed.'],
       ['Can it always keep up?', 'Only while there is power to spare. Here the wheel needs about 70% power on a fresh battery, so there is room to add more. If a shot needed 100% power on a fresh battery, there would be nothing left to add when it sags. Leave some headroom.'],
     ],
