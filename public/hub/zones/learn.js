@@ -9,6 +9,8 @@ const soft = 'background:var(--raised);color:var(--text)';
 // ================================================================= Paths
 // Steps: [title, type, minutes, go: [zone, sub tab] or null, lesson: [intro, steps[], tip] or null]
 const PATHS = [
+  { id: 'made', t: "How it's made", ic: 'sparkle', badge: 'Robot insider', d: 'Open up the real parts on our robot in 3D: what is inside, how a factory makes them and what they do for the rest of the robot. Turn the knobs and drag the sliders to see it work.', steps: [
+    ['Open up the battery: cells, volts, amps and watts', 'Explore', 10, ['dive', 'battery']], ['Open up a drive motor: magnets, coils and gears', 'Explore', 10, ['dive', 'motor']], ['Follow the frame from rock to a drilled channel', 'Explore', 10, ['dive', 'frame']], ['Click a part on the 3D robot and find its deep dive', 'Explore', 5, ['robot', '3D Explorer']]] },
   { id: 'safety', t: 'Shop safety', ic: 'alert', badge: 'Shop safety', d: 'Glasses, tools, batteries and what to do when something goes wrong. Everyone finishes this before using a tool.', steps: [
     ['Safety glasses on, every time', 'Read', 3], ['Which tools need a mentor next to you', 'Read', 5], ['Batteries: charging, carrying and storing', 'Read', 4], ['Walk the shop with a mentor', 'Do', 10], ['Safety quiz', 'Quiz', 5]] },
   { id: 'onshape', t: 'Onshape Basics', ic: 'layers', badge: 'Onshape Basics', d: 'Sketch, extrude and put parts together in the browser CAD the team uses. Works on Chromebooks.', steps: [
@@ -68,6 +70,11 @@ function paths(view, ctx) {
   const mentor = isMentor();
   view.innerHTML = `<div class="zv">
     ${strip('Short paths that end in a badge. Each step is a few minutes of reading or doing, and many open the right place in the Hub. Your progress saves to your account, so it follows you to any device.', [tag(`${PATHS.length} paths`)])}
+    <article class="card">
+      <div class="card-head"><span class="oc2 solid">${icon('sparkle', 'i sm')}</span><h3 class="card-title">How it's made: 3D deep dives</h3><span class="tag">New</span></div>
+      <p class="lead">Open up a real part from our robot, see what is inside and how it gets made, and play with the knobs and sliders.</p>
+      <div class="dive-row" style="margin-top:0">${[['battery', 'Battery', 'Cells, volts, amps and watts'], ['motor', 'Motor', 'Magnets, coils and planetary gears'], ['frame', 'Frame', 'From rock to a drilled channel']].map(([k, n, b]) => `<button class="dive-chip" type="button" data-opendive="${k}"><span class="oc">${icon('sparkle', 'i sm')}</span>${n}<small>${b}</small></button>`).join('')}</div>
+    </article>
     <article class="card">
       <div class="card-head"><h3 class="card-title">Your paths</h3><span class="tag" id="pathSum"></span></div>
       <div class="paths" id="pathGrid"></div>
@@ -143,7 +150,7 @@ function paths(view, ctx) {
         const acts = st === 'done' ? `<span class="cap row" style="gap:4px">${icon('check', 'i sm')}Done</span>${i === n - 1 ? '<button class="btn ghost pill sm" type="button" data-undo="1">Undo</button>' : ''}`
           : st === 'now' ? `${les ? `<button class="btn soft pill sm" type="button" data-lesson="${i}">Open</button>` : go ? `<button class="btn soft pill sm" type="button" data-go="${i}">${icon('arrow', 'i sm')}Open</button>` : ''}<button class="btn primary pill sm" type="button" data-done="1"${loaded ? '' : ' disabled'}>Mark done</button>`
             : '<span class="cap">Locked</span>';
-        return `<li class="lstep ${st}"><span class="n">${st === 'done' ? icon('check', 'i sm') : i + 1}</span><div style="min-width:0"><div class="t">${t}</div><div class="cap row" style="gap:6px">${icon(TYPE_IC[type], 'i sm')}${type} · ${m} min${go ? ` · opens ${go[1]}` : ''}</div></div><div class="row">${acts}</div></li>`;
+        return `<li class="lstep ${st}"><span class="n">${st === 'done' ? icon('check', 'i sm') : i + 1}</span><div style="min-width:0"><div class="t">${t}</div><div class="cap row" style="gap:6px">${icon(TYPE_IC[type], 'i sm')}${type} · ${m} min${go ? ` · opens ${go[0] === 'dive' ? 'the 3D deep dive' : go[1]}` : ''}</div></div><div class="row">${acts}</div></li>`;
       }).join('')}</ol>`;
   };
   const all = (pop) => { grid(); detail(pop); badges(); };
@@ -230,7 +237,7 @@ function paths(view, ctx) {
       return;
     }
     const g = e.target.closest('[data-go]');
-    if (g) { const s = PATHS.find((x) => x.id === cur).steps[+g.dataset.go]; ctx.go(s[3][0], s[3][1]); return; }
+    if (g) { const s = PATHS.find((x) => x.id === cur).steps[+g.dataset.go]; if (s[3][0] === 'dive') document.dispatchEvent(new CustomEvent('hub:dive', { detail: s[3][1] })); else ctx.go(s[3][0], s[3][1]); return; }
     const l = e.target.closest('[data-lesson]');
     if (l) {
       const p = PATHS.find((x) => x.id === cur), i = +l.dataset.lesson, [t, type, m, go, les] = p.steps[i];

@@ -483,6 +483,21 @@ export async function createViewer(opts) {
     shadow.material.opacity = isDark ? 0.95 : 0.6;
     request();
   }
+  // A stand-alone copy of one part for the "How it's made" pop-up: same full-detail geometry, shared not duplicated.
+  function clonePart(id) {
+    const p = byId.get(id);
+    if (!p) return null;
+    const g = new THREE.Group();
+    p.node.updateWorldMatrix(true, true);
+    const inv = new THREE.Matrix4().copy(p.node.matrixWorld).invert();
+    for (const m of p.meshes) {
+      const c = new THREE.Mesh(m.geometry, m.userData.orig);
+      c.applyMatrix4(new THREE.Matrix4().multiplyMatrices(inv, m.matrixWorld));
+      c.userData.keepGeo = true;
+      g.add(c);
+    }
+    return g;
+  }
   function findPart(name) {
     const p = parts.find((q) => q.info && q.info[2] === name);
     return p ? p.id : null;
@@ -524,7 +539,7 @@ export async function createViewer(opts) {
   }
 
   return {
-    setColorMode, setXray, setExplode, select, focusSystem, frameCurrent, resetView, setTheme, findPart, stopAutoRotate,
+    setColorMode, setXray, setExplode, select, focusSystem, frameCurrent, resetView, setTheme, findPart, clonePart, stopAutoRotate,
     issuePartId: issuePart ? issuePart.id : null,
     stats: { parts: parts.length, size },
     getState: () => ({ colorMode, xray, focus, selected, explode }),
