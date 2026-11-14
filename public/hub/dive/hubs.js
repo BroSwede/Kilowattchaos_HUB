@@ -96,7 +96,9 @@ export default function hubs() {
   const two = {
     id: 'two', tab: 'Two boxes',
     title: 'One in your hands, one on the robot',
-    lead: 'A FIRST Tech Challenge robot is run by two boxes. The <b>Driver Hub</b> is the touchscreen the drive team holds, with the gamepads plugged into it. The <b>Control Hub</b> is bolted to the robot. It is the robot’s brain: it runs your code and feeds every motor. They talk over <b>Wi-Fi</b>, so there is no wire between drivers and robot.',
+    big: 'Two boxes run the robot: one in the drivers’ hands and one on the robot, joined by Wi-Fi.',
+    lead: 'The touchscreen the drive team holds is the <b>Driver Hub</b>. The gamepads plug into it. The box bolted to the robot is the <b>Control Hub</b>. It is the robot’s brain: it runs your code and feeds every motor. The two talk by <b>Wi-Fi</b>, so no wire joins the drivers and the robot.',
+    real: 'At the start of a match a driver taps <b>Init</b>, then <b>Start</b>, on the Driver Hub. If the robot ever does something scary, <b>Stop</b> is on the same screen.',
     try: 'Turn the stick knob. Watch the message cross the gap and the wheel answer.',
     controls: [
       { type: 'knob', id: 'hb_stick', label: 'Push the stick', min: -1, max: 1, step: 0.05, value: 0.5, fmt: (v) => fmt(v) },
@@ -168,7 +170,9 @@ export default function hubs() {
   const ports = {
     id: 'ports', tab: 'Ports tour',
     title: 'Every plug on the Control Hub',
-    lead: 'Everything on the robot plugs into this box, and <b>every port has a number</b>. Your code uses the same numbers when it says which motor is which. This is REV’s real CAD model, so what you see here is what is on our robot. Pick a group, then tap the labels.',
+    big: 'Everything on the robot plugs into one box, and every plug has a number that your code uses.',
+    lead: 'Every motor, servo and sensor plugs into this box, and <b>every port has a number</b>. Your code uses the same numbers to say which motor is which. This is REV’s real 3D model, so what you see is what is on our robot. Pick a group, then tap the labels.',
+    real: 'Each drive motor has its own port number. If the robot spins when it should drive straight, two plugs are probably swapped. Check the numbers first.',
     try: 'Pick a group, tap a label, then slide the cable into its port.',
     controls: [
       { type: 'seg', id: 'hp_grp', label: 'Show me the ports for', value: 'all', options: Object.entries(GROUPS).map(([k, g]) => [k, g.label]) },
@@ -248,7 +252,9 @@ export default function hubs() {
   const inside = {
     id: 'inside', tab: 'Open it up',
     title: 'What is inside the box',
-    lead: 'Slide to cut the case away. Underneath is one circuit board carrying five kinds of parts: a <b>computer</b> that runs your code, <b>motor drivers</b> that switch real power, an <b>IMU</b> that feels turning, a <b>Wi-Fi radio</b>, and <b>regulators</b> that make safe voltages. The case and board are REV’s real CAD. REV’s model leaves the chips out, so they are drawn in about where they sit.',
+    big: 'Inside the case is one circuit board with five jobs: think, drive motors, feel turning, talk by radio and tame the voltage.',
+    lead: 'Slide to cut the case away. One circuit board carries five kinds of parts: a <b>computer</b> for your code, <b>motor drivers</b> that switch real power, a turn-feeling chip called an <b>IMU</b>, a <b>Wi-Fi radio</b>, and <b>regulators</b> that make safe voltages. The case and board are REV’s real model. It leaves the chips out, so they are drawn in about where they sit.',
+    real: 'The IMU chip is why the hub must be bolted down tight. If the hub wobbles, the robot’s sense of direction wobbles with it.',
     try: 'Slide the case open, then pick a part to light up its job.',
     controls: [
       { id: 'hi_open', label: 'Cut the case away', min: 0, max: 100, value: 0, unit: '%' },
@@ -352,7 +358,9 @@ export default function hubs() {
   const motorPort = {
     id: 'motor', tab: 'Motor port',
     title: 'Four switches make a motor obey',
-    lead: 'A motor port has just two pins. Behind them are four fast switches wired in the shape of a letter H, with the motor as the crossbar. This is an <b>H-bridge</b>. Close one diagonal pair and current runs through the motor one way: forwards. Close the other pair and it runs the other way: reverse. For half speed, the hub does not send half the voltage. It flicks the switch on and off very fast and leaves it on half the time. That trick is called <b>PWM</b>.',
+    big: 'A motor port is four fast switches: which pair is closed sets the direction, and how long they stay closed sets the speed.',
+    lead: 'A motor port has two pins. Behind them sit four fast switches wired like a letter H, with the motor as the crossbar. This is an <b>H-bridge</b>. Close one diagonal pair and the motor runs forwards. Close the other pair and it reverses. For half speed, the hub flicks the switches on and off very fast and leaves them on half the time. That trick is called <b>PWM</b>.',
+    real: 'When our code sets a drive wheel to power 0.5, this is what happens: the switches are on half the time. Brake mode is why the robot stops quickly instead of coasting.',
     try: 'Turn the power knob through zero and watch which switches close.',
     controls: [
       { type: 'knob', id: 'hm_pow', label: 'motor.setPower', min: -1, max: 1, step: 0.05, value: 0.5, fmt: (v) => fmt(v) },
@@ -449,7 +457,9 @@ export default function hubs() {
   const servoPort = {
     id: 'servo', tab: 'Servo port',
     title: 'A servo listens to how long the pulse is',
-    lead: 'A <b>servo</b> is a small motor with its own brain. You do not tell it how hard to push. You tell it <b>what angle to hold</b>. The hub does that with one signal wire, sending a short pulse about 50 times a second. The servo measures <b>how long each pulse lasts</b>, in millionths of a second (microseconds, µs). 500 µs means all the way one side, 1500 µs is the middle, 2500 µs is all the way to the other side.',
+    big: 'A servo holds an angle, and the hub picks the angle by how long each pulse lasts.',
+    lead: 'A <b>servo</b> is a small motor with its own brain. You tell it <b>what angle to hold</b>, not how hard to push. The hub sends a short pulse down one wire about 50 times a second, and the servo times each pulse in millionths of a second (<b>microseconds, µs</b>). 500 µs is one end, 1500 µs is the middle and 2500 µs is the other end.',
+    real: 'Our <b>hopper servo</b> works this way. One pulse length holds the balls back. Another lets one ball through to the flywheel.',
     try: 'Turn the pulse knob, or drag the servo arm. Then push on the arm.',
     controls: [
       { type: 'knob', id: 'hv_pw', label: 'Pulse length', min: 500, max: 2500, step: 10, value: 1500, unit: ' µs' },
@@ -540,7 +550,9 @@ export default function hubs() {
   const sensorPorts = {
     id: 'sensor', tab: 'Sensor ports',
     title: 'Three ways a sensor can talk',
-    lead: 'The small white ports come in three kinds, and each speaks a different language. <b>Analog</b> is a voltage that can be anything from 0 to 3.3 volts, like a dimmer switch. <b>Digital</b> has only two answers: on or off. <b>I2C</b> is a real conversation: several smart sensors share the same wires, each has its own <b>address</b>, and the hub calls one by its address and gets numbers back.',
+    big: 'Sensors talk to the hub in three ways: a sliding voltage, a plain on or off, or a numbered conversation.',
+    lead: 'The small white ports come in three kinds. A voltage that slides anywhere from 0 to 3.3 volts, like a dimmer, is <b>analog</b>. A plain on or off is <b>digital</b>. A real conversation is <b>I2C</b>: several smart sensors share the same wires, each has its own <b>address</b>, and the hub calls one by its address to get numbers back.',
+    real: 'A colour sensor that tells which ball the robot is holding would plug into an I2C port. A simple touch switch would use a digital port.',
     try: 'Pick a kind of port, then move the slider and read what the code sees.',
     controls: [
       { type: 'seg', id: 'hx_kind', label: 'Kind of port', value: 'analog', options: Object.entries(KINDS).map(([k, v]) => [k, v.label]) },
@@ -635,7 +647,9 @@ export default function hubs() {
   const signal = {
     id: 'signal', tab: 'Stick to wheel',
     title: 'How a push on the stick reaches a wheel',
-    lead: 'You push the stick. The wheel turns. In between, the message makes a trip: <b>gamepad</b>, <b>Driver Hub</b>, through the air by <b>Wi-Fi</b>, into the <b>Control Hub</b>, where your OpMode <b>loop</b> reads it and decides a motor power. Each stop takes a few thousandths of a second (milliseconds, ms). Add them up and you get <b>lag</b>.',
+    big: 'A stick push makes a short trip with several stops, and every stop adds a little delay.',
+    lead: 'You push the stick and the wheel turns. In between, the message travels: <b>gamepad</b>, <b>Driver Hub</b>, through the air by <b>Wi-Fi</b>, into the <b>Control Hub</b>, where your program’s <b>loop</b> reads it and picks a motor power. Each stop takes a few thousandths of a second (<b>milliseconds, ms</b>). Added up, that delay is called <b>lag</b>.',
+    real: 'At a busy event the air is full of Wi-Fi, so lag can grow. That is one reason drivers practise with the real Driver Hub and the real robot.',
     try: 'Flick the stick knob, then make the Wi-Fi slow and flick again.',
     controls: [
       { type: 'knob', id: 'hs_stick', label: 'Stick', min: -1, max: 1, step: 0.05, value: 0.8, fmt: (v) => fmt(v) },
@@ -732,7 +746,9 @@ export default function hubs() {
   const power = {
     id: 'power', tab: 'Power',
     title: 'Twelve volts in, and one big rule',
-    lead: 'The battery plugs into the hub’s yellow <b>XT30</b> port, through the main <b>power switch</b>. The hub then shares that power out: full battery voltage to the motors, a gentle 5 volts to servos and 3.3 volts to sensors. The rule: <b>switch off before you plug or unplug anything</b>.',
+    big: 'The hub takes 12 volts from the battery and hands each part the voltage it can safely use.',
+    lead: 'The battery plugs into the hub’s yellow <b>XT30</b> port, through the main <b>power switch</b>. The hub then shares the power out: full battery voltage to the motors, a gentle 5 volts to servos and 3.3 volts to sensors. The rule: <b>switch off before you plug or unplug anything</b>.',
+    real: 'Before every match, check the battery is charged and strapped in. A tired battery makes every motor weaker, and the launcher starts to shoot short.',
     try: 'Flip the switch on, drain the battery with the knob, then try to pull a wire.',
     controls: [
       { type: 'seg', id: 'hw_sw', label: 'Power switch', value: 'on', options: [['off', 'Off'], ['on', 'On']] },

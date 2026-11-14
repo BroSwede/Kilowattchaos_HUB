@@ -11,6 +11,8 @@ const TOPICS = {
   hubs: { load: () => import('./hubs.js'), name: 'Control Hub and Driver Hub', sys: 'hardware', blurb: 'Open up the robot\u2019s brain: chips, ports, and how a stick push reaches a wheel', kind: 'works', icon: 'bot', tabs: [['two', 'Two boxes'], ['ports', 'Ports tour'], ['inside', 'Open it up'], ['motor', 'Motor port'], ['servo', 'Servo port'], ['sensor', 'Sensor ports'], ['signal', 'Stick to wheel'], ['power', 'Power']] },
   wheels: { load: () => import('./wheels.js'), name: 'Mecanum wheels', sys: 'drivetrain', blurb: 'Why our robot can drive sideways, and the math for each wheel', kind: 'works', icon: 'focus', tabs: [['size', 'Wheel size'], ['roller', 'The rollers'], ['four', 'Four wheels'], ['tank', 'Tank or mecanum']] },
   sensors: { load: () => import('./sensors.js'), name: 'Sensors', sys: 'intake', blurb: 'Encoders, the gyro, distance and colour: how the robot feels the world', kind: 'works', icon: 'zap', tabs: [['enc', 'Encoder'], ['imu', 'IMU (gyro)'], ['dist', 'Distance'], ['color', 'Colour']] },
+  launcher: { load: () => import('./launcher.js'), name: 'The launcher', sys: 'launcher', blurb: 'How a spinning wheel throws a ball, and why the same shot can land short', kind: 'works', icon: 'flag', tabs: [['speed', 'Wheel to ball'], ['arc', 'Angle and arc'], ['recover', 'Spin back up'], ['steady', 'Same shot every time']] },
+  intake: { load: () => import('./intake.js'), name: 'Intake and ball path', sys: 'intake', blurb: 'Soft wheels that grab a ball, the squeeze that grips or jams, and the trip to the flywheel', kind: 'works', icon: 'layers', tabs: [['grab', 'The squeeze'], ['speed', 'Fast enough?'], ['path', 'One at a time'], ['jam', 'Jams']] },
   math: { load: () => import('./math.js'), name: 'Algorithms and math', sys: 'ballpath', blurb: 'Deadzones, the robot loop and control that steers itself', kind: 'works', icon: 'code', tabs: [['stick', 'Joystick math'], ['loop', 'The loop'], ['pid', 'Turn to 90°'], ['drive', 'Drive a distance']] },
 };
 const KIND = { made: 'How it\u2019s made and how it works', works: 'How it works' };
@@ -73,7 +75,7 @@ export const isDiveOpen = () => !!open;
 
 /**
  * Open a deep dive.
- * @param {string} key      'battery' | 'motor' | 'frame' | 'hubs' | 'wheels' | 'sensors' | 'math'
+ * @param {string} key      'battery' | 'motor' | 'frame' | 'hubs' | 'wheels' | 'sensors' | 'math' | 'launcher' | 'intake'
  * @param {object} [opts]   { part: {name, sku, sys}, real: () => Object3D|null, startAt: chapter id }
  */
 export async function openDive(key, opts = {}) {
@@ -284,7 +286,9 @@ export async function openDive(key, opts = {}) {
     $('#ddBody').innerHTML = `
       <div class="dd-kicker">Chapter ${i + 1} of ${chapters.length}</div>
       <h3>${esc(ch.title)}</h3>
+      ${ch.big ? `<p class="dd-big"><span>Big idea</span>${ch.big}</p>` : ''}
       <p class="dd-lead">${ch.lead}</p>
+      ${ch.real ? `<p class="dd-real"><span>On our robot</span>${ch.real}</p>` : ''}
       ${(ch.more || []).length ? `<div class="dd-mores"><div class="dd-mh">Dig deeper</div>${ch.more.map(([q, a]) => `<details class="dd-more"><summary>${esc(q)}${ICON('plus', 'i sm')}</summary><div class="a">${a}</div></details>`).join('')}</div>` : ''}`;
     $('#ddBody').scrollTop = 0;
     $('#ddStep').textContent = `${i + 1} / ${chapters.length}`;

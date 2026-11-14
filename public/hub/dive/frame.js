@@ -38,6 +38,7 @@ export default function frame(ctx) {
   const ore = {
     id: 'ore', tab: 'Rock to metal',
     title: 'Your robot used to be red dirt',
+    big: 'Aluminium is locked inside rock, and it takes a huge amount of electricity to get it out.',
     lead: 'Aluminium is the most common metal in the Earth’s crust, but you never find a lump of it lying around. It is always locked up inside rock. Getting it out takes four big steps and a shocking amount of electricity.',
     try: 'Step through the four stages, then slide to see what a kilogram really costs.',
     controls: [
@@ -147,6 +148,7 @@ export default function frame(ctx) {
   const extrude = {
     id: 'extrude', tab: 'Squeeze it',
     title: 'A play-dough press the size of a house',
+    big: 'Push soft metal through a shaped hole and it comes out that shape, all the way along.',
     lead: 'The channel on your robot is the same shape all the way along. That is the fingerprint of <b>extrusion</b>. A billet is heated until it is soft (not melted), then a ram shoves it through a steel plate with a U-shaped hole, called a <b>die</b>. Out comes 40 metres of U-channel, like toothpaste.',
     try: 'Heat the billet until it glows, then drag the ram to squeeze it through the die.',
     controls: [
@@ -239,6 +241,7 @@ export default function frame(ctx) {
   const stamp = {
     id: 'stamp', tab: 'Stamp or squeeze?',
     title: 'The other way to shape metal',
+    big: 'Thin, flat or folded parts are punched out of sheet metal in one hit.',
     lead: 'Not every part can be squeezed out like toothpaste. Thin, flat or folded parts are <b>stamped</b>: a press slams a hardened steel punch through a sheet, like a hole punch through paper, and can fold the piece in the same hit. Hit the button and make some brackets.',
     try: 'Tap the yellow press head on the model, or hit the button.',
     controls: [
@@ -329,6 +332,7 @@ export default function frame(ctx) {
   const holes = {
     id: 'holes', tab: 'Add the holes',
     title: 'A robot that drills for robots',
+    big: 'A computer-controlled mill drills every hole on an exact 8 mm grid.',
     lead: 'The extrusion is cut to length and clamped in a <b>CNC machine</b>: a computer-controlled mill that moves a spinning cutter to exact positions, over and over, without getting bored. It follows a list of coordinates, a lot like your autonomous code. Every hole lands on an 8 mm grid, accurate to a few hundredths of a millimetre.',
     try: 'Change the speed and the feed. Can you snap the drill?',
     controls: [
@@ -418,6 +422,7 @@ export default function frame(ctx) {
   const finish = {
     id: 'finish', tab: 'Finish it',
     title: 'Growing armour with electricity',
+    big: 'Electricity grows a hard protective layer out of the metal’s own surface.',
     lead: 'Bare aluminium scratches easily and leaves grey marks on your hands. So the drilled channels are hung on a rack and lowered into an acid bath with electricity running through them. This is <b>anodising</b>. It grows a glass-hard layer out of the metal’s own surface. It is not paint, and it cannot peel.',
     try: 'Drag the rack down into the bath, wait for the layer to grow, then pick a dye.',
     controls: [
@@ -482,6 +487,7 @@ export default function frame(ctx) {
   const whyU = {
     id: 'shape', tab: 'Why a U?',
     title: 'Shape beats material',
+    big: 'The same metal gets far stiffer when it is bent into the right shape.',
     lead: 'The frame carries everything: motors, battery, and the shock of hitting a wall. Here is the same aluminium, the same 2.5 mm wall, in four shapes. Rest a weight on the middle of each and see which you would build a robot from.',
     try: 'Drag the weight down to load the beam, then swap the shape.',
     controls: [

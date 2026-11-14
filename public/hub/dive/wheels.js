@@ -15,7 +15,9 @@ export default function wheels() {
   const size = {
     id: 'size', tab: 'Wheel size',
     title: 'One turn of the wheel, one trip round its edge',
-    lead: 'Roll a wheel one full turn and it moves forward by the distance around its edge. That distance is the <b>circumference</b>, and it is always <b>π × diameter</b> (π is about 3.14). So a bigger wheel goes further per turn, and a faster motor makes more turns per minute (<b>rpm</b>). Multiply the two and you get the robot’s speed.',
+    big: 'Every turn moves a wheel forward by the distance around its edge, so speed is turns times that distance.',
+    lead: 'Roll a wheel one full turn and it moves forward by the distance around its edge. That distance is the <b>circumference</b>, always <b>π × diameter</b> (π is about 3.14). A bigger wheel goes further per turn. A faster motor makes more turns per minute (<b>rpm</b>). Multiply the two and you get the robot’s speed.',
+    real: 'Our wheels are 104 mm across on 312 rpm motors. That is about 1.7 metres a second flat out: wall to wall in a little over two seconds.',
     try: 'Drag the wheel bigger and smaller. Then turn the motor speed knob.',
     controls: [
       { id: 'wz_d', label: 'Wheel diameter', min: 48, max: 140, step: 1, value: 104, unit: ' mm' },
@@ -83,7 +85,9 @@ export default function wheels() {
   const roller = {
     id: 'roller', tab: 'The rollers',
     title: 'A wheel made of little wheels',
-    lead: 'A mecanum wheel has no tyre. Its rim is a ring of small free-spinning <b>rollers</b>, each set at <b>45°</b>. A roller cannot grip in the direction it rolls, so the floor can only push the wheel <b>along the roller’s axle</b>. That turns a plain forward spin into a push that is half forward and half sideways.',
+    big: 'Angled rollers turn a plain forward spin into a push that is half forward and half sideways.',
+    lead: 'A mecanum wheel has no tyre. Its rim is a ring of small free-spinning <b>rollers</b>, each set at <b>45°</b>. A roller cannot grip in the direction it rolls, so the floor can only push the wheel <b>along the roller’s axle</b>. A plain forward spin becomes a push that is half forward and half sideways.',
+    real: 'Look down on our robot and the rollers of the four wheels make an X. Put one wheel on the wrong corner and the robot drifts, or will not slide sideways at all.',
     try: 'Slide the roller angle from 0° to 90° and watch where the floor pushes.',
     controls: [
       { id: 'wr_ang', label: 'Roller angle', min: 0, max: 90, step: 5, value: 45, unit: '°' },
@@ -169,7 +173,9 @@ export default function wheels() {
   const four = {
     id: 'four', tab: 'Four wheels',
     title: 'Three wishes in, four wheel powers out',
-    lead: 'The driver asks for three things at once: go <b>forward</b>, slide sideways (<b>strafe</b>) and <b>turn</b>. The robot has four wheels. One line of adding and subtracting for each wheel turns three wishes into four motor powers. If any answer is bigger than 1, all four are shrunk by the same amount, so the robot still goes the way you asked.',
+    big: 'One line of adding and subtracting per wheel turns what the driver wants into four motor powers.',
+    lead: 'The driver asks for three things at once: go <b>forward</b>, slide sideways (<b>strafe</b>) and <b>turn</b>. The robot has four wheels. One line of adding and subtracting per wheel turns three wishes into four motor powers. If any answer is bigger than 1, all four shrink by the same amount, so the robot still goes the way you asked.',
+    real: 'This exact math runs in our driver-control program many times a second, every time a stick moves.',
     try: 'Turn the three knobs, or pick a quick move and read the four wheel powers.',
     controls: [
       { type: 'knob', id: 'wf_f', label: 'Forward', min: -1, max: 1, step: 0.05, value: 0, fmt: (v) => fmt(v) },
@@ -236,7 +242,9 @@ export default function wheels() {
   const tank = {
     id: 'tank', tab: 'Tank or mecanum',
     title: 'Why not just use normal wheels?',
-    lead: 'A robot with normal wheels is called a <b>tank drive</b>. It can go forward, back and turn, but never sideways. To move one step to the right it has to turn, drive and turn back. A mecanum robot just slides over. That saves time in front of the goal, but it costs grip.',
+    big: 'Mecanum wheels buy sideways movement and pay for it with grip.',
+    lead: 'A robot with normal wheels is called a <b>tank drive</b>. It goes forward, back and turns, but never sideways. To move one step to the right it must turn, drive and turn back. A mecanum robot just slides over. That saves time when lining up, but it costs grip.',
+    real: 'Our StarterBot uses mecanum so drivers can slide sideways to line up a shot while the launcher keeps pointing at the goal.',
     try: 'Set how far to the side the goal is, then press Race.',
     controls: [
       { id: 'wt_d', label: 'Goal is this far to the right', min: 20, max: 120, step: 5, value: 60, unit: ' cm' },

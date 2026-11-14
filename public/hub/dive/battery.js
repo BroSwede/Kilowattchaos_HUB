@@ -40,6 +40,7 @@ export default function battery(ctx) {
   const openUp = {
     id: 'open', tab: 'Open it up',
     title: 'Ten little batteries in a trench coat',
+    big: 'The 12 V battery is really ten small cells welded into one chain.',
     lead: 'The robot’s 12 V battery is not one battery. Slide to peel off the shrink wrap and you find <b>10 round cells</b> in two nested rows, each about the size of a fat marker cap, welded together in one long chain.',
     try: 'Drag the pink wrap upward on the model, or use the slider.',
     controls: [{ type: 'range', id: 'peel', label: 'Peel it open', min: 0, max: 100, value: 0, unit: '%' }],
@@ -148,6 +149,7 @@ export default function battery(ctx) {
   const inside = {
     id: 'cell', tab: 'Inside a cell',
     title: 'A cell is a rolled-up chemical sandwich',
+    big: 'A cell pushes electrons out of one end, and their only way back is through your robot.',
     lead: 'Unroll one cell and you get three long ribbons: a <b>plus sheet</b>, a <b>minus sheet</b> and a paper-thin <b>separator</b> soaked in liquid. Chemicals on the minus sheet want to give away electrons. The only way across is the long way round: out of the cell, through your robot and back in.',
     try: 'Drag the steel can down to cut it open, then switch what the cell is doing.',
     controls: [
@@ -269,6 +271,7 @@ export default function battery(ctx) {
   const lab = {
     id: 'lab', tab: 'Volts, amps, watts',
     title: 'Build your own pack',
+    big: 'Cells in a chain add up their volts. Chains side by side add running time.',
     lead: 'How you connect cells changes what the pack can do. Cells <b>in a chain</b> (plus to minus, called <i>series</i>) add up their volts. Chains <b>side by side</b> (called <i>parallel</i>) share the work, so the pack lasts longer. Build a pack and watch the numbers.',
     try: 'Add cells to the chain, add chains, then turn the knob to make the motor pull harder.',
     controls: [
@@ -376,6 +379,7 @@ export default function battery(ctx) {
   const made = {
     id: 'made', tab: 'How it’s made',
     title: 'From paste to pack',
+    big: 'A battery pack is built by a line of machines, each doing one small job very fast.',
     lead: 'Battery factories are mostly long machines that do one small job very fast. Step through the line that builds a pack like yours.',
     try: 'Pick a station, then change the line speed.',
     controls: [
@@ -503,6 +507,7 @@ export default function battery(ctx) {
   const onRobot = {
     id: 'robot', tab: 'On the robot',
     title: 'One battery, everything else',
+    big: 'One battery feeds everything, and the Control Hub decides how much each motor gets.',
     lead: 'Every motor, servo and sensor on the robot drinks from this one pack. Power leaves the battery, passes the fuse and the main switch, and reaches the <b>Control Hub</b>. The hub is the robot’s brain <i>and</i> its power board: your code tells it how much to send to each motor.',
     try: 'Pick what the robot is doing, then drain the battery with the knob.',
     controls: [
