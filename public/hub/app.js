@@ -99,7 +99,7 @@ const ZONES = [
   { id: 'home', name: 'Home', icon: 'home', subs: ['Dashboard', 'Shop TV', 'Customize'], q: "What's happening, and what's next?" },
   { id: 'robot', name: 'Robot', icon: 'bot', subs: ['3D Explorer', 'Versions', 'Subsystems', 'Specs and parts', 'AR and VR'], q: 'What does our robot look like now, and how did it get here?' },
   { id: 'build', name: 'Build', icon: 'wrench', subs: ['Ideas', 'Mechanism Lab', 'Print Shop', 'Parts and inventory'], q: 'How do we make it better, and can I get that part printed?' },
-  { id: 'learn', name: 'Learn', icon: 'book', subs: ['Paths', 'FIRST and BIOBUZZ', 'Setup and FAQ', 'Build tips', 'AI agents', 'Glossary'], q: 'How do I do this, and what do the rules say?' },
+  { id: 'learn', name: 'Learn', icon: 'book', subs: ['Paths', 'How it works', 'FIRST and BIOBUZZ', 'Setup and FAQ', 'Build tips', 'AI agents', 'Glossary'], q: 'How do I do this, and what do the rules say?' },
   { id: 'code', name: 'Code', icon: 'code', subs: ['BioBuzz XR', 'Our code', 'Snippets', 'Challenges'], q: 'Where do I write code, and does it work?' },
   { id: 'crew', name: 'Crew', icon: 'users', subs: ['Chat', 'Inspiration', 'People', 'Feedback'], q: "What's the team talking about?" },
   { id: 'logbook', name: 'Logbook', icon: 'logbook', subs: ['Calendar', 'Sessions', 'Progress', 'Competitions', 'Portfolio'], q: 'What did we do, and when is the next thing?' },
@@ -156,7 +156,7 @@ const SUB_ICONS = {
   Dashboard: 'home', 'Shop TV': 'play', Customize: 'sliders',
   '3D Explorer': 'bot', Versions: 'commit', Subsystems: 'layers', 'Specs and parts': 'note', 'AR and VR': 'max',
   Ideas: 'bulb', 'Mechanism Lab': 'wrench', 'Print Shop': 'printer', 'Parts and inventory': 'layers',
-  Paths: 'arrow', 'FIRST and BIOBUZZ': 'trophy', 'Setup and FAQ': 'help', 'Build tips': 'wrench', 'AI agents': 'sparkle', Glossary: 'book',
+  Paths: 'arrow', 'How it works': 'sliders', 'FIRST and BIOBUZZ': 'trophy', 'Setup and FAQ': 'help', 'Build tips': 'wrench', 'AI agents': 'sparkle', Glossary: 'book',
   'BioBuzz XR': 'gamepad', 'Our code': 'code', Snippets: 'note', Challenges: 'flag',
   Chat: 'chat', Inspiration: 'sparkle', People: 'users', Feedback: 'help',
   Calendar: 'calendar', Sessions: 'clock', Progress: 'zap', Competitions: 'trophy', Portfolio: 'image',
@@ -1209,21 +1209,22 @@ sheetDive.type = 'button';
 sheetDive.hidden = true;
 sheetDive.innerHTML = '<svg class="i sm"><use href="#i-sparkle"/></svg>See how it\u2019s made<small>3D deep dive</small>';
 $('.sheet-actions', sheet).before(sheetDive);
-function startDive(key, info) {
+function startDive(key, info, startAt) {
   if (viewer) viewer.stopAutoRotate();
   const id = info && info.id;
-  openDive(key, { part: info || null, real: () => (viewer && id ? viewer.clonePart(id) : null) });
+  openDive(key, { part: info || null, real: () => (viewer && id ? viewer.clonePart(id) : null), startAt });
 }
 sheetDive.addEventListener('click', () => sheetPart && startDive(sheetDive.dataset.dive, sheetPart));
 const diveRow = document.createElement('div');
 diveRow.className = 'dive-row';
-diveRow.innerHTML = '<span class="cap">Click a part on the robot, or open one up:</span>' + DIVES.map((d) => `<button class="dive-chip" type="button" data-dive="${d.key}"><span class="oc"><svg class="i sm"><use href="#i-sparkle"/></svg></span>${d.name}<small>${d.blurb}</small></button>`).join('');
+diveRow.innerHTML = '<span class="cap">Click a part on the robot, or open one up:</span>' + DIVES.filter((d) => d.kind === 'made').map((d) => `<button class="dive-chip" type="button" data-dive="${d.key}"><span class="oc"><svg class="i sm"><use href="#i-sparkle"/></svg></span>${d.name}<small>${d.blurb}</small></button>`).join('');
 $('#sysRow').after(diveRow);
 // Deep dives can also be opened from anywhere else in the Hub (Learn uses these).
-document.addEventListener('hub:dive', (e) => DIVES.some((d) => d.key === e.detail) && startDive(e.detail, null));
+// The detail is a topic key, or 'key:chapter' to open at one chapter.
+document.addEventListener('hub:dive', (e) => { const [key, at] = String(e.detail).split(':'); if (DIVES.some((d) => d.key === key)) startDive(key, null, at); });
 document.addEventListener('click', (e) => {
   const b = e.target.closest('[data-opendive]');
-  if (b) document.dispatchEvent(new CustomEvent('hub:dive', { detail: b.dataset.opendive }));
+  if (b) document.dispatchEvent(new CustomEvent('hub:dive', { detail: b.dataset.chapter ? `${b.dataset.opendive}:${b.dataset.chapter}` : b.dataset.opendive }));
 });
 diveRow.addEventListener('click', (e) => {
   const b = e.target.closest('.dive-chip');
