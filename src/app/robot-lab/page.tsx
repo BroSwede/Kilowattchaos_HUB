@@ -23,7 +23,7 @@ const BODY = `<div class="page"><div class="frame lab-frame">
       <p class="lead">Every part on our goBILDA StarterBot, in 3D. See how it gets made in a factory, then how it works on the robot. Turn the knobs, drag the sliders, pull things apart.</p>
     </header>
     <section class="lab-sec" aria-labelledby="labWorksH">
-      <div class="lab-sec-head"><h3 class="card-title" id="labWorksH">How it works</h3><span class="cap">Wheels, sensors, the hubs and the math</span></div>
+      <div class="lab-sec-head"><h3 class="card-title" id="labWorksH">How it works</h3><span class="cap">The hubs, wheels, sensors, launcher, intake and the math</span></div>
       <div class="lab-grid" id="labWorks"></div>
     </section>
     <section class="lab-sec" aria-labelledby="labMadeH">

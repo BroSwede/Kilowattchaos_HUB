@@ -13,7 +13,9 @@ export default function sensors() {
   const enc = {
     id: 'enc', tab: 'Encoder',
     title: 'Counting turns to measure distance',
-    lead: 'A motor cannot see how far the robot has gone, but it can <b>count</b>. On the back of each drive motor is an <b>encoder</b>: a ring of tiny magnets on the shaft and two sensors that click each time a magnet passes. Each click is one <b>tick</b>. Our motors give <b>537.7 ticks</b> for one full turn of the wheel. Count the ticks and you know the distance.',
+    big: 'An encoder counts tiny clicks as the motor turns, and counting clicks tells you distance.',
+    lead: 'A motor cannot see how far the robot has gone, but it can <b>count</b>. On the back of each drive motor is a ring of tiny magnets and two sensors that click each time a magnet passes. That is an <b>encoder</b>, and each click is one <b>tick</b>. Our motors give <b>537.7 ticks</b> for one turn of the wheel. Count the ticks and you know the distance.',
+    real: 'Every Yellow Jacket motor on our robot has one, the launcher motor too. That is how code can know the flywheel’s speed before it fires.',
     try: 'Drag the wheel along the floor and watch the ticks add up.',
     controls: [
       { id: 'se_turn', label: 'Turn the wheel', min: 0, max: 2, step: 0.01, value: 0.5, fmt: (v) => `${v.toFixed(2)} turns` },
@@ -105,7 +107,9 @@ export default function sensors() {
   const imu = {
     id: 'imu', tab: 'IMU (gyro)',
     title: 'Which way am I facing?',
-    lead: 'Inside the Control Hub is a chip called an <b>IMU</b>. Part of it is a <b>gyroscope</b>: it feels how fast the robot is turning. The hub adds up all those little turns to keep a running answer to one question: <b>how many degrees have I turned since the start?</b> That number is the <b>heading</b>, or yaw. Turning left counts up, turning right counts down.',
+    big: 'A chip feels how fast the robot is turning and adds it all up, so the robot knows which way it faces.',
+    lead: 'Inside the Control Hub is a motion chip called an <b>IMU</b>. One part of it feels how fast the robot is turning: a <b>gyroscope</b>. The hub adds up all those little turns to answer one question: <b>how many degrees have I turned since the start?</b> That number is the <b>heading</b>. Turning left counts up, turning right counts down.',
+    real: 'In autonomous, “turn to face the goal” uses this number. It only works if the robot starts the match pointing the way the code expects.',
     try: 'Spin the robot with the knob. Then let time pass and watch the two arrows drift apart.',
     controls: [
       { type: 'knob', id: 'si_turn', label: 'Turn the robot', min: -180, max: 180, step: 1, value: 35, unit: '°' },
@@ -179,7 +183,9 @@ export default function sensors() {
   const dist = {
     id: 'dist', tab: 'Distance',
     title: 'Timing a flash of light',
-    lead: 'A distance sensor is a stopwatch for light. It fires a tiny flash of invisible infrared light, then times how long the flash takes to bounce off something and come back. This is called <b>time of flight</b>. Light is absurdly fast: about <b>30 cm every nanosecond</b>, and a nanosecond is a billionth of a second. So the sensor has to be a very, very good stopwatch.',
+    big: 'A distance sensor times how long a flash of light takes to bounce back.',
+    lead: 'A distance sensor is a stopwatch for light. It fires a tiny flash of invisible infrared light, then times how long the flash takes to bounce off something and come back. This is called <b>time of flight</b>. Light is absurdly fast: about <b>30 cm every nanosecond</b> (a billionth of a second). So it has to be a very good stopwatch.',
+    real: 'A robot like ours could use one to measure how far it is from the goal, then pick the flywheel speed to match.',
     try: 'Drag the wall closer and further. Then swap what it is made of.',
     controls: [
       { id: 'sd_d', label: 'Distance to the wall', min: 5, max: 200, step: 1, value: 90, unit: ' cm' },
@@ -270,7 +276,9 @@ export default function sensors() {
   const color = {
     id: 'color', tab: 'Colour',
     title: 'Three numbers for every colour',
-    lead: 'A colour sensor shines a white light on whatever is under it and measures the light that bounces back through three tiny filters: <b>red</b>, <b>green</b> and <b>blue</b>. That gives three numbers, called <b>RGB</b>. A purple ball sends back lots of red and blue but little green. Your code looks at the three numbers and decides which game piece it is holding.',
+    big: 'A colour sensor turns a colour into three numbers: how much red, green and blue bounces back.',
+    lead: 'A colour sensor shines white light on whatever is in front of it and measures what bounces back through three tiny filters: <b>red</b>, <b>green</b> and <b>blue</b>. Those three numbers are called <b>RGB</b>. A purple ball sends back lots of red and blue but little green. Your code reads the numbers and decides which game piece it is.',
+    real: 'Placed in the ball path, a colour sensor could tell the robot which ball is next in line before it launches.',
     try: 'Pick a game piece, then lift the sensor away and watch the numbers fade.',
     controls: [
       { type: 'seg', id: 'sc_pick', label: 'Game piece', value: 'purple', options: Object.entries(PIECES).map(([k, v]) => [k, v[0]]) },

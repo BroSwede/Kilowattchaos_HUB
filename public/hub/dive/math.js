@@ -47,7 +47,9 @@ export default function math() {
   const stick = {
     id: 'stick', tab: 'Joystick math',
     title: 'Cleaning up the joystick',
-    lead: 'A joystick gives a number from <b>-1 to 1</b>. Two problems. A worn stick never rests at exactly 0, so the robot creeps. And small moves are hard: a tiny nudge already gives a lot of power. Two small bits of math fix both. A <b>deadzone</b> treats tiny numbers as 0. <b>Squaring</b> the number makes the middle of the stick gentle while full stick is still full power.',
+    big: 'Two small bits of math make a twitchy joystick calm near the middle and still strong at the edge.',
+    lead: 'A joystick gives a number from <b>-1 to 1</b>. Two problems. A worn stick never rests at exactly 0, so the robot creeps. And a tiny nudge already gives a lot of power. Treating tiny numbers as 0 fixes the first: that is a <b>deadzone</b>. <b>Squaring</b> the number fixes the second: gentle in the middle, full power at full stick.',
+    real: 'Lining up a shot takes tiny, slow moves. Squared sticks give our drivers that fine control without giving up top speed.',
     try: 'Leave the stick near the middle and shrink the deadzone to 0. Then compare Straight and Squared.',
     controls: [
       { type: 'knob', id: 'ms_x', label: 'Stick', min: -1, max: 1, step: 0.01, value: 0.04, fmt: (v) => fmt(v) },
@@ -116,7 +118,9 @@ export default function math() {
   const loopCh = {
     id: 'loop', tab: 'The loop',
     title: 'Read, decide, act. Again. Forever.',
-    lead: 'A robot program is not a list that runs once. It is a <b>loop</b>: <b>read</b> the sensors and gamepad, <b>decide</b> what to do, <b>set</b> the motors, then go straight back to the top. A good loop goes round about every 20 milliseconds, which is 50 times a second. Between two laps the robot is blind: it keeps doing whatever it was last told.',
+    big: 'A robot program is a loop that reads, decides and acts, over and over, many times a second.',
+    lead: 'A robot program is not a list that runs once. It is a <b>loop</b>: <b>read</b> the sensors and gamepad, <b>decide</b> what to do, <b>set</b> the motors, then go straight back to the top. A good loop goes round about every 20 thousandths of a second (20 milliseconds). Between two laps the robot is blind: it keeps doing whatever it was last told.',
+    real: 'A slow loop is one reason a robot drives past its mark in autonomous. Keep slow jobs, like long waits, out of the loop.',
     try: 'Make the loop slow and the robot fast. Watch how far past the line it stops.',
     controls: [
       { id: 'ml_ms', label: 'One lap of the loop takes', min: 10, max: 300, step: 10, value: 20, unit: ' ms' },
@@ -207,7 +211,9 @@ export default function math() {
   const pid = {
     id: 'pid', tab: 'Turn to 90°',
     title: 'Steering by how wrong you are',
-    lead: 'How do you make a robot turn to exactly 90°? Every lap of the loop, work out the <b>error</b>: target minus where you are now. Then set the turning power to <b>kP × error</b>. Far from the target, the error is big, so the power is big. Close to it, the power fades away. This is <b>proportional control</b>, the P in PID. The whole skill is picking the number <b>kP</b>.',
+    big: 'Turn hard when you are far from the target, and gentler as you get close.',
+    lead: 'How does a robot turn to exactly 90°? Every lap of the loop, work out how wrong you are: the <b>error</b>, which is the target minus where you are now. Then set the turning power to <b>kP × error</b>. Far away, the power is big. Close, it fades. This is <b>proportional control</b>, the P in PID. The skill is picking the number <b>kP</b>.',
+    real: 'The same idea can hold our flywheel at its target speed: the further below target it is, the more power it gets.',
     try: 'Turn kP up until the robot overshoots, then add kD to calm it down.',
     controls: [
       { type: 'knob', id: 'mp_kp', label: 'kP (how hard to push)', min: 0.001, max: 0.1, step: 0.001, value: 0.004, fmt: (v) => v.toFixed(3) },
@@ -291,7 +297,9 @@ export default function math() {
   const drive = {
     id: 'drive', tab: 'Drive a distance',
     title: 'Drive exactly 120 cm, with no driver',
-    lead: 'In autonomous nobody holds the gamepad. To drive a set distance the code turns <b>centimetres into encoder ticks</b>, then runs the motors until the count gets there. One wheel turn is 327 mm and 537.7 ticks, so <b>ticks = distance ÷ 327 × 537.7</b>. Stopping is the hard part: a moving robot does not stop the instant you cut the power.',
+    big: 'To drive a set distance with no driver, turn the distance into encoder ticks and count them.',
+    lead: 'In autonomous nobody holds the gamepad. To drive a set distance, the code turns <b>centimetres into encoder ticks</b>, then runs the motors until the count gets there. One wheel turn is 327 mm and 537.7 ticks, so <b>ticks = distance ÷ 327 × 537.7</b>. Stopping is the hard part: a moving robot does not stop the instant you cut the power.',
+    real: 'This is how our robot can leave its start spot and reach a shooting position in the first 30 seconds of a match, before drivers touch the sticks.',
     try: 'Run it both ways and compare how far each one misses.',
     controls: [
       { id: 'md_cm', label: 'Distance to drive', min: 30, max: 180, step: 5, value: 120, unit: ' cm' },

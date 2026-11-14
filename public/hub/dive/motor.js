@@ -127,6 +127,7 @@ export default function motor(ctx) {
   const openUp = {
     id: 'open', tab: 'Open it up',
     title: 'Two machines bolted together',
+    big: 'A Yellow Jacket is a fast, weak motor bolted to a gearbox that makes it slow and strong.',
     lead: 'A Yellow Jacket is really two things. The back half is an <b>electric motor</b> that spins very fast but is easy to stop with your fingers. The front half is a <b>gearbox</b> that trades that speed for muscle. Slide to pull it apart.',
     try: 'Drag the motor sideways to pull it apart, then tap the + labels.',
     controls: [{ type: 'range', id: 'boom', label: 'Pull it apart', min: 0, max: 100, value: 0, unit: '%' }],
@@ -226,6 +227,7 @@ export default function motor(ctx) {
   const why = {
     id: 'spin', tab: 'Why it spins',
     title: 'Magnets chasing magnets',
+    big: 'A motor spins because magnets you can switch on and off keep chasing fixed magnets and never catch them.',
     lead: 'Run electricity through a coil of wire and it becomes a magnet you can switch on and off: an <b>electromagnet</b>. Each tooth of the rotor is one. The fixed magnets pull and push on them, the rotor turns, and just as a tooth arrives, the <b>commutator</b> flips its current so it gets shoved onward. It never catches up.',
     try: 'Drag the rotor up or down to change the volts. Push it below zero to reverse.',
     controls: [
@@ -325,6 +327,7 @@ export default function motor(ctx) {
   const gears = {
     id: 'gears', tab: 'Planetary gears',
     title: 'Trading speed for muscle',
+    big: 'Gears trade speed for muscle: slower out means stronger out.',
     lead: 'The small yellow <b>sun gear</b> spins fast. It drives three <b>planet gears</b> that roll around inside a fixed <b>ring gear</b>, like planets orbiting the sun. The planets drag a plate called the <b>carrier</b> round with them, much more slowly. Slower means stronger. Stack stages and the effect multiplies.',
     try: 'Drag the gears sideways to change the motor speed. Follow the yellow bar.',
     controls: [
@@ -416,6 +419,7 @@ export default function motor(ctx) {
   const made = {
     id: 'made', tab: 'How it’s made',
     title: 'Stamped, wound, zapped and cut',
+    big: 'A motor is more than fifty parts, each made by a machine that does one job over and over.',
     lead: 'A motor has more than fifty parts, and almost every one is made by a machine doing a single job over and over. Step through the five big ones.',
     try: 'Pick a station, then change the line speed.',
     controls: [
@@ -538,6 +542,7 @@ export default function motor(ctx) {
   const onRobot = {
     id: 'robot', tab: 'On the robot',
     title: 'Your code is the throttle',
+    big: 'Your code picks a power from -1 to 1, and the encoder reports back how far the motor turned.',
     lead: `The Control Hub does not just switch this motor on and off. Your code asks for a power between -1 and 1, and the hub flicks the battery on and off thousands of times a second to deliver that fraction. Meanwhile the <b>encoder</b> on the back counts every turn, so your code knows exactly how far the ${drives ? 'wheel' : job === 'launcher' ? 'flywheel' : 'intake'} has gone.`,
     try: 'Drag the wheel up or down, or turn the knob. Watch the sensors blink.',
     controls: [
