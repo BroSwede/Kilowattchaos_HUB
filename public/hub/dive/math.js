@@ -48,20 +48,17 @@ export default function math() {
     id: 'stick', tab: 'Joystick math',
     title: 'Cleaning up the joystick',
     big: 'Two small bits of math make a twitchy joystick calm near the middle and still strong at the edge.',
-    lead: 'A joystick gives a number from <b>-1 to 1</b>. Two problems. A worn stick never rests at exactly 0, so the robot creeps. And a tiny nudge already gives a lot of power. Treating tiny numbers as 0 fixes the first: that is a <b>deadzone</b>. <b>Squaring</b> the number fixes the second: gentle in the middle, full power at full stick.',
-    real: 'Lining up a shot takes tiny, slow moves. Squared sticks give our drivers that fine control without giving up top speed.',
-    try: 'Leave the stick near the middle and shrink the deadzone to 0. Then compare Straight and Squared.',
+    lead: 'A joystick gives a number from <b>-1 to 1</b>. Tiny numbers are treated as 0, so a worn stick cannot make the robot creep: a <b>deadzone</b>. Then the number is <b>squared</b>: gentle near the middle, full power at the edge.',
+    real: 'Squared sticks let our drivers make tiny moves to line up a shot.',
+    try: 'Turn the stick slowly from the middle to the edge and watch the motor power.',
+    fixed: { ms_dead: 0.05, ms_curve: 2 },
     controls: [
       { type: 'knob', id: 'ms_x', label: 'Stick', min: -1, max: 1, step: 0.01, value: 0.04, fmt: (v) => fmt(v) },
-      { id: 'ms_dead', label: 'Deadzone', min: 0, max: 0.3, step: 0.01, value: 0.05, fmt: (v) => v.toFixed(2) },
-      { type: 'seg', id: 'ms_curve', label: 'Curve', value: 2, options: [[1, 'Straight'], [2, 'Squared'], [3, 'Cubed']] },
     ],
-    readouts: [['ms_in', 'Stick says'], ['ms_dz', 'After the deadzone'], ['ms_out', 'Motor power']],
+    readouts: [['ms_in', 'Stick says'], ['ms_out', 'Motor power']],
     more: [
       ['Show me the squared math', 'Half stick is 0.5. Squared, that is 0.5 × 0.5 = <b>0.25</b>, so half stick gives a quarter power. Full stick is 1 × 1 = 1, still full power. You get fine control at low speed without losing top speed.'],
       ['Squaring a negative number makes it positive. Then how does reverse work?', 'Good catch. The code squares the size and then puts the sign back: <code>power = x * Math.abs(x)</code>. So -0.5 becomes -0.25, not +0.25.'],
-      ['How big should the deadzone be?', 'Just bigger than the worst number your stick rests at. Let go of the stick, read the telemetry on the Driver Hub, and add a little. 0.05 suits most gamepads. Too big and the stick feels dead in the middle.'],
-      ['Why stretch the rest after the deadzone?', 'If you only zero out the small numbers, power would jump from 0 straight to 0.05 as you leave the deadzone. Stretching what is left so it starts again from 0 keeps the motion smooth.'],
     ],
     build(st, S, ui) {
       const pad = gamepad(1.5);
@@ -119,16 +116,15 @@ export default function math() {
     id: 'loop', tab: 'The loop',
     title: 'Read, decide, act. Again. Forever.',
     big: 'A robot program is a loop that reads, decides and acts, over and over, many times a second.',
-    lead: 'A robot program is not a list that runs once. It is a <b>loop</b>: <b>read</b> the sensors and gamepad, <b>decide</b> what to do, <b>set</b> the motors, then go straight back to the top. A good loop goes round about every 20 thousandths of a second (20 milliseconds). Between two laps the robot is blind: it keeps doing whatever it was last told.',
-    real: 'A slow loop is one reason a robot drives past its mark in autonomous. Keep slow jobs, like long waits, out of the loop.',
-    try: 'Make the loop slow and the robot fast. Watch how far past the line it stops.',
+    lead: 'A robot program is a <b>loop</b>: <b>read</b> the sensors, <b>decide</b>, <b>set</b> the motors, then straight back to the top. Between two laps the robot is blind: it keeps doing whatever it was last told.',
+    real: 'A slow loop is one reason a robot drives past its mark in autonomous.',
+    try: 'Make the loop slow and watch how far past the line the robot stops.',
+    fixed: { ml_v: 1.2 },
     controls: [
       { id: 'ml_ms', label: 'One lap of the loop takes', min: 10, max: 300, step: 10, value: 20, unit: ' ms' },
-      { type: 'knob', id: 'ml_v', label: 'Robot speed', min: 0.3, max: 2, step: 0.1, value: 1.2, fmt: (v) => `${v.toFixed(1)} m/s` },
     ],
-    readouts: [['ml_hz', 'Laps per second'], ['ml_gap', 'Robot moves between looks', 'speed × lap time'], ['ml_over', 'Stopped past the line by', 'this run']],
+    readouts: [['ml_hz', 'Laps per second'], ['ml_over', 'Stopped past the line by', 'this run']],
     more: [
-      ['Show me the math', 'Distance between looks = speed × lap time. At 1.2 m/s with a 20 ms loop: 1.2 × 0.020 = 0.024 m = <b>2.4 cm</b>. With a 300 ms loop: 1.2 × 0.3 = <b>36 cm</b>. The robot can be anywhere up to that far past the line before it even notices.'],
       ['What makes a loop slow?', 'Anything that waits. <code>sleep(500)</code> freezes the whole loop for half a second. Reading many sensors one by one, or doing camera vision every lap, adds up too.'],
       ['Where is the loop in our code?', 'In a LinearOpMode it is <code>while (opModeIsActive()) { ... }</code>. Everything inside the curly brackets is one lap.'],
     ],
@@ -212,20 +208,17 @@ export default function math() {
     id: 'pid', tab: 'Turn to 90°',
     title: 'Steering by how wrong you are',
     big: 'Turn hard when you are far from the target, and gentler as you get close.',
-    lead: 'How does a robot turn to exactly 90°? Every lap of the loop, work out how wrong you are: the <b>error</b>, which is the target minus where you are now. Then set the turning power to <b>kP × error</b>. Far away, the power is big. Close, it fades. This is <b>proportional control</b>, the P in PID. The skill is picking the number <b>kP</b>.',
-    real: 'The same idea can hold our flywheel at its target speed: the further below target it is, the more power it gets.',
-    try: 'Turn kP up until the robot overshoots, then add kD to calm it down.',
+    lead: 'To turn to exactly 90°, the code keeps asking: how wrong am I? That is the <b>error</b>. Turning power is <b>kP × error</b>: big when far away, fading as it gets close. The skill is picking the number <b>kP</b>.',
+    real: 'The same idea can hold our flywheel at its target speed.',
+    try: 'Turn kP up until the robot swings past 90°, then back it off.',
+    fixed: { mp_kd: 0 },
     controls: [
       { type: 'knob', id: 'mp_kp', label: 'kP (how hard to push)', min: 0.001, max: 0.1, step: 0.001, value: 0.004, fmt: (v) => v.toFixed(3) },
-      { type: 'knob', id: 'mp_kd', label: 'kD (the brake)', min: 0, max: 0.004, step: 0.0002, value: 0, fmt: (v) => v.toFixed(4) },
-      { type: 'button', id: 'mp_go', label: 'Turn again' },
     ],
-    readouts: [['mp_v', 'Verdict'], ['mp_o', 'Overshoot', 'how far past 90°'], ['mp_s', 'Settled in', 'within 3° and staying']],
+    readouts: [['mp_v', 'Verdict'], ['mp_o', 'Overshoot', 'how far past 90°']],
     more: [
       ['Show me one lap of the math', 'Say the robot is at 30° and the target is 90°. Error = 90 - 30 = 60°. With kP = 0.01, power = 0.01 × 60 = <b>0.6</b>. Later, at 85°: error is 5°, power is 0.05. The robot eases in by itself.'],
-      ['What does kD do?', 'kD looks at how <b>fast</b> the robot is turning and pushes back against it: power = kP × error - kD × speed. It is a brake that is strongest exactly when the robot is rushing at the target, so you can use a bigger kP without overshooting.'],
       ['Why not just "turn until the IMU says 90"?', 'Because the robot is still spinning when it gets there and the loop only checks every 20 ms. It would coast past every time. Slowing down as you get close is what makes the stop accurate.'],
-      ['And the I in PID?', 'I adds up the error over time. It helps when the robot stops a little short and stays there, by slowly building up more power. Most FTC turns work fine with just P and D.'],
     ],
     build(st, S, ui) {
       const plate = cyl(5.4, 0.24, mat('#8D9391', { rough: 0.9 }), { pos: [-5.4, -0.12, 1.2], seg: 64 });
@@ -298,21 +291,17 @@ export default function math() {
     id: 'drive', tab: 'Drive a distance',
     title: 'Drive exactly 120 cm, with no driver',
     big: 'To drive a set distance with no driver, turn the distance into encoder ticks and count them.',
-    lead: 'In autonomous nobody holds the gamepad. To drive a set distance, the code turns <b>centimetres into encoder ticks</b>, then runs the motors until the count gets there. One wheel turn is 327 mm and 537.7 ticks, so <b>ticks = distance ÷ 327 × 537.7</b>. Stopping is the hard part: a moving robot does not stop the instant you cut the power.',
-    real: 'This is how our robot can leave its start spot and reach a shooting position in the first 30 seconds of a match, before drivers touch the sticks.',
-    try: 'Run it both ways and compare how far each one misses.',
+    lead: 'In autonomous nobody holds the gamepad. To drive a set distance, the code turns <b>centimetres into encoder ticks</b> and counts them. Stopping is the hard part: a moving robot does not stop the instant the power is cut.',
+    real: 'This is how our robot reaches its shooting spot in the first 30 seconds.',
+    try: 'Switch how it stops and compare how far each one misses.',
+    fixed: { md_cm: 120, md_pow: 0.8 },
     controls: [
-      { id: 'md_cm', label: 'Distance to drive', min: 30, max: 180, step: 5, value: 120, unit: ' cm' },
       { type: 'seg', id: 'md_how', label: 'How to stop', value: 'bang', options: [['bang', 'Cut power at the count'], ['ramp', 'Slow down near the end']] },
-      { type: 'knob', id: 'md_pow', label: 'Power', min: 0.3, max: 1, step: 0.05, value: 0.8, fmt: (v) => fmt(v) },
-      { type: 'button', id: 'md_go', label: 'Go' },
     ],
-    readouts: [['md_t', 'Target ticks'], ['md_n', 'Ticks counted'], ['md_e', 'Missed by']],
+    readouts: [['md_t', 'Target ticks'], ['md_e', 'Missed by']],
     more: [
       ['Show me the ticks math', 'For 120 cm: 1200 mm ÷ 327 mm = 3.67 wheel turns. 3.67 × 537.7 = <b>1,973 ticks</b>. The code drives until the encoder says 1,973.'],
       ['Why does cutting power overshoot?', 'The robot weighs several kilograms and is moving at over a metre a second. Like a bike when you stop pedalling, it rolls on. The faster it was going, the further it coasts.'],
-      ['How does "slow down near the end" work?', 'It is proportional control again, like turning to 90°. Error = target ticks - ticks so far. Power = kP × error, capped at your chosen power. Far away it drives at full speed. In the last 25 cm the power fades, so there is almost no speed left to coast with.'],
-      ['Is there a built-in way?', 'Yes. <code>motor.setTargetPosition(ticks)</code> with <code>RUN_TO_POSITION</code> mode makes the Control Hub do the slow-down for you. It is the same idea, running inside the hub.'],
     ],
     build(st, S, ui) {
       const U = 1 / 12.5, x0 = -9;
@@ -366,7 +355,6 @@ export default function math() {
           ui.out('md_n', Math.round(ticks).toLocaleString('en-US'), `${(x * 100).toFixed(0)} cm so far`);
           ui.out('md_e', state === 'go' ? '…' : `${Math.abs(miss).toFixed(1)} cm`, state === 'go' ? '' : miss >= 0 ? 'too far' : 'short');
           ui.tone('md_e', state === 'go' ? '' : Math.abs(miss) > 4 ? 'warn' : 'good');
-          ui.label('md_go', state === 'done' ? 'Go again' : 'Driving…');
           ui.note(S.md_how === 'bang' ? (state === 'go' ? 'Full power until the encoder reaches the target count, then power 0.' : `The count was reached on the line, but the robot was still doing ${fmt(S.md_pow * 1.7, 1)} m/s. It <b>coasted ${Math.max(0, miss).toFixed(0)} cm</b> past. The orange strip shows the miss.`) : (state === 'go' ? 'Power = kP × ticks left. Watch the power number fall as the robot nears the flag.' : `By slowing down over the last 25 cm it arrived with almost no speed left: <b>${Math.abs(miss).toFixed(1)} cm</b> off.`), state !== 'go' && Math.abs(miss) > 4 ? 'warn' : '');
         },
       };

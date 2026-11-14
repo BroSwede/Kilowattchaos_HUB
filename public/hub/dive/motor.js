@@ -128,13 +128,15 @@ export default function motor(ctx) {
     id: 'open', tab: 'Open it up',
     title: 'Two machines bolted together',
     big: 'A Yellow Jacket is a fast, weak motor bolted to a gearbox that makes it slow and strong.',
-    lead: 'A Yellow Jacket is really two things. The back half is an <b>electric motor</b> that spins very fast but is easy to stop with your fingers. The front half is a <b>gearbox</b> that trades that speed for muscle. Slide to pull it apart.',
-    try: 'Drag the motor sideways to pull it apart, then tap the + labels.',
-    controls: [{ type: 'range', id: 'boom', label: 'Pull it apart', min: 0, max: 100, value: 0, unit: '%' }],
-    readouts: [['in', 'Motor spins at', 'no load, 12 V'], ['ratio', 'Gearbox'], ['out', 'Shaft comes out at']],
+    lead: 'A Yellow Jacket is two things. The back half is an <b>electric motor</b>: very fast, but easy to stop with your fingers. The front half is a <b>gearbox</b> that trades that speed for muscle.',
+    real: 'Our robot has six of these. Four of them drive the wheels.',
+    try: 'Drag the motor sideways to pull it apart.',
+    controls: [
+      { type: 'range', id: 'boom', label: 'Pull it apart', min: 0, max: 100, value: 0, unit: '%' },
+    ],
+    readouts: [['in', 'Motor spins at', 'no load, 12 V'], ['out', 'Shaft comes out at']],
     more: [
       ['What is each part for?', '<b>Magnets</b> (stator): two curved permanent magnets glued inside the steel can. They never move. <b>Rotor</b>: the spinning stack of steel plates wrapped in copper wire. <b>Commutator and brushes</b>: a rotating switch that keeps flipping the current. <b>Encoder</b>: a tiny magnet and sensors that count turns. <b>Planetary gears</b>: slow the spin down and multiply the turning force.'],
-      ['Why is it called "brushed"?', 'Two little blocks of carbon, called brushes, press on the spinning commutator to pass electricity into the rotor. They slowly wear down, like pencil lead. Brushless motors (in drones and electric cars) use electronics to do the switching instead.'],
       ['Why not just use a slower motor?', 'Small electric motors are happiest spinning fast. A motor built to turn slowly with the same power would need to be far bigger and heavier. A small fast motor plus gears is lighter, cheaper and more efficient.'],
     ],
     build(st, S, ui) {
@@ -228,18 +230,16 @@ export default function motor(ctx) {
     id: 'spin', tab: 'Why it spins',
     title: 'Magnets chasing magnets',
     big: 'A motor spins because magnets you can switch on and off keep chasing fixed magnets and never catch them.',
-    lead: 'Run electricity through a coil of wire and it becomes a magnet you can switch on and off: an <b>electromagnet</b>. Each tooth of the rotor is one. The fixed magnets pull and push on them, the rotor turns, and just as a tooth arrives, the <b>commutator</b> flips its current so it gets shoved onward. It never catches up.',
-    try: 'Drag the rotor up or down to change the volts. Push it below zero to reverse.',
+    lead: 'Run electricity through a coil and it becomes a magnet you can switch on and off. The fixed magnets pull each coil round. Just as it arrives, the <b>commutator</b> flips the current, so it gets pushed onward.',
+    real: 'More volts means a faster wheel. That is what “motor power” in our code changes.',
+    try: 'Drag the rotor up or down to change the volts. Below zero it reverses.',
+    fixed: { load: 20, slow: 'slow' },
     controls: [
       { type: 'range', id: 'volts', label: 'Volts from the Control Hub', min: -12, max: 12, value: 6, fmt: (v) => `${v > 0 ? '+' : ''}${v} V` },
-      { type: 'knob', id: 'load', label: 'Load on the shaft', min: 0, max: 100, step: 5, value: 20, unit: '%' },
-      { type: 'seg', id: 'slow', label: 'Playback', value: 'slow', options: [['slow', 'Slow motion'], ['fast', 'Faster']] },
     ],
-    readouts: [['rpm', 'Speed'], ['amps', 'Current'], ['tq', 'Turning force'], ['heat', 'Wasted as heat']],
+    readouts: [['rpm', 'Speed'], ['amps', 'Current']],
     more: [
       ['Red and blue: what am I looking at?', 'Red means a north pole, blue means a south pole. Opposite poles pull together, matching poles push apart. Watch one coil as it goes round: its colour flips every half turn, exactly when it passes a brush.'],
-      ['Why does more load mean more amps?', 'A spinning motor is also a generator. It makes its own voltage that pushes back against the battery. The faster it spins, the more it pushes back and the less current flows. Slow the shaft down with a load and the push-back drops, so more current rushes in and the motor fights harder.'],
-      ['What is a stall?', 'If the load is too much, the motor stops but the current keeps flowing: about 9 amps in this motor. None of that energy becomes movement. All of it becomes heat in the coils. A stalled motor can cook itself in under a minute.'],
       ['How does the robot go backwards?', 'Swap plus and minus and every electromagnet flips, so the rotor is pushed the other way. Drag the volts below zero to try it. In code, that is <code>motor.setPower(-1)</code>.'],
     ],
     build(st, S, ui) {
@@ -313,7 +313,7 @@ export default function motor(ctx) {
           ui.out('heat', watts > 0 ? `${Math.round(clamp(1 - mech / watts, 0, 1) * 100)}%` : '0%');
           ui.tone('amps', stalled ? 'warn' : '');
           ui.tone('heat', stalled ? 'warn' : '');
-          ui.note(V === 0 ? 'No volts, no electromagnets. The rotor coasts to a stop. Drag the volts slider.'
+          ui.note(V === 0 ? 'No volts, no electromagnets. The rotor coasts to a stop.'
             : stalled ? '<b>Stalled.</b> The load is more than the motor can push at this voltage. Current is at its highest and every bit of it is turning into heat. Give it more volts or less load.'
             : load > free * 0.6 ? 'Working hard: slower, but pulling more current and pushing with more force.'
             : 'Yellow arrows show the push on the rotor. More volts, more speed. More load, more current.', stalled ? 'warn' : '');
@@ -328,19 +328,17 @@ export default function motor(ctx) {
     id: 'gears', tab: 'Planetary gears',
     title: 'Trading speed for muscle',
     big: 'Gears trade speed for muscle: slower out means stronger out.',
-    lead: 'The small yellow <b>sun gear</b> spins fast. It drives three <b>planet gears</b> that roll around inside a fixed <b>ring gear</b>, like planets orbiting the sun. The planets drag a plate called the <b>carrier</b> round with them, much more slowly. Slower means stronger. Stack stages and the effect multiplies.',
-    try: 'Drag the gears sideways to change the motor speed. Follow the yellow bar.',
+    lead: 'The small <b>sun gear</b> spins fast. It drives three <b>planet gears</b> that roll around inside a fixed ring, dragging a plate round much more slowly. Slower out means stronger out.',
+    real: 'Our drive motors use 19.2 to 1: about 19 times slower and 19 times stronger.',
+    try: 'Pick a gearbox and compare the speed and the force that come out.',
+    fixed: { mrpm: 3000, ringOn: 'show' },
     controls: [
       { type: 'seg', id: 'ratio', label: 'Pick a gearbox', value: myRatio, options: Object.keys(RATIOS).map((k) => [k, `${k}:1`]) },
-      { type: 'range', id: 'mrpm', label: 'Motor speed', min: 0, max: 6000, step: 100, value: 3000, fmt: (v) => `${v.toLocaleString('en-US')} rpm` },
-      { type: 'seg', id: 'ringOn', label: 'Ring gear', value: 'show', options: [['show', 'Show'], ['ghost', 'See through']] },
     ],
-    readouts: [['gin', 'Sun gear (in)'], ['gout', 'Output shaft'], ['gx', 'Turning force', 'compared with the bare motor'], ['gst', 'Stages']],
+    readouts: [['gout', 'Output shaft'], ['gx', 'Turning force', 'compared with the bare motor']],
     more: [
       ['Where do numbers like 19.2 come from?', 'Count teeth. The ring has 46. With a 17-tooth sun, one stage slows things by 1 + 46 ÷ 17 = <b>3.7</b>. With an 11-tooth sun it is 1 + 46 ÷ 11 = <b>5.2</b>. Your drive motors use one of each: 3.7 × 5.2 = <b>19.2</b>. The intake motor uses three 3.7 stages: 3.7 × 3.7 × 3.7 = <b>50.9</b>.'],
       ['Why planetary and not just two gears?', 'Three planets share the load, so the teeth can be small without breaking. The input and output are in a straight line, so the gearbox is a neat cylinder the same width as the motor. And you can stack stages like pancakes.'],
-      ['Is anything lost?', 'A little. Teeth rubbing on teeth turn some energy into heat and noise, roughly 5 to 10 percent per stage. That is why the 50.9:1 gearbox gives a bit less than 50.9 times the force.'],
-      ['Which should a robot use?', 'Low ratios for things that must be fast, like a flywheel. High ratios for things that must be strong, like an arm lifting a heavy load. A drivetrain sits in the middle: 19.2:1 on these wheels is about walking pace with plenty of shove.'],
     ],
     build(st, S, ui) {
       const holder = group();
@@ -421,15 +419,14 @@ export default function motor(ctx) {
     title: 'Stamped, wound, zapped and cut',
     big: 'A motor is more than fifty parts, each made by a machine that does one job over and over.',
     lead: 'A motor has more than fifty parts, and almost every one is made by a machine doing a single job over and over. Step through the five big ones.',
-    try: 'Pick a station, then change the line speed.',
+    try: 'Pick a station and watch it work.',
+    fixed: { mspeed: 100 },
     controls: [
       { type: 'seg', id: 'mstep', label: 'Station', value: 0, options: STEPS.map((s, i) => [i, `${i + 1} ${s[0]}`]) },
-      { type: 'range', id: 'mspeed', label: 'Line speed', min: 0, max: 200, value: 100, unit: '%' },
     ],
     more: [
       ['Where does the copper come from?', 'Copper ore is mined mostly in Chile, Peru and the Congo, crushed, and purified using electricity until it is 99.99% copper. It is pulled through smaller and smaller holes, called dies, until it is a wire thinner than pencil lead.'],
       ['What are the magnets made of?', 'Small motors like this usually use ferrite: iron oxide (basically refined rust) mixed with strontium. It is cheap and does not rust. Stronger motors use neodymium magnets, which are far more powerful and more expensive.'],
-      ['Stamping shows up again', 'The motor’s steel can and end plates are stamped too: a press pushes flat sheet through dies to cup it into shape, the same deep-drawing trick used for battery cans.'],
     ],
     build(st, S, ui) {
       const X = 0, stations = []; // every station stands on the same spot; only the chosen one shows
@@ -611,5 +608,5 @@ export default function motor(ctx) {
     },
   };
 
-  return { title: `${myRatio === '50.9' ? 'Intake' : job === 'launcher' ? 'Launcher' : 'Drive'} motor`, chapters: [openUp, why, gears, made, onRobot] };
+  return { title: `${myRatio === '50.9' ? 'Intake' : job === 'launcher' ? 'Launcher' : 'Drive'} motor`, chapters: [openUp, why, gears, made] };
 }

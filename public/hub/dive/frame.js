@@ -39,17 +39,16 @@ export default function frame(ctx) {
     id: 'ore', tab: 'Rock to metal',
     title: 'Your robot used to be red dirt',
     big: 'Aluminium is locked inside rock, and it takes a huge amount of electricity to get it out.',
-    lead: 'Aluminium is the most common metal in the Earth’s crust, but you never find a lump of it lying around. It is always locked up inside rock. Getting it out takes four big steps and a shocking amount of electricity.',
-    try: 'Step through the four stages, then slide to see what a kilogram really costs.',
+    lead: 'Aluminium is the most common metal in the ground, but it is always locked inside rock. Getting it out takes four big steps and a shocking amount of electricity.',
+    real: 'Our whole frame is aluminium channel that started like this.',
+    try: 'Step through the four stages.',
+    fixed: { kg: 1 },
     controls: [
       { type: 'seg', id: 'ostep', label: 'Step', value: 0, options: STEPS.map((s, i) => [i, `${i + 1} ${s[0]}`]) },
-      { type: 'range', id: 'kg', label: 'Aluminium you want', min: 0.5, max: 5, step: 0.5, value: 1, fmt: (v) => `${v} kg` },
     ],
-    readouts: [['rockKg', 'Bauxite to dig up'], ['kwh', 'Electricity to smelt it'], ['charges', 'Same as charging your robot battery', 'times']],
+    readouts: [['rockKg', 'Bauxite to dig up'], ['kwh', 'Electricity to smelt it']],
     more: [
       ['Why does it need so much electricity?', 'Aluminium atoms hold on to oxygen far more tightly than iron does. Breaking that grip takes about 15 kilowatt-hours for every kilogram: enough to run a home fridge for two weeks. Smelters are built next to hydroelectric dams for exactly this reason.'],
-      ['It once cost more than gold', 'Before the electric method was invented in 1886 (by two 22-year-olds working separately, Charles Hall and Paul Héroult), aluminium was so hard to make that Napoleon III of France served his most important guests with aluminium cutlery. Everyone else got gold.'],
-      ['Is this where the frame of our robot started?', 'Possibly not from rock. Recycling aluminium takes only about 5% of the energy of making it new, and it can be melted and reused forever. A lot of the aluminium in use today has been something else before: a drink can, a window frame, a car.'],
       ['How much is in the robot?', 'One 432 mm side rail of the StarterBot weighs roughly 400 grams. The whole frame is around 2 kg of aluminium. Try setting the slider to 2.'],
     ],
     build(st, S, ui) {
@@ -149,18 +148,15 @@ export default function frame(ctx) {
     id: 'extrude', tab: 'Squeeze it',
     title: 'A play-dough press the size of a house',
     big: 'Push soft metal through a shaped hole and it comes out that shape, all the way along.',
-    lead: 'The channel on your robot is the same shape all the way along. That is the fingerprint of <b>extrusion</b>. A billet is heated until it is soft (not melted), then a ram shoves it through a steel plate with a U-shaped hole, called a <b>die</b>. Out comes 40 metres of U-channel, like toothpaste.',
-    try: 'Heat the billet until it glows, then drag the ram to squeeze it through the die.',
+    lead: 'Our channel is the same shape all the way along. That is the mark of <b>extrusion</b>: a hot, soft block of metal is pushed through a U-shaped hole, called a <b>die</b>, like toothpaste.',
+    try: 'Drag the ram to squeeze the metal through the die.',
+    fixed: { temp: 480, die: 'u' },
     controls: [
-      { type: 'knob', id: 'temp', label: 'Billet temperature', min: 20, max: 640, step: 10, value: 480, unit: ' °C' },
       { type: 'range', id: 'ram', label: 'Push the ram', min: 0, max: 100, value: 0, unit: '%' },
-      { type: 'seg', id: 'die', label: 'Die shape', value: 'u', options: Object.entries(DIES) },
     ],
-    readouts: [['force', 'Force on the ram'], ['len', 'Channel made'], ['qual', 'Result']],
+    readouts: [['force', 'Force on the ram'], ['len', 'Channel made']],
     more: [
       ['Why heat it? Why not melt it?', 'Cold aluminium is too stiff: the press would stall or the die would crack. Melted aluminium would just run out as a puddle. At about 450 to 500 °C it is solid but soft, like stiff clay, and it holds whatever shape the die gives it.'],
-      ['How hard does the press push?', 'A medium press pushes with around 2,000 tonnes: the weight of about 1,300 cars balanced on a billet the width of a dinner plate. Pressure inside the container is higher than at the bottom of the deepest ocean trench.'],
-      ['What happens after it comes out?', 'The long strand is cooled with air or water, then gripped at both ends and stretched a little to pull it perfectly straight. It is cut into lengths and baked for several hours at about 175 °C. That bake, called T6 tempering, more than doubles its strength.'],
       ['How do we know it was extruded and not stamped?', 'Three clues. The cross-section is identical everywhere along the part. The inside corners are sharp and square. And if you look closely at bare extruded aluminium you can see faint lines running along its length, left by the die.'],
     ],
     build(st, S, ui) {
@@ -333,19 +329,17 @@ export default function frame(ctx) {
     id: 'holes', tab: 'Add the holes',
     title: 'A robot that drills for robots',
     big: 'A computer-controlled mill drills every hole on an exact 8 mm grid.',
-    lead: 'The extrusion is cut to length and clamped in a <b>CNC machine</b>: a computer-controlled mill that moves a spinning cutter to exact positions, over and over, without getting bored. It follows a list of coordinates, a lot like your autonomous code. Every hole lands on an 8 mm grid, accurate to a few hundredths of a millimetre.',
-    try: 'Change the speed and the feed. Can you snap the drill?',
+    lead: 'The channel is clamped in a <b>CNC machine</b>: a computer-controlled drill that moves to exact spots, over and over. It follows a list of coordinates, a lot like autonomous code. Every hole lands on an 8 mm grid.',
+    real: 'That 8 mm grid is why any goBILDA part bolts onto any other.',
+    try: 'Push the drill down faster. Can you snap it?',
+    fixed: { rpm: 6000 },
     controls: [
-      { type: 'range', id: 'rpm', label: 'Spindle speed', min: 500, max: 12000, step: 500, value: 6000, fmt: (v) => `${v.toLocaleString('en-US')} rpm` },
       { type: 'range', id: 'feed', label: 'Feed (how fast it plunges)', min: 10, max: 100, step: 5, value: 45, unit: '%' },
-      { type: 'button', id: 'again', label: 'Load a fresh channel' },
     ],
-    readouts: [['done', 'Holes cut'], ['tool', 'Tool in the spindle'], ['chip', 'Chip thickness']],
+    readouts: [['done', 'Holes cut'], ['chip', 'Chip thickness']],
     more: [
       ['Why this hole pattern?', 'goBILDA parts all share one pattern: 4 mm holes on an 8 mm grid, with a big 14 mm hole every 24 mm for shafts and bearings to pass through. Because every part follows the same grid, any part can bolt to any other part, anywhere. It is LEGO for metal.'],
       ['What is "feeds and speeds"?', 'Each cutting edge should slice off a thin, even chip. Spin too slowly for how fast you push and each edge takes too big a bite: the drill snaps. Spin fast but push too gently and the edge just rubs, heats up and goes blunt. Machinists tune both together. Try breaking a drill.'],
-      ['Why not punch the holes?', 'Punching thick aluminium leaves ragged, slightly dented holes, and the punch could not reach the inside faces of a U. Drilling and milling leave clean holes exactly where they should be, on all three faces.'],
-      ['How does it know where to go?', 'An engineer draws the part in CAD (the same kind of model you can spin on the Robot page). Software turns it into G-code: a long list of moves like "go to X 24.0, Y 8.0, plunge 3 mm". The machine reads it line by line.'],
     ],
     build(st, S, ui) {
       const LEN = UNITS * PITCH;
@@ -375,7 +369,6 @@ export default function frame(ctx) {
       plate();
       return {
         view: { pos: [13, 11, 24], target: [0, 0.6, 0] },
-        change(id) { if (id === 'again') { n = 0; ph = 0; plate(); } },
         handles: [{ obj: spindle, id: 'feed', axis: 'y', invert: true, span: 220, hint: 'Drag down to plunge faster', dy: -60 }],
         tick(dt) {
           const bite = (S.feed / 100) / (S.rpm / 6000); // relative chip load: 0.45 is comfortable
@@ -386,6 +379,7 @@ export default function frame(ctx) {
           if (broken > 0) { broken -= dt; snap.show(true); drill.scale.y = 0.35; chips.object.visible = false; }
           else {
             snap.show(false); drill.scale.y = 1;
+            if (n >= HOLE_LIST.length) { n = 0; ph = 0; plate(); } // finished: load a fresh channel
             if (n < HOLE_LIST.length) {
               const h = HOLE_LIST[n];
               const target = new THREE.Vector3(h[0], 0, h[1]);
@@ -488,18 +482,17 @@ export default function frame(ctx) {
     id: 'shape', tab: 'Why a U?',
     title: 'Shape beats material',
     big: 'The same metal gets far stiffer when it is bent into the right shape.',
-    lead: 'The frame carries everything: motors, battery, and the shock of hitting a wall. Here is the same aluminium, the same 2.5 mm wall, in four shapes. Rest a weight on the middle of each and see which you would build a robot from.',
-    try: 'Drag the weight down to load the beam, then swap the shape.',
+    lead: 'Here is the same aluminium, with the same wall thickness, in four shapes. A 5 kg weight rests on the middle of each. Which one would you build a robot from?',
+    real: 'Our rails are U-channel: stiff, light, and open so a wrench fits inside.',
+    try: 'Swap the shape and watch how far it bends.',
+    fixed: { wkg: 5 },
     controls: [
       { type: 'seg', id: 'sect', label: 'Cross-section', value: 'u', options: Object.entries(SECT).map(([k, v]) => [k, v[0]]) },
-      { type: 'knob', id: 'wkg', label: 'Weight resting on the middle', min: 0, max: 20, step: 1, value: 5, unit: ' kg' },
     ],
-    readouts: [['bend', 'Bends in the middle'], ['mass', 'Rail weighs'], ['vs', 'Stiffness vs flat strip']],
+    readouts: [['bend', 'Bends in the middle'], ['vs', 'Stiffness vs flat strip']],
     more: [
       ['Why does the shape matter so much?', 'When a beam bends, the top gets squashed and the bottom gets stretched. The middle does almost nothing. Metal far from the middle fights bending hardest, so the best shapes put their metal as far above and below the centre as possible. The tall walls of a U do exactly that.'],
       ['Then why not always use a box tube?', 'A box is stiffer still, and much better at resisting twist. But you cannot reach inside it to tighten a nut. An open U lets you mount motors, bearings and gears <i>inside</i> the rail, with a screwdriver from any side. Engineering is always a trade.'],
-      ['Do the holes make it weaker?', 'A little: the holes remove about a quarter of the metal. But they take it from the faces, and the stiffness mostly comes from how far apart the faces are. You lose a bit of strength and gain the ability to bolt anything anywhere, which is a trade worth making.'],
-      ['How this connects to the rest of the robot', 'The two long side rails set the distance between the wheels. If they flex, the four mecanum wheels stop touching the floor evenly and the robot drifts when it should slide straight. A stiff frame is what lets your drive code behave the same way twice.'],
     ],
     build(st, S, ui) {
       const LEN = 14, K = 0.42, bMat = metal(ALU, 0.3);
@@ -557,5 +550,5 @@ export default function frame(ctx) {
     },
   };
 
-  return { title: 'The aluminium frame', chapters: [ore, extrude, stamp, holes, finish, whyU] };
+  return { title: 'The aluminium frame', chapters: [ore, extrude, holes, whyU] };
 }

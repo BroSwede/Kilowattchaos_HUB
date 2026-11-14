@@ -17,17 +17,15 @@ export default function power() {
     id: 'one', tab: 'One motor',
     title: 'The harder a motor works, the more it drinks',
     big: 'A motor pulls only a little current when it spins freely and a lot when something holds it back.',
-    lead: 'Electric current is measured in <b>amps</b>: how much electricity flows each second. A motor does not take a fixed amount. Spinning freely it sips about a quarter of an amp. Make it work and it pulls more. Hold it still while it is switched on, which is called a <b>stall</b>, and it gulps about <b>9 amps</b> and turns every bit of it into heat.',
-    real: 'We have six of these motors: four for driving, one for the intake and one for the launcher. If the intake jams, that one motor is stalled until the driver lets go of the button.',
-    try: 'Squeeze the brake harder and watch the amps climb as the speed falls.',
+    lead: 'Current is measured in <b>amps</b>. A motor spinning freely sips about a quarter of an amp. Make it work and it pulls more. Hold it still, called a <b>stall</b>, and it gulps about <b>9 amps</b>, all turned into heat.',
+    real: 'If our intake jams, its motor is stalled until the driver lets go.',
+    try: 'Squeeze the brake harder and watch the amps climb.',
     controls: [
       { type: 'knob', id: 'pw_load', label: 'Brake on the shaft', min: 0, max: 100, step: 1, value: 20, unit: '%' },
-      { type: 'seg', id: 'pw_pick', label: 'Jump to', value: 'drive', options: [['free', 'Spinning free'], ['drive', 'Driving'], ['push', 'Pushing hard'], ['stall', 'Stalled']] },
     ],
-    readouts: [['pw_a', 'Current', 'amps'], ['pw_s', 'Speed', 'of the bare motor'], ['pw_w', 'Power in', '12 volts × amps'], ['pw_h', 'Becomes heat']],
+    readouts: [['pw_a', 'Current', 'amps'], ['pw_s', 'Speed', 'of the bare motor']],
     more: [
       ['Why more amps when it is slower?', 'A spinning motor also works as a generator. It makes its own voltage that pushes back against the battery. Spinning fast, it pushes back hard and little current gets through. Slowed down, it pushes back less, so more current flows.'],
-      ['What is a watt?', 'Volts times amps. It measures how fast energy is being used. 12 volts × 9 amps = 108 watts, about as much as a bright old light bulb, inside a motor the size of your thumb.'],
       ['How long can a motor stay stalled?', 'A few seconds. After that the copper coils get hot enough to damage themselves. Good code stops a motor that is powered but not moving.'],
     ],
     build(st, S, ui) {
@@ -89,25 +87,22 @@ export default function power() {
 
   // ------------------------------------------------------------ 2. The power budget
   const DRIVE = { off: [0, 'Off'], cruise: [6, 'Driving'], push: [24, 'Pushing hard'] }, INT = { off: [0, 'Off'], on: [1.5, 'Running'], jam: [STALL_A, 'Jammed'] }, LAU = { off: [0, 'Off'], hold: [2, 'Holding speed'], up: [STALL_A, 'Spinning up'] };
+  // One switch instead of three: each step adds one more thing for the battery to feed.
+  const MODES = { drive: ['cruise', 'off', 'off'], intake: ['cruise', 'on', 'off'], launch: ['cruise', 'on', 'hold'], worst: ['push', 'jam', 'up'] };
   const budget = {
     id: 'budget', tab: 'Power budget',
     title: 'One battery, everything at once',
     big: 'Every motor that is running adds its amps to the total, and the more amps you pull, the lower the battery’s voltage sinks.',
-    lead: 'All the current comes out of one battery, through one <b>20 amp fuse</b>. Add up what each system is pulling and you get the total. That is your <b>power budget</b>. Two things happen when it gets big. The battery’s voltage <b>sags</b>, so every motor gets weaker. And if the total stays above 20 amps for long, the fuse gets hot and breaks the circuit to protect the wires.',
-    real: 'Pushing another robot while the launcher spins up and the intake is jammed is the worst case for our robot. That is when a robot goes sluggish, or resets in the middle of a match. A reset caused by low voltage is called a <b>brownout</b>.',
-    try: 'Switch systems on one by one. Then go for the worst case and watch the fuse.',
+    lead: 'All the current comes from one battery, through one <b>20 amp fuse</b>. Every running motor adds its amps to the total. As the total grows, the battery’s voltage <b>sags</b>. Stay above 20 amps too long and the fuse blows.',
+    real: 'Pushing a robot while the launcher spins up and the intake jams is our worst case.',
+    try: 'Switch on one more thing at a time, up to the worst case.',
     controls: [
-      { type: 'seg', id: 'pb_d', label: 'Drive (4 motors)', value: 'cruise', options: Object.entries(DRIVE).map(([k, v]) => [k, v[1]]) },
-      { type: 'seg', id: 'pb_i', label: 'Intake', value: 'off', options: Object.entries(INT).map(([k, v]) => [k, v[1]]) },
-      { type: 'seg', id: 'pb_l', label: 'Launcher', value: 'off', options: Object.entries(LAU).map(([k, v]) => [k, v[1]]) },
-      { type: 'button', id: 'pb_fix', label: 'Replace the fuse' },
+      { type: 'seg', id: 'pb_mode', label: 'What is running', value: 'drive', options: [['drive', 'Just driving'], ['intake', '+ intake'], ['launch', '+ launcher'], ['worst', 'Worst case']] },
     ],
-    readouts: [['pb_a', 'Total current', 'the fuse allows 20 A'], ['pb_v', 'Battery voltage', 'starts at 12.8 V'], ['pb_f', 'Fuse'], ['pb_s', 'Motors get', 'of their full strength']],
+    readouts: [['pb_a', 'Total current', 'the fuse allows 20 A'], ['pb_v', 'Battery voltage', 'starts at 12.8 V']],
     more: [
       ['Why does the voltage sag?', 'The battery has a little resistance inside, like a narrow pipe. Pushing more current through it uses up some of the push before it ever leaves the pack. Our pack loses about 0.12 volts for every amp. At 30 amps that is 3.6 volts gone.'],
-      ['Does 21 amps blow the fuse straight away?', 'No. The fuse is a thin strip of metal that has to heat up. A short burst above 20 amps is fine. Staying well above it for several seconds is not. The further over you go, the faster it goes.'],
       ['What is a brownout?', 'If the voltage sinks too low, the Control Hub cannot keep its own computer running properly. It may switch off the motors or restart, and the robot sits dead for a while. The exact voltage depends on the hub. The lesson is the same: do not ask for everything at once.'],
-      ['Where do these amps come from?', 'They are estimates built from the motor’s numbers: 0.25 A spinning free, 9.2 A stalled. A cruising drive motor is taken as 1.5 A and a hard-pushing one as 6 A. Measure your own robot with the telemetry on the Driver Hub.'],
     ],
     build(st, S, ui) {
       const table = box(30, 0.3, 17, mat('#8D9391', { rough: 0.9 }), { r: 0.05, pos: [0, -0.15, -0.5] });
@@ -132,27 +127,28 @@ export default function power() {
       st.add(table, batt, fuse, fuseGlow, hub, w.g, dm.g, gk.g, im.g, fw.g, lm.g, tube(main, 0.14, C.red), fMain.object, scr.g, ...runs.map((r) => tube(r, 0.1, C.red)), ...fl.map((f) => f.object));
       st.label('12 V battery', batt, { dy: -46 });
       const lf = st.label('20 A fuse', fuse, { dy: -34 });
-      st.label('Control Hub', hub, { dy: -38 });
       const ls = [st.label('Drive', w.g, { dy: -52 }), st.label('Intake', gk.g, { dy: -50 }), st.label('Launcher', fw.g, { dy: -56 })];
-      let hot = 0, blown = false, tw = 0, ti = 0, tf = 0, lastKey = '';
+      let hot = 0, blown = false, out = 0, tw = 0, ti = 0, tf = 0, lastKey = '';
       return {
         view: { pos: [-0.5, 21, 29], target: [-0.5, 2.2, -1.6] },
         groundY: -0.3,
-        change(id) { if (id === 'pb_fix') { blown = false; hot = 0; } },
+        change() { blown = false; hot = 0; out = 0; },
         tick(dt) {
-          const a = [DRIVE[S.pb_d][0], INT[S.pb_i][0], LAU[S.pb_l][0]], want = 1 + a[0] + a[1] + a[2];
+          const [pd, pi, pl] = MODES[S.pb_mode], a = [DRIVE[pd][0], INT[pi][0], LAU[pl][0]], want = 1 + a[0] + a[1] + a[2];
           const total = blown ? 0 : want, V = 12.8 - total * PACK_OHM, k = blown ? 0 : V / 12.8;
           // The fuse warms up above 20 A, faster the further over you go, and cools again below it.
           hot = clamp(hot + (total > FUSE_A ? ((total / FUSE_A) ** 2 - 1) * 0.22 : -0.25) * dt, 0, 1);
           if (hot >= 1) blown = true;
+          // A blown fuse is swapped for a new one after a few seconds, so nobody gets stuck.
+          if (blown) { out += dt; if (out > 4) { blown = false; hot = 0; out = 0; } }
           fuseGlow.material.opacity = blown ? 0 : hot * 0.75;
           fuseGlow.visible = hot > 0.02 && !blown;
           if (!blown) {
             fMain.advance(dt * (0.04 + total * 0.02));
             fl.forEach((f, i) => { f.object.visible = a[i] > 0; f.advance(dt * (0.04 + a[i] * 0.04)); });
-            tw += dt * (S.pb_d === 'off' ? 0 : S.pb_d === 'push' ? 1.2 : 6) * k;
-            ti += dt * (S.pb_i === 'on' ? 9 : 0) * k;
-            tf += dt * (S.pb_l === 'off' ? 0 : S.pb_l === 'up' ? 7 : 16) * k;
+            tw += dt * (pd === 'off' ? 0 : pd === 'push' ? 1.2 : 6) * k;
+            ti += dt * (pi === 'on' ? 9 : 0) * k;
+            tf += dt * (pl === 'off' ? 0 : pl === 'up' ? 7 : 16) * k;
           }
           fMain.object.visible = !blown;
           if (blown) fl.forEach((f) => { f.object.visible = false; });
@@ -179,7 +175,6 @@ export default function power() {
             ctx.fillText('brownout risk', x0 + 6, 372); ctx.textAlign = 'right'; ctx.fillText(blown ? 'no power' : `${V.toFixed(1)} V`, W - 36, 372); ctx.fillText(`${total.toFixed(1)} A`, W - 36, 190);
             scr.flush();
           }
-          ui.label('pb_fix', blown ? 'Replace the fuse' : 'Fuse is fine');
           ui.out('pb_a', `${total.toFixed(1)} A`, blown ? `it was ${want.toFixed(1)} A` : 'the fuse allows 20 A');
           ui.tone('pb_a', total > FUSE_A ? 'warn' : '');
           ui.out('pb_v', blown ? '0 V' : `${V.toFixed(1)} V`, blown ? 'nothing reaches the hub' : `sagging by ${(total * PACK_OHM).toFixed(1)} V`);
@@ -187,7 +182,7 @@ export default function power() {
           ui.out('pb_f', blown ? 'Blown' : hot > 0.05 ? `Heating: ${Math.round(hot * 100)}%` : 'Cool');
           ui.tone('pb_f', blown || hot > 0.05 ? 'warn' : 'good');
           ui.out('pb_s', `${Math.round(k * 100)}%`);
-          ui.note(blown ? `<b>The fuse has blown.</b> ${want.toFixed(0)} amps for too long. The robot is dead until someone fits a new fuse. Switch something off first, then replace it.`
+          ui.note(blown ? `<b>The fuse has blown.</b> ${want.toFixed(0)} amps for too long. The robot is dead until someone fits a new fuse. A new fuse goes in after a few seconds. Pick something lighter before it does.`
             : V < BROWN ? `<b>Brownout risk.</b> ${total.toFixed(0)} amps drags the battery down to ${V.toFixed(1)} V. The hub may reset, and the fuse is heating fast.`
             : total > FUSE_A ? `<b>Over budget.</b> ${total.toFixed(0)} amps is more than the fuse allows. A short burst is fine. Hold it and the fuse will go.`
             : total > 12 ? `<b>A busy robot.</b> ${total.toFixed(0)} amps. The battery has sagged to ${V.toFixed(1)} V, so everything is a bit weaker than it was.`
@@ -202,18 +197,16 @@ export default function power() {
     id: 'match', tab: 'Will it last?',
     title: 'One match is easy. The fourth is not.',
     big: 'A charged battery has enough for several matches, but it gets weaker as it empties, so we start every match with a full one.',
-    lead: 'The battery’s size is written on it: <b>3,000 mAh</b>, or 3 amp-hours. Think of it as a fuel tank: 3 amps for one hour, or 12 amps for a quarter of an hour. A match is only <b>2 minutes 30 seconds</b>, so one match uses a small slice. The catch is that a part-empty battery gives <b>lower voltage</b>, and lower voltage means a slower robot and shorter shots.',
-    real: 'This is why the pit crew swaps in a freshly charged battery before every match, and why teams keep more than one. It is the cheapest performance boost there is.',
-    try: 'Play match after match without charging and watch the voltage and the robot.',
+    lead: 'The battery holds <b>3,000 mAh</b>: think of a fuel tank. One match of 2 minutes 30 uses only a slice. But a part-empty battery gives <b>lower voltage</b>, which means a slower robot and shorter shots.',
+    real: 'Our pit crew swaps in a freshly charged battery before every match.',
+    try: 'Play match after match without charging and watch the voltage.',
+    fixed: { pm_a: 10 },
     controls: [
       { id: 'pm_n', label: 'Matches played since the last charge', min: 0, max: 8, step: 1, value: 0 },
-      { type: 'knob', id: 'pm_a', label: 'Average current in a match', min: 4, max: 20, step: 1, value: 10, unit: ' A' },
     ],
-    readouts: [['pm_u', 'One match uses', 'of a full battery'], ['pm_c', 'Charge left'], ['pm_v', 'Voltage while driving', 'a fresh pack gives about 11.8 V'], ['pm_s', 'Robot strength']],
+    readouts: [['pm_c', 'Charge left'], ['pm_v', 'Voltage while driving', 'a fresh pack gives about 11.8 V']],
     more: [
-      ['Show me the math', 'A match lasts 150 seconds, which is 150 ÷ 3,600 = 0.042 hours. At an average of 10 amps that is 10 × 0.042 = <b>0.42 amp-hours</b>. The tank holds 3.0, so one match uses about <b>14%</b>.'],
       ['So why not play seven matches on one charge?', 'Because the last few would be played on a tired battery. The voltage drops as the tank empties, and near the end it falls off a cliff. Motors get weaker, the launcher throws short, and a big burst of current can cause a brownout.'],
-      ['Is it bad to run a battery flat?', 'Yes. Running these batteries completely flat damages the cells. Stop when the robot feels sluggish, and never leave a robot switched on overnight.'],
       ['How do I know how full it is?', 'The Driver Hub shows the robot’s battery voltage. Rested, a full pack reads about 13 volts or more and a nearly empty one about 12. Check it before you queue for a match.'],
     ],
     build(st, S, ui) {
