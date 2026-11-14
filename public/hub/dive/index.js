@@ -4,11 +4,17 @@
 import { createStage, loadParts, THREE, clamp } from './kit.js';
 
 const TOPICS = {
-  battery: { load: () => import('./battery.js'), name: 'Battery', sys: 'power', blurb: 'Cells, volts, amps and watts' },
-  motor: { load: () => import('./motor.js'), name: 'Motor', sys: 'drivetrain', blurb: 'Magnets, coils and planetary gears' },
-  frame: { load: () => import('./frame.js'), name: 'Frame', sys: 'structure', blurb: 'From rock to a drilled channel' },
+  battery: { load: () => import('./battery.js'), name: 'Battery', sys: 'power', blurb: 'Cells, volts, amps and watts', kind: 'made', chapters: 5 },
+  motor: { load: () => import('./motor.js'), name: 'Motor', sys: 'drivetrain', blurb: 'Magnets, coils and planetary gears', kind: 'made', chapters: 5 },
+  frame: { load: () => import('./frame.js'), name: 'Frame', sys: 'structure', blurb: 'From rock to a drilled channel', kind: 'made', chapters: 6 },
+  // "How it works": the systems and the math, separate from how the parts are made.
+  hubs: { load: () => import('./hubs.js'), name: 'Control Hub and Driver Hub', sys: 'hardware', blurb: 'Open up the robot\u2019s brain: chips, ports, and how a stick push reaches a wheel', kind: 'works', icon: 'bot', tabs: [['two', 'Two boxes'], ['ports', 'Ports tour'], ['inside', 'Open it up'], ['motor', 'Motor port'], ['servo', 'Servo port'], ['sensor', 'Sensor ports'], ['signal', 'Stick to wheel'], ['power', 'Power']] },
+  wheels: { load: () => import('./wheels.js'), name: 'Mecanum wheels', sys: 'drivetrain', blurb: 'Why our robot can drive sideways, and the math for each wheel', kind: 'works', icon: 'focus', tabs: [['size', 'Wheel size'], ['roller', 'The rollers'], ['four', 'Four wheels'], ['tank', 'Tank or mecanum']] },
+  sensors: { load: () => import('./sensors.js'), name: 'Sensors', sys: 'intake', blurb: 'Encoders, the gyro, distance and colour: how the robot feels the world', kind: 'works', icon: 'zap', tabs: [['enc', 'Encoder'], ['imu', 'IMU (gyro)'], ['dist', 'Distance'], ['color', 'Colour']] },
+  math: { load: () => import('./math.js'), name: 'Algorithms and math', sys: 'ballpath', blurb: 'Deadzones, the robot loop and control that steers itself', kind: 'works', icon: 'code', tabs: [['stick', 'Joystick math'], ['loop', 'The loop'], ['pid', 'Turn to 90°'], ['drive', 'Drive a distance']] },
 };
-export const DIVES = Object.entries(TOPICS).map(([key, t]) => ({ key, name: t.name, sys: t.sys, blurb: t.blurb }));
+const KIND = { made: 'How it\u2019s made and how it works', works: 'How it works' };
+export const DIVES = Object.entries(TOPICS).map(([key, t]) => ({ key, name: t.name, sys: t.sys, blurb: t.blurb, kind: t.kind || 'made', icon: t.icon || 'sparkle', tabs: t.tabs || [], chapters: (t.tabs || []).length || t.chapters || 0 }));
 
 // Which deep dive, if any, explains this part of the robot.
 export function topicFor(info) {
@@ -67,7 +73,7 @@ export const isDiveOpen = () => !!open;
 
 /**
  * Open a deep dive.
- * @param {string} key      'battery' | 'motor' | 'frame'
+ * @param {string} key      'battery' | 'motor' | 'frame' | 'hubs' | 'wheels' | 'sensors' | 'math'
  * @param {object} [opts]   { part: {name, sku, sys}, real: () => Object3D|null, startAt: chapter id }
  */
 export async function openDive(key, opts = {}) {
@@ -81,7 +87,7 @@ export async function openDive(key, opts = {}) {
   el.className = 'dd';
   el.setAttribute('role', 'dialog');
   el.setAttribute('aria-modal', 'true');
-  el.setAttribute('aria-label', `How it's made: ${T.name}`);
+  el.setAttribute('aria-label', `${T.kind === 'works' ? 'How it works' : "How it's made"}: ${T.name}`);
   el.innerHTML = `
     <div class="dd-stage" id="ddStage">
       <canvas id="ddCanvas" tabindex="0" aria-label="3D model for this chapter. Drag to turn it, scroll or pinch to zoom."></canvas>
@@ -97,7 +103,7 @@ export async function openDive(key, opts = {}) {
     <div class="dd-side">
       <header class="dd-head">
         <div>
-          <div class="eyebrow"><span class="dd-dot" style="--c:var(--sys-${T.sys})"></span>How it's made and how it works</div>
+          <div class="eyebrow"><span class="dd-dot" style="--c:var(--sys-${T.sys})"></span>${KIND[T.kind] || KIND.made}</div>
           <h2 id="ddTitle">${esc(T.name)}</h2>
         </div>
         <button class="icon-btn sm" type="button" id="ddClose" aria-label="Close">${ICON('x')}</button>

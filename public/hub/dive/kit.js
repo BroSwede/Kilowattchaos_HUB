@@ -78,6 +78,14 @@ export function part(name, o = {}) {
   if (o.pos) g.position.set(...o.pos);
   return g;
 }
+// ---- Real CAD: whole products converted straight from the maker's STEP file (millimetres, every face kept).
+const MODELS = {};
+export function loadModel(file) {
+  return (MODELS[file] ??= new GLTFLoader().loadAsync(new URL(`./models/${file}`, import.meta.url).href).then((gltf) => {
+    gltf.scene.traverse((o) => { if (o.isMesh) { o.userData.keepGeo = true; o.material.userData.shared = true; } });
+    return gltf.scene;
+  }));
+}
 export const metal = (color, rough = 0.35) => mat(color, { metal: 0.85, rough });
 const asMat = (c, o) => (c && c.isMaterial ? c : mat(c, o));
 
@@ -489,7 +497,7 @@ export function createStage({ canvas, wrap, labels, reduced = false }) {
   }
 
   return {
-    THREE, scene, camera, controls, reduced,
+    THREE, scene, camera, controls, reduced, renderer,
     get world() { return world; },
     add(...o) { world.add(...o); return o[0]; },
     setView, label, clear, dispose, disposeTree, grab, ground,
