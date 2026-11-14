@@ -13,7 +13,11 @@ const TOPICS = {
   sensors: { load: () => import('./sensors.js'), name: 'Sensors', sys: 'intake', blurb: 'Encoders, the gyro, distance and colour: how the robot feels the world', kind: 'works', icon: 'zap', tabs: [['enc', 'Encoder'], ['imu', 'IMU (gyro)'], ['dist', 'Distance'], ['color', 'Colour']] },
   launcher: { load: () => import('./launcher.js'), name: 'The launcher', sys: 'launcher', blurb: 'How a spinning wheel throws a ball, and why the same shot can land short', kind: 'works', icon: 'flag', tabs: [['speed', 'Wheel to ball'], ['arc', 'Angle and arc'], ['recover', 'Spin back up'], ['steady', 'Same shot every time']] },
   intake: { load: () => import('./intake.js'), name: 'Intake and ball path', sys: 'intake', blurb: 'Soft wheels that grab a ball, the squeeze that grips or jams, and the trip to the flywheel', kind: 'works', icon: 'layers', tabs: [['grab', 'The squeeze'], ['speed', 'Fast enough?'], ['path', 'One at a time'], ['jam', 'Jams']] },
+  gears: { load: () => import('./gears.js'), name: 'Gears', sys: 'drivetrain', blurb: 'Trading speed for muscle, and why our drive motors are geared 19.2 to 1', kind: 'works', icon: 'reset', tabs: [['ratio', 'Speed or muscle'], ['planet', 'Inside the gearbox'], ['drive', 'Why 19.2 to 1?']] },
+  power: { load: () => import('./power.js'), name: 'Power budget', sys: 'power', blurb: 'How many amps each motor pulls, the 20 amp fuse, and how long a battery lasts', kind: 'works', icon: 'sun', tabs: [['one', 'One motor'], ['budget', 'Power budget'], ['match', 'Will it last?']] },
   math: { load: () => import('./math.js'), name: 'Algorithms and math', sys: 'ballpath', blurb: 'Deadzones, the robot loop and control that steers itself', kind: 'works', icon: 'code', tabs: [['stick', 'Joystick math'], ['loop', 'The loop'], ['pid', 'Turn to 90°'], ['drive', 'Drive a distance']] },
+  code: { load: () => import('./code.js'), name: 'How the code flows', sys: 'hardware', blurb: 'Autonomous then TeleOp, names that must match, and why a plan needs sensors', kind: 'works', icon: 'commit', tabs: [['clock', 'The match clock'], ['names', 'Names must match'], ['plan', 'Plan an autonomous']] },
+  fix: { load: () => import('./fix.js'), name: 'Troubleshooting', sys: 'structure', blurb: 'Something is wrong: what to check, in what order, with the power off first', kind: 'works', icon: 'wrench', tabs: [['safe', 'Safe first'], ['find', 'What do I check?'], ['swap', 'Swap one thing']] },
 };
 const KIND = { made: 'How it\u2019s made and how it works', works: 'How it works' };
 export const DIVES = Object.entries(TOPICS).map(([key, t]) => ({ key, name: t.name, sys: t.sys, blurb: t.blurb, kind: t.kind || 'made', icon: t.icon || 'sparkle', tabs: t.tabs || [], chapters: (t.tabs || []).length || t.chapters || 0 }));
@@ -75,7 +79,7 @@ export const isDiveOpen = () => !!open;
 
 /**
  * Open a deep dive.
- * @param {string} key      'battery' | 'motor' | 'frame' | 'hubs' | 'wheels' | 'sensors' | 'math' | 'launcher' | 'intake'
+ * @param {string} key      'battery' | 'motor' | 'frame' | 'hubs' | 'wheels' | 'sensors' | 'math' | 'launcher' | 'intake' | 'gears' | 'power' | 'code' | 'fix'
  * @param {object} [opts]   { part: {name, sku, sys}, real: () => Object3D|null, startAt: chapter id }
  */
 export async function openDive(key, opts = {}) {

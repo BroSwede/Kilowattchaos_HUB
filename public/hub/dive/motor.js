@@ -97,7 +97,7 @@ function planetStage(sunT, m, width, tint) {
 }
 const TINTS = ['#F07A2A', '#0E8F9E', '#B394FF'];
 // A whole gearbox along Z: stage 1 at z = 0, each next stage `gap` further on.
-function gearbox(suns, m, width, gap) {
+export function gearbox(suns, m, width, gap) {
   const g = group();
   const stages = suns.map((s, i) => {
     const st = planetStage(s, m, width, TINTS[i]);
