@@ -1219,6 +1219,12 @@ const diveRow = document.createElement('div');
 diveRow.className = 'dive-row';
 diveRow.innerHTML = '<span class="cap">Click a part on the robot, or open one up:</span>' + DIVES.map((d) => `<button class="dive-chip" type="button" data-dive="${d.key}"><span class="oc"><svg class="i sm"><use href="#i-sparkle"/></svg></span>${d.name}<small>${d.blurb}</small></button>`).join('');
 $('#sysRow').after(diveRow);
+// Deep dives can also be opened from anywhere else in the Hub (Learn uses these).
+document.addEventListener('hub:dive', (e) => DIVES.some((d) => d.key === e.detail) && startDive(e.detail, null));
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-opendive]');
+  if (b) document.dispatchEvent(new CustomEvent('hub:dive', { detail: b.dataset.opendive }));
+});
 diveRow.addEventListener('click', (e) => {
   const b = e.target.closest('.dive-chip');
   if (!b) return;
