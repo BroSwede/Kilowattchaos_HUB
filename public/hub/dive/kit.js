@@ -233,12 +233,12 @@ export function arrow(len, color, r = 0.06) {
 // ---------------------------------------------------------------- Stage
 export function createStage({ canvas, wrap, labels, reduced = false }) {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
   renderer.setClearColor(0x000000, 0);
   renderer.toneMapping = THREE.NeutralToneMapping;
   renderer.toneMappingExposure = 1.0;
   renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.shadowMap.type = THREE.PCFShadowMap;
 
   const scene = new THREE.Scene();
   const pmrem = new THREE.PMREMGenerator(renderer);
@@ -250,7 +250,7 @@ export function createStage({ canvas, wrap, labels, reduced = false }) {
   const rim = new THREE.DirectionalLight(0xffffff, 0.7);
   rim.position.set(-8, 4, -6);
   key.castShadow = true;
-  key.shadow.mapSize.set(2048, 2048);
+  key.shadow.mapSize.set(1024, 1024);
   key.shadow.bias = -0.0004;
   scene.add(key, key.target, rim);
   // The floor only shows up as a soft shadow and a faint pool of light under the model.
