@@ -27,7 +27,11 @@ export const DIVES = Object.entries(TOPICS).map(([key, t]) => ({ key, name: t.na
 export function topicFor(info) {
   if (!info || !info.name) return null;
   if (info.name === '12V Battery') return 'battery';
+  if (info.name === 'Mecanum Wheel') return 'wheels';
+  if (/^Launcher|^Flywheel/.test(info.name)) return 'launcher';
   if (/Motor$/.test(info.name)) return 'motor';
+  if (/^Intake|Gecko Wheel$/.test(info.name)) return 'intake';
+  if (/Gear$/.test(info.name)) return 'gears';
   if (/U-Channel$/.test(info.name)) return 'frame';
   return null;
 }

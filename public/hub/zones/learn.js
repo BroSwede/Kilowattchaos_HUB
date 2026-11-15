@@ -2,6 +2,7 @@
 // FIRST facts, lessons and links are real content. Progress, badges and glossary suggestions are saved team data.
 import { $, $$, esc, clamp, icon, tag, strip, av, avStack, bar, seg, wireSeg, acc, copyText, codeBlock, drawer, closeDrawer, gl, GLOSSARY } from './common.js';
 import { api, session, isMentor, me } from '../api.js';
+import { CORE, LINKS, COMP_FAQ } from '../rules-data.js';
 import { DIVES, LEVELS } from '../dive/index.js';
 
 const TYPE_IC = { Read: 'book', Do: 'wrench', Quiz: 'check', Sim: 'sliders', Explore: 'focus', Challenge: 'trophy' };
@@ -258,23 +259,6 @@ function paths(view, ctx) {
 }
 
 // ================================================================= FIRST and BIOBUZZ
-const CORE = [
-  ['Discovery', 'We explore new skills and ideas.', 'Trying a change when nobody knows yet if it will work, then testing it.'],
-  ['Innovation', 'We use creativity and persistence to solve problems.', 'Testing a part ten times, and still going, until it works.'],
-  ['Impact', 'We apply what we learn to improve our world.', 'Showing the robot at a library or a school, so other kids want to try FIRST.'],
-  ['Inclusion', 'We respect each other and embrace our differences.', 'Everyone gets BioBuzz XR time, not just the drivers.'],
-  ['Teamwork', 'We are stronger when we work together.', 'One person measures, one writes it down, then you swap.'],
-  ['Fun', 'We enjoy and celebrate what we do!', 'Shoutouts at the end of a meeting for something a teammate did well.'],
-];
-const LINKS = [
-  ['Competition Manual', 'The official game and robot rules', 'https://ftc.game/manual/'],
-  ['Team Updates', 'Rule changes during the season', 'https://ftc.game/tu-latest'],
-  ['Field resources', 'Field drawings and CAD', 'https://ftc-resources.firstinspires.org/ftc/field'],
-  ['Scoring calculator', 'Work out a match score', 'https://ftc.game/calculator'],
-  ['Rules chatbot', "FIRST's AI helper for the manual", 'https://ftc-cmchatbot.firstinspires.org/'],
-  ['FTC Docs', 'Control Hub and programming guides', 'https://ftc-docs.firstinspires.org/'],
-  ['Community forum', 'Questions and answers from other teams', 'https://ftc-community.firstinspires.org/'],
-];
 const QUIZ = {
   q: "Before a match, your alliance partner's robot won't connect to their Driver Station. What's the most Gracious Professionalism thing to do?",
   a: [
@@ -294,15 +278,6 @@ const AGREE = [
   'I wear safety glasses in the shop and I only use tools I have been checked out on.',
   'I use AI agents with a mentor, on the team laptop, and I read and understand code before it goes on the robot.',
   'I keep my password to myself and sign out on shared computers.',
-];
-const COMP_FAQ = [
-  ['What happens at a league meet?', 'You play several matches, each with a different alliance partner, and your scores count toward the league rankings. Judged awards usually happen at tournaments and qualifiers. Each event\'s page says what to expect.'],
-  ["What's inspection?", 'Before you play, inspectors check that the robot follows the robot rules and is safe. Practice with the checklist in Logbook, Competitions, and bring the official checklist from the manual.'],
-  ['What do judges ask?', "How you designed things, what you tried that didn't work, and how the team works together. Everyone should be ready to talk about their own part. Your session notes are the best practice."],
-  ['What if our robot breaks?', "Fix it in the pits. Ask other teams for a part or a hand. That's Coopertition, and they'll ask you too."],
-  ['Who registers the team?', 'Coach registers the team with FIRST. Each of you is added in the FIRST Dashboard, and a parent or guardian fills in the consent and release form.'],
-  ['Can families come?', 'Yes. Most events are free to watch. Check the event page for the schedule.'],
-  ['Where do official answers come from?', 'The Competition Manual, the Team Updates and the official Q&A. When a rule question matters for the robot, Coach asks the Q&A and the answer gets pinned here.'],
 ];
 function seasonStep(d = new Date()) {
   const m = d.getMonth();
