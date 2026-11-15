@@ -608,5 +608,5 @@ export default function motor(ctx) {
     },
   };
 
-  return { title: `${myRatio === '50.9' ? 'Intake' : job === 'launcher' ? 'Launcher' : 'Drive'} motor`, chapters: [openUp, why, gears, made] };
+  return { title: `${myRatio === '50.9' ? 'Intake' : job === 'launcher' ? 'Launcher' : 'Drive'} motor`, chapters: [openUp, why, gears, made, onRobot] };
 }
