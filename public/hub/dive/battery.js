@@ -605,5 +605,5 @@ export default function battery(ctx) {
     },
   };
 
-  return { title: 'The 12 V battery', chapters: [openUp, inside, lab, made] };
+  return { title: 'The 12 V battery', chapters: [openUp, inside, lab, made, onRobot] };
 }

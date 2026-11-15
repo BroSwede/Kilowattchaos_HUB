@@ -832,5 +832,5 @@ export default function hubs() {
     },
   };
 
-  return { title: 'Control Hub and Driver Hub', chapters: [two, ports, motorPort, signal] };
+  return { title: 'Control Hub and Driver Hub', chapters: [two, ports, inside, motorPort, servoPort, sensorPorts, signal, power] };
 }

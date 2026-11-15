@@ -550,5 +550,5 @@ export default function frame(ctx) {
     },
   };
 
-  return { title: 'The aluminium frame', chapters: [ore, extrude, holes, whyU] };
+  return { title: 'The aluminium frame', chapters: [ore, extrude, stamp, holes, finish, whyU] };
 }
