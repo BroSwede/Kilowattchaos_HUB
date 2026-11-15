@@ -21,7 +21,7 @@ const BODY = `<div class="page"><div class="frame lab-frame">
     <header class="lab-hero">
       <div class="eyebrow">Kilowatt Chaos · FTC team</div>
       <h2 class="hello">Open up our robot</h2>
-      <p class="lead">Our goBILDA StarterBot in 3D. Click any part to see what it does, then open the explainers below. The rules of the game are at the bottom.</p>
+      <p class="lead">Our goBILDA StarterBot in 3D. Click any part to see what it does and open its explainer. Then work through the explainers in order. Checklists and a rules review are at the bottom.</p>
     </header>
     <section class="lab-robot" aria-labelledby="labRobotH">
       <div class="lab-sec-head"><h3 class="card-title" id="labRobotH">Click a part to learn about it</h3><span class="cap">The real robot, every one of its 418 parts</span></div>
@@ -43,7 +43,7 @@ const BODY = `<div class="page"><div class="frame lab-frame">
     </section>
     <div class="lab-levels" id="labLevels"></div>
     <section class="lab-rules" aria-labelledby="labRulesH">
-      <div class="lab-sec-head"><h3 class="card-title" id="labRulesH">Rules and the game, in plain words</h3><span class="cap">The short version. The official manual always wins.</span></div>
+      <div class="lab-sec-head"><h3 class="card-title" id="labRulesH">Review and checklists</h3><span class="cap">Come back here before an event. The official manual always wins.</span></div>
       <div id="labRules"></div>
     </section>
     <p class="cap lab-foot">Made by Kilowatt Chaos for our team and families.</p>

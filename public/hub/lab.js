@@ -1,7 +1,7 @@
 // Robot Lab: the public page at /robot-lab. Lists every deep dive the hub has (same registry), no sign-in.
-// Share a single dive with /robot-lab#motor.
-import { DIVES, LEVELS, openDive, topicFor } from './dive/index.js';
-import { MATCH, GAME_BASICS, ROBOT_RULES, SAFETY, CORE, LINKS } from './rules-data.js';
+// Share a single dive with /robot-lab#motor, or one chapter with /robot-lab#hubs:servo.
+import { DIVES, LEVELS, openDive, chapterFor } from './dive/index.js';
+import { MATCH, GAME_BASICS, ROBOT_RULES, SAFETY, CORE, LINKS, INSPECT, PRE_MATCH, PACK } from './rules-data.js';
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const card = (d) => `<button class="lab-card" type="button" data-dive="${esc(d.key)}">
@@ -14,14 +14,15 @@ document.getElementById('labLevels').innerHTML = LEVELS.map(([lv, name, sub], n)
   <div class="lab-sec-head"><b class="lab-n">${n + 1}</b><h3 class="card-title" id="lab-${lv}">${name}</h3><span class="cap">${sub}</span></div>
   <div class="lab-grid">${DIVES.filter((d) => d.level === lv).map(card).join('')}</div></section>`).join('');
 
-const start = (key) => openDive(key, { onClose: () => { if (location.hash) history.replaceState(null, '', location.pathname); } });
+const start = (key, startAt) => openDive(key, { startAt, onClose: () => { if (location.hash) history.replaceState(null, '', location.pathname); } });
 document.addEventListener('click', (e) => {
   const b = e.target.closest('[data-dive]');
   if (!b) return;
-  history.replaceState(null, '', `#${b.dataset.dive}`);
-  start(b.dataset.dive);
+  const ch = b.dataset.chapter || '';
+  history.replaceState(null, '', `#${b.dataset.dive}${ch ? `:${ch}` : ''}`);
+  start(b.dataset.dive, ch || undefined);
 });
-const fromHash = () => { const k = location.hash.slice(1); if (DIVES.some((d) => d.key === k)) start(k); };
+const fromHash = () => { const [k, ch] = decodeURIComponent(location.hash.slice(1)).split(':'); if (DIVES.some((d) => d.key === k)) start(k, ch || undefined); };
 window.addEventListener('hashchange', fromHash);
 fromHash();
 
@@ -65,11 +66,16 @@ function showPart(info) {
   const sys = (partsData.systems.find((x) => x.id === info.sys) || {});
   $('partSys').textContent = sys.name || '';
   $('partName').textContent = info.name;
-  $('partText').textContent = SAYS[info.name] || info.note || sys.blurb || '';
-  const key = topicFor(info), d = key && DIVES.find((x) => x.key === key);
+  const many = info.sku && info.same > 1 ? ` Our robot has ${info.same} of these.` : '';
+  $('partText').textContent = (SAYS[info.name] || info.note || sys.blurb || '') + many;
+  const hit = chapterFor(info), d = hit && DIVES.find((x) => x.key === hit[0]);
   const btn = $('partDive');
   btn.hidden = !d;
-  if (d) { btn.dataset.dive = d.key; btn.textContent = d.kind === 'made' ? `See how the ${d.name.toLowerCase()} is made` : `Learn how it works: ${d.name}`; }
+  if (d) {
+    const ch = hit[1] && (d.tabs.find(([id]) => id === hit[1]) || [])[1];
+    btn.dataset.dive = d.key; btn.dataset.chapter = hit[1] || '';
+    btn.textContent = ch ? `Learn more: ${d.name}, ${ch}` : `Learn more: ${d.name}`;
+  }
   partCard.hidden = false;
 }
 $('partClose').addEventListener('click', () => viewer && viewer.select(null));
@@ -112,15 +118,33 @@ if (c && c.saveData) {
   $('loadNow').addEventListener('click', startViewer, { once: true });
 } else if (window.requestIdleCallback) requestIdleCallback(startViewer, { timeout: 800 }); else setTimeout(startViewer, 50);
 
-// ---------------------------------------------------------------- Rules and the game (same data as Learn)
+// ---------------------------------------------------------------- Rules review and checklists (same data as the hub)
+// The team already knows FTC; this is a place to come back and check. Ticks stay on this device only.
 const acc = (title, inner, open = false) => `<details class="lab-acc"${open ? ' open' : ''}><summary>${title}</summary><div class="lab-acc-body">${inner}</div></details>`;
 const list = (rows) => `<ul class="lab-list">${rows.map(([t, d]) => `<li><b>${esc(t)}</b> ${esc(d)}</li>`).join('')}</ul>`;
+const store = (() => { try { return JSON.parse(localStorage.getItem('lab-ticks') || '{}'); } catch (e) { return {}; } })();
+const checks = (id, rows) => `<div class="lab-checks" data-list="${id}">${rows.map((t, i) => `<label class="lab-check"><input type="checkbox" data-k="${id}.${i}"${store[`${id}.${i}`] ? ' checked' : ''}><span>${esc(t)}</span></label>`).join('')}
+  <button class="btn ghost pill sm" type="button" data-clear="${id}">Clear ticks</button></div>`;
 $('labRules').innerHTML = [
-  acc('What FTC is', '<p>FIRST Tech Challenge (FTC) is a robotics competition for grades 7 to 12. Every September a new game is revealed. Teams design, build and code a robot to play it, then compete at meets and tournaments through the winter.</p>', true),
-  acc('A match, step by step', `<ul class="lab-list">${MATCH.map(([, t, len, d]) => `<li><b>${esc(t)}</b> <span class="tag">${esc(len)}</span> ${esc(d)}</li>`).join('')}</ul>`),
+  acc('Pre-inspection checklist', `<p class="cap">Go through this before inspection at every event. It's practice: the official checklist in the Competition Manual wins.</p>${checks('inspect', INSPECT)}`, true),
+  acc('Before every match', checks('match', PRE_MATCH)),
+  acc('Pack list for event day', checks('pack', PACK)),
+  acc('Match timing', `<ul class="lab-list">${MATCH.map(([, t, len, d]) => `<li><b>${esc(t)}</b> <span class="tag">${esc(len)}</span> ${esc(d)}</li>`).join('')}</ul>`),
+  acc('Robot rules to remember', list(ROBOT_RULES)),
   acc('Alliances, scoring and awards', list(GAME_BASICS)),
-  acc('Robot rules that matter most', list(ROBOT_RULES)),
-  acc('Safety', `<ul class="lab-list">${SAFETY.map((s) => `<li>${esc(s)}</li>`).join('')}</ul>`),
-  acc('Gracious Professionalism and Coopertition', `<p><b>Gracious Professionalism</b> means competing hard while being kind and respectful. <b>Coopertition</b> means helping other teams, even ones you'll play against, like lending a part in the pits.</p>${list(CORE.map(([t, d]) => [t, d]))}`),
+  acc('Safety', `<ul class="lab-list">${SAFETY.map((t) => `<li>${esc(t)}</li>`).join('')}</ul>`),
+  acc('Gracious Professionalism and Core Values', list(CORE.map(([t, d]) => [t, d]))),
   acc('Official rules and links', `<ul class="lab-list">${LINKS.map(([t, d, u]) => `<li><a href="${esc(u)}" target="_blank" rel="noopener">${esc(t)}</a> ${esc(d)}</li>`).join('')}</ul>`),
 ].join('');
+$('labRules').addEventListener('change', (e) => {
+  const k = e.target.dataset && e.target.dataset.k;
+  if (!k) return;
+  if (e.target.checked) store[k] = 1; else delete store[k];
+  try { localStorage.setItem('lab-ticks', JSON.stringify(store)); } catch (err) { /* ticks just won't be remembered */ }
+});
+$('labRules').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-clear]');
+  if (!b) return;
+  b.parentElement.querySelectorAll('input').forEach((i) => { i.checked = false; delete store[i.dataset.k]; });
+  try { localStorage.setItem('lab-ticks', JSON.stringify(store)); } catch (err) { /* fine */ }
+});
