@@ -39,3 +39,7 @@
 .lab-list { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 8px; }
 .lab-list a { color: var(--text); font-weight: 600; }
 @media (max-width: 640px) { .lab-view { min-height: 360px; } .lab-card-part { top: auto; bottom: 64px; } }
+.lab-checks { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.lab-checks .lab-check { display: flex !important; flex-direction: row !important; gap: 10px; align-items: flex-start; padding: 4px 0; cursor: pointer; font: 400 15px/22px Inter, sans-serif; }
+.lab-check input { width: 20px; height: 20px; margin: 1px 0 0; accent-color: var(--solid); flex: none; }
+.lab-check input:checked + span { color: var(--muted); text-decoration: line-through; }

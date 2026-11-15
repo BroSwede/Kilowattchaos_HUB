@@ -4,37 +4,49 @@
 import { createStage, loadParts, THREE, clamp } from './kit.js';
 
 // Three ordered paths, so nobody has to pick from thirteen things: start, score, deeper.
-export const LEVELS = [['start', 'Start here', 'The four things every team member should know first'], ['score', 'Make it score', 'How the robot picks up balls and shoots them'], ['deeper', 'Go deeper', 'For when you want to know why']];
+export const LEVELS = [['build', 'How it’s made and how it works', 'The parts of our robot: what is inside, how they are made and what they do'], ['elec', 'Sensors and electronics', 'The brain, the sensors, the power, and fixing problems'], ['math', 'Code and math', 'How the code runs the robot, and the math behind it']];
 const TOPICS = {
-  hubs: { load: () => import('./hubs.js'), name: 'Control Hub and Driver Hub', sys: 'hardware', blurb: 'The robot\u2019s brain, and how a stick push reaches a wheel', kind: 'works', level: 'start', icon: 'bot', tabs: [['two', 'Two boxes'], ['ports', 'Ports tour'], ['inside', 'Open it up'], ['motor', 'Motor port'], ['servo', 'Servo port'], ['sensor', 'Sensor ports'], ['signal', 'Stick to wheel'], ['power', 'Power']] },
-  wheels: { load: () => import('./wheels.js'), name: 'Mecanum wheels', sys: 'drivetrain', blurb: 'Why our robot can drive sideways', kind: 'works', level: 'start', icon: 'focus', tabs: [['size', 'Wheel size'], ['roller', 'The rollers'], ['four', 'Four wheels'], ['tank', 'Tank or mecanum']] },
-  motor: { load: () => import('./motor.js'), name: 'Motor', sys: 'drivetrain', blurb: 'Magnets, coils and gears: what makes a wheel turn', kind: 'made', level: 'start', icon: 'sliders', tabs: [['open', 'Open it up'], ['spin', 'Why it spins'], ['gears', 'Planetary gears'], ['made', 'How it\u2019s made'], ['robot', 'On the robot']] },
-  battery: { load: () => import('./battery.js'), name: 'Battery', sys: 'power', blurb: 'Ten small cells, and what volts and amps mean', kind: 'made', level: 'start', icon: 'bulb', tabs: [['open', 'Open it up'], ['cell', 'Inside a cell'], ['lab', 'Volts, amps, watts'], ['made', 'How it\u2019s made'], ['robot', 'On the robot']] },
-  launcher: { load: () => import('./launcher.js'), name: 'The launcher', sys: 'launcher', blurb: 'How a spinning wheel throws a ball', kind: 'works', level: 'score', icon: 'flag', tabs: [['speed', 'Wheel to ball'], ['arc', 'Angle and arc'], ['recover', 'Spin back up'], ['steady', 'Same shot every time']] },
-  intake: { load: () => import('./intake.js'), name: 'Intake and ball path', sys: 'intake', blurb: 'Soft wheels that grab a ball and feed it to the launcher', kind: 'works', level: 'score', icon: 'layers', tabs: [['grab', 'The squeeze'], ['speed', 'Fast enough?'], ['path', 'One at a time'], ['jam', 'Jams']] },
-  sensors: { load: () => import('./sensors.js'), name: 'Sensors', sys: 'intake', blurb: 'How the robot feels the world', kind: 'works', level: 'score', icon: 'zap', tabs: [['enc', 'Encoder'], ['imu', 'IMU (gyro)'], ['dist', 'Distance'], ['color', 'Colour']] },
-  gears: { load: () => import('./gears.js'), name: 'Gears', sys: 'drivetrain', blurb: 'Trading speed for muscle', kind: 'works', level: 'deeper', icon: 'reset', tabs: [['ratio', 'Speed or muscle'], ['planet', 'Inside the gearbox'], ['drive', 'Why 19.2 to 1?']] },
-  power: { load: () => import('./power.js'), name: 'Power budget', sys: 'power', blurb: 'Amps, the 20 amp fuse, and how long a battery lasts', kind: 'works', level: 'deeper', icon: 'sun', tabs: [['one', 'One motor'], ['budget', 'Power budget'], ['match', 'Will it last?']] },
-  code: { load: () => import('./code.js'), name: 'How the code flows', sys: 'hardware', blurb: 'Autonomous, TeleOp, and names that must match', kind: 'works', level: 'deeper', icon: 'commit', tabs: [['clock', 'The match clock'], ['names', 'Names must match'], ['plan', 'Plan an autonomous']] },
-  math: { load: () => import('./math.js'), name: 'Algorithms and math', sys: 'ballpath', blurb: 'The robot loop, and control that steers itself', kind: 'works', level: 'deeper', icon: 'code', tabs: [['stick', 'Joystick math'], ['loop', 'The loop'], ['pid', 'Turn to 90\u00b0'], ['drive', 'Drive a distance']] },
-  frame: { load: () => import('./frame.js'), name: 'Frame', sys: 'structure', blurb: 'From red rock to a drilled channel', kind: 'made', level: 'deeper', icon: 'home', tabs: [['ore', 'Rock to metal'], ['extrude', 'Squeeze it'], ['stamp', 'Stamp or squeeze?'], ['holes', 'Add the holes'], ['finish', 'Finish it'], ['shape', 'Why a U?']] },
-  fix: { load: () => import('./fix.js'), name: 'Troubleshooting', sys: 'structure', blurb: 'What to check, in what order, with the power off first', kind: 'works', level: 'deeper', icon: 'wrench', tabs: [['safe', 'Safe first'], ['find', 'What do I check?'], ['swap', 'Swap one thing']] },
+  motor: { load: () => import('./motor.js'), name: 'Motor', sys: 'drivetrain', blurb: 'Magnets, coils and gears: what makes a wheel turn', kind: 'made', level: 'build', icon: 'sliders', tabs: [['open', 'Open it up'], ['spin', 'Why it spins'], ['gears', 'Planetary gears'], ['made', 'How it\u2019s made'], ['robot', 'On the robot']] },
+  battery: { load: () => import('./battery.js'), name: 'Battery', sys: 'power', blurb: 'Ten small cells, and what volts and amps mean', kind: 'made', level: 'build', icon: 'bulb', tabs: [['open', 'Open it up'], ['cell', 'Inside a cell'], ['lab', 'Volts, amps, watts'], ['made', 'How it\u2019s made'], ['robot', 'On the robot']] },
+  frame: { load: () => import('./frame.js'), name: 'Frame', sys: 'structure', blurb: 'From red rock to a drilled channel', kind: 'made', level: 'build', icon: 'home', tabs: [['ore', 'Rock to metal'], ['extrude', 'Squeeze it'], ['stamp', 'Stamp or squeeze?'], ['holes', 'Add the holes'], ['finish', 'Finish it'], ['shape', 'Why a U?']] },
+  wheels: { load: () => import('./wheels.js'), name: 'Mecanum wheels', sys: 'drivetrain', blurb: 'Why our robot can drive sideways', kind: 'works', level: 'build', icon: 'focus', tabs: [['size', 'Wheel size'], ['roller', 'The rollers'], ['four', 'Four wheels'], ['tank', 'Tank or mecanum']] },
+  gears: { load: () => import('./gears.js'), name: 'Gears', sys: 'drivetrain', blurb: 'Trading speed for muscle', kind: 'works', level: 'build', icon: 'reset', tabs: [['ratio', 'Speed or muscle'], ['planet', 'Inside the gearbox'], ['drive', 'Why 19.2 to 1?']] },
+  intake: { load: () => import('./intake.js'), name: 'Intake and ball path', sys: 'intake', blurb: 'Soft wheels that grab a ball and feed it to the launcher', kind: 'works', level: 'build', icon: 'layers', tabs: [['grab', 'The squeeze'], ['speed', 'Fast enough?'], ['path', 'One at a time'], ['jam', 'Jams']] },
+  launcher: { load: () => import('./launcher.js'), name: 'The launcher', sys: 'launcher', blurb: 'How a spinning wheel throws a ball', kind: 'works', level: 'build', icon: 'flag', tabs: [['speed', 'Wheel to ball'], ['arc', 'Angle and arc'], ['recover', 'Spin back up'], ['steady', 'Same shot every time']] },
+  hubs: { load: () => import('./hubs.js'), name: 'Control Hub and Driver Hub', sys: 'hardware', blurb: 'The robot\u2019s brain, and how a stick push reaches a wheel', kind: 'works', level: 'elec', icon: 'bot', tabs: [['two', 'Two boxes'], ['ports', 'Ports tour'], ['inside', 'Open it up'], ['motor', 'Motor port'], ['servo', 'Servo port'], ['sensor', 'Sensor ports'], ['signal', 'Stick to wheel'], ['power', 'Power']] },
+  sensors: { load: () => import('./sensors.js'), name: 'Sensors', sys: 'intake', blurb: 'How the robot feels the world', kind: 'works', level: 'elec', icon: 'zap', tabs: [['enc', 'Encoder'], ['imu', 'IMU (gyro)'], ['dist', 'Distance'], ['color', 'Colour']] },
+  power: { load: () => import('./power.js'), name: 'Power budget', sys: 'power', blurb: 'Amps, the 20 amp fuse, and how long a battery lasts', kind: 'works', level: 'elec', icon: 'sun', tabs: [['one', 'One motor'], ['budget', 'Power budget'], ['match', 'Will it last?']] },
+  fix: { load: () => import('./fix.js'), name: 'Troubleshooting', sys: 'structure', blurb: 'What to check, in what order, with the power off first', kind: 'works', level: 'elec', icon: 'wrench', tabs: [['safe', 'Safe first'], ['find', 'What do I check?'], ['swap', 'Swap one thing']] },
+  code: { load: () => import('./code.js'), name: 'How the code flows', sys: 'hardware', blurb: 'Autonomous, TeleOp, and names that must match', kind: 'works', level: 'math', icon: 'commit', tabs: [['clock', 'The match clock'], ['names', 'Names must match'], ['plan', 'Plan an autonomous']] },
+  math: { load: () => import('./math.js'), name: 'Algorithms and math', sys: 'ballpath', blurb: 'The robot loop, and control that steers itself', kind: 'works', level: 'math', icon: 'code', tabs: [['stick', 'Joystick math'], ['loop', 'The loop'], ['pid', 'Turn to 90\u00b0'], ['drive', 'Drive a distance']] },
 };
 const KIND = { made: 'How it\u2019s made and how it works', works: 'How it works' };
-export const DIVES = Object.entries(TOPICS).map(([key, t]) => ({ key, name: t.name, sys: t.sys, blurb: t.blurb, kind: t.kind || 'made', level: t.level || 'deeper', icon: t.icon || 'sparkle', tabs: t.tabs || [], chapters: (t.tabs || []).length || t.chapters || 0 }));
+export const DIVES = Object.entries(TOPICS).map(([key, t]) => ({ key, name: t.name, sys: t.sys, blurb: t.blurb, kind: t.kind || 'made', level: t.level || 'build', icon: t.icon || 'sparkle', tabs: t.tabs || [], chapters: (t.tabs || []).length || t.chapters || 0 }));
 
-// Which deep dive, if any, explains this part of the robot.
-export function topicFor(info) {
+// Which deep dive (and which chapter of it) explains each kind of part on the robot.
+// Every part type on the StarterBot has one, so any part you click can open an explainer.
+const PART_DIVE = {
+  '12V Battery': ['battery'], 'Battery Mount': ['battery', 'robot'],
+  'Drive Motor': ['motor'], 'Intake Motor': ['motor', 'robot'], 'Launcher Motor': ['launcher', 'steady'],
+  'Mecanum Wheel': ['wheels'],
+  'Flywheel': ['launcher'], 'Launcher Mount': ['launcher', 'arc'],
+  'Intake Roller': ['intake'], '48mm Gecko Wheel': ['intake'], '72mm Gecko Wheel': ['intake'],
+  'Hopper Panel': ['intake', 'path'], 'Ramp Panel': ['intake', 'path'],
+  'Hopper Servo': ['hubs', 'servo'], 'Speed Servo': ['hubs', 'servo'], 'Compact ServoBlock': ['hubs', 'servo'],
+  '100-Tooth Gear': ['gears'], '20-Tooth Gear': ['gears'],
+  '8mm REX Shaft': ['gears', 'planet'], 'Hub': ['gears'], 'Bearing / Collar': ['gears'],
+  '15-Hole U-Channel': ['frame'], 'U-Channel': ['frame'],
+  'Dual Block Mount': ['frame', 'holes'], 'Quad Block Mount': ['frame', 'holes'], 'Standoff / Spacer': ['frame', 'holes'], 'Hardware': ['frame', 'holes'],
+};
+export function chapterFor(info) {
   if (!info || !info.name) return null;
-  if (info.name === '12V Battery') return 'battery';
-  if (info.name === 'Mecanum Wheel') return 'wheels';
-  if (/^Launcher|^Flywheel/.test(info.name)) return 'launcher';
-  if (/Motor$/.test(info.name)) return 'motor';
-  if (/^Intake|Gecko Wheel$/.test(info.name)) return 'intake';
-  if (/Gear$/.test(info.name)) return 'gears';
-  if (/U-Channel$/.test(info.name)) return 'frame';
+  const hit = PART_DIVE[info.name];
+  if (hit && TOPICS[hit[0]]) return hit;
+  if (/Motor$/.test(info.name)) return ['motor'];
+  if (/U-Channel$/.test(info.name)) return ['frame'];
   return null;
 }
+export function topicFor(info) { const c = chapterFor(info); return c ? c[0] : null; }
 // A part on the robot to jump to when a dive is opened from the shortcut buttons.
 export const PART_FOR = { battery: '12V Battery', motor: 'Drive Motor', frame: '15-Hole U-Channel' };
 

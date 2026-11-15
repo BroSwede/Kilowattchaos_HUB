@@ -57,3 +57,31 @@ export const SAFETY = [
   'Keep fingers clear of wheels, gears and the launcher while the robot is on.',
   'Carry the robot with two people and the switch off.',
 ];
+
+// Practice robot inspection, also used by Logbook > Competitions. The official checklist is in the manual.
+export const INSPECT = [
+  'Robot fits inside the 18 × 18 × 18 inch starting size, with everything folded in',
+  'Battery is held down tight, and the main power switch is easy for a referee to reach',
+  'The 20 A fuse is the right one and the battery wires are not damaged',
+  'No sharp edges, pinch points or loose parts',
+  'All wires are tied down and away from wheels, gears and the launcher',
+  'Only legal motors and servos, within the season limits',
+  'Team number signs are on the robot, in the right alliance colour',
+  'Control Hub and Driver Hub software are up to date, and the robot is named correctly',
+  'Robot stops right away when the Driver Station says stop',
+];
+// Quick check before every match.
+export const PRE_MATCH = [
+  'Fresh, fully charged battery in, and the old one on the charger',
+  'Driver Hub charged, and both gamepads connected and working',
+  'Robot powers on and connects to the Driver Hub',
+  'Right autonomous program picked, and the robot set in its starting spot',
+  'Number signs in the right colour for this match (red or blue)',
+  'Quick look: nothing loose, wires tied down, launcher and intake clear',
+  'Know the plan with your alliance partner for autonomous and endgame',
+];
+// Pack list for event day.
+export const PACK = [
+  'Robot and its cart', 'All batteries and the chargers', 'Driver Hub, its charger and two gamepads', 'Spare fuses, cables and zip ties',
+  'Tool box: hex keys, screwdrivers, pliers', 'Spare parts: wheels, servos, screws', 'Team number signs, red and blue', 'Engineering portfolio', 'Safety glasses for everyone',
+];

@@ -4,7 +4,7 @@ import { api, session as S, isMentor } from './api.js';
 import { setRoster, esc, drawer } from './zones/common.js';
 import { buildSamples, SAMPLE_CREW, SAMPLE_MENTOR, isSample } from './sample.js';
 import { openPrintRequest, enhanceHomePrintCard } from './print-request.js';
-import { openDive, topicFor, DIVES, PART_FOR } from './dive/index.js';
+import { openDive, topicFor, chapterFor, DIVES, PART_FOR } from './dive/index.js';
 
 // Who is signed in, and the team. Everything below can rely on it.
 const BOOT = await api.me();
@@ -1197,7 +1197,7 @@ function onSelect(info) {
   sheetPart = info;
   const dive = topicFor(info);
   sheetDive.hidden = !dive;
-  if (dive) sheetDive.dataset.dive = dive;
+  if (dive) { sheetDive.dataset.dive = dive; sheetDive.dataset.chapter = (chapterFor(info) || [])[1] || ''; }
   renderSheetIssue();
   sheet.classList.add('is-open');
   sheet.setAttribute('aria-hidden', 'false');
@@ -1207,14 +1207,14 @@ const sheetDive = document.createElement('button');
 sheetDive.className = 'btn pill sheet-dive';
 sheetDive.type = 'button';
 sheetDive.hidden = true;
-sheetDive.innerHTML = '<svg class="i sm"><use href="#i-sparkle"/></svg>See how it\u2019s made<small>3D deep dive</small>';
+sheetDive.innerHTML = '<svg class="i sm"><use href="#i-sparkle"/></svg>Learn about this part<small>3D explainer</small>';
 $('.sheet-actions', sheet).before(sheetDive);
 function startDive(key, info, startAt) {
   if (viewer) viewer.stopAutoRotate();
   const id = info && info.id;
   openDive(key, { part: info || null, real: () => (viewer && id ? viewer.clonePart(id) : null), startAt });
 }
-sheetDive.addEventListener('click', () => sheetPart && startDive(sheetDive.dataset.dive, sheetPart));
+sheetDive.addEventListener('click', () => sheetPart && startDive(sheetDive.dataset.dive, sheetPart, sheetDive.dataset.chapter || undefined));
 const diveRow = document.createElement('div');
 diveRow.className = 'dive-row';
 diveRow.innerHTML = '<span class="cap">Click a part on the robot, or open one up:</span>' + DIVES.filter((d) => d.kind === 'made').map((d) => `<button class="dive-chip" type="button" data-dive="${d.key}"><span class="oc"><svg class="i sm"><use href="#i-sparkle"/></svg></span>${d.name}<small>${d.blurb}</small></button>`).join('');

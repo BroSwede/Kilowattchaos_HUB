@@ -3,6 +3,7 @@
 // meetings, events and competitions, and anyone can write session notes and portfolio sections.
 import { $, $$, esc, icon, tag, strip, av, avStack, dot, bar, seg, wireSeg, lineChart, copyText } from './common.js';
 import { api, session, isMentor, me } from '../api.js';
+import { INSPECT } from '../rules-data.js';
 
 const D = (y, m, d) => new Date(y, m, d);
 const dayStart = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -497,7 +498,8 @@ const PACK = [
   ['Tools', ['Hex keys and screwdrivers', 'Zip ties and tape', 'Spare screws and nuts', 'Safety glasses for everyone', 'Power strip and extension cord']],
   ['Team', ['Team shirts', 'Printed Engineering Portfolio', 'Permission slips', 'Water and snacks', 'Our pit sign']],
 ];
-const INSPECT = ['Robot fits inside the starting size', 'Battery is held down tight and the main switch is easy to reach', 'No sharp edges or loose parts', 'All wires are tied down and away from moving parts', 'Team number signs are on the robot', 'Control Hub and Driver Station software are up to date', 'Robot stops when the Driver Station says stop'];
+// The practice inspection list is shared with the public Robot Lab page.
+
 function competitions(view, ctx) {
   let packed = [];
   try { packed = JSON.parse(ctx.local.get('kwc-pack') || '[]'); if (!Array.isArray(packed)) packed = []; } catch (e) { packed = []; }
