@@ -97,6 +97,7 @@ async function startViewer() {
       },
       onFirstFrame() { $('viewport').classList.add('is-live'); $('loader').classList.add('is-done'); },
       onSelect: showPart,
+      autoRotate: false,
     });
     window.__labViewer = viewer;
   } catch (err) {
@@ -109,7 +110,7 @@ const c = navigator.connection;
 if (c && c.saveData) {
   $('loadLbl').innerHTML = 'Data Saver is on. <button class="btn soft pill sm" type="button" id="loadNow">Load the 3D robot (143 MB)</button>';
   $('loadNow').addEventListener('click', startViewer, { once: true });
-} else startViewer();
+} else if (window.requestIdleCallback) requestIdleCallback(startViewer, { timeout: 800 }); else setTimeout(startViewer, 50);
 
 // ---------------------------------------------------------------- Rules and the game (same data as Learn)
 const acc = (title, inner, open = false) => `<details class="lab-acc"${open ? ' open' : ''}><summary>${title}</summary><div class="lab-acc-body">${inner}</div></details>`;

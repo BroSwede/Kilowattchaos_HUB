@@ -142,7 +142,7 @@ export async function createViewer(opts) {
     container, canvas, data, poster = false, reducedMotion = false, dark = false,
     onProgress = () => {}, onHover = () => {}, onSelect = () => {}, onFocus = () => {},
     onXray = () => {}, onAnchor = () => {}, onFirstFrame = () => {},
-    look = {},
+    look = {}, autoRotate = true,
   } = opts;
   const LOOK = { env: 0.55, key: 2.0, rim: 0.55, exposure: 0.95, fit: 0.78, dir: [1.1, 0.62, 1.0], ...look };
 
@@ -261,7 +261,7 @@ export async function createViewer(opts) {
   controls.maxDistance = 4;
   controls.maxPolarAngle = Math.PI * 0.495;
   controls.zoomToCursor = true;
-  controls.autoRotate = !reducedMotion && !poster;
+  controls.autoRotate = autoRotate && !reducedMotion && !poster;
   controls.autoRotateSpeed = 1.1;
   const homeTarget = new THREE.Vector3(0, size.y * 0.4, 0);
   const homeDir = new THREE.Vector3(...LOOK.dir).normalize();
@@ -314,7 +314,7 @@ export async function createViewer(opts) {
   function stopAutoRotate() { controls.autoRotate = false; }
 
   // ---- Render loop: on demand, paused when hidden or off screen ----
-  let ready = false, raf = 0, needs = true, visible = true, onScreen = true, hidden = document.hidden;
+  let ready = false, raf = 0, needs = true, visible = true, onScreen = true, hidden = document.hidden, covered = false;
   let continuous = false, frames = 0, slow = 0, dprDropped = false;
   const clock = new THREE.Clock();
   function request() {
@@ -354,10 +354,14 @@ export async function createViewer(opts) {
     }
   }
   function setVisible() {
-    visible = onScreen && !hidden;
+    visible = onScreen && !hidden && !covered;
     if (visible) { clock.getDelta(); request(); }
   }
   document.addEventListener('visibilitychange', () => { hidden = document.hidden; setVisible(); });
+  // A deep dive covers the whole screen with its own 3D stage: stop drawing the robot behind it,
+  // so only one heavy scene renders at a time.
+  document.addEventListener('dive:open', () => { covered = true; setVisible(); });
+  document.addEventListener('dive:close', () => { covered = false; setVisible(); });
   new IntersectionObserver((e) => { onScreen = e[e.length - 1].isIntersecting; setVisible(); }).observe(container);
 
   function resize() {

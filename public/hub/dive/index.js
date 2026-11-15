@@ -129,6 +129,7 @@ export async function openDive(key, opts = {}) {
       </footer>
     </div>`;
   document.body.append(back, el);
+  document.dispatchEvent(new Event('dive:open'));
   document.body.classList.add('no-scroll');
   const prevFocus = document.activeElement;
   requestAnimationFrame(() => { back.classList.add('is-on'); el.classList.add('is-open'); });
@@ -145,6 +146,7 @@ export async function openDive(key, opts = {}) {
     el.classList.remove('is-open');
     back.classList.remove('is-on');
     document.body.classList.remove('no-scroll');
+    document.dispatchEvent(new Event('dive:close'));
     if (inst && inst.dispose) inst.dispose();
     setTimeout(() => { if (stage) stage.dispose(); el.remove(); back.remove(); }, 260);
     if (prevFocus && prevFocus.focus) prevFocus.focus({ preventScroll: true });
