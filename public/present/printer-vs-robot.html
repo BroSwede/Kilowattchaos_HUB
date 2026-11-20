@@ -582,7 +582,7 @@ let robotDirty = true;
 const lastCam = new THREE.Matrix4(); let lastAspect = 0;
 // ---------------------------------------------------------------- robot: full goBILDA StarterBot (418 parts, unsimplified) + REV Control Hub
 const rb = new THREE.Group(); sceneR.add(rb);
-const RBX = 0.5; rb.position.x = RBX;
+const RBX = 0.32; rb.position.x = RBX;
 const rbParts = []; // {mesh, name, orig}
 let robotReady = false, robotBox = null;
 let hubG = null;
@@ -783,8 +783,8 @@ const SLIDES = [
   { steps: 5, dim: 1, cam: [[-0.25, 0.75, 2.4], [-0.2, 0.28, 0]], show: { cr: 1, rb: 1 }, print: 1 },
   { steps: 1, cam: [[-0.45, 0.72, 1.75], [-0.9, 0.3, 0]], show: { cr: 1 }, print: 1 },
   { steps: 4, cam: [[-0.3, 0.72, 1.6], [-0.75, 0.3, 0]], show: { cr: 1 }, print: 1 },
-  { steps: 1, cam: [[0.95, 0.45, 0.85], [0.5, 0.14, 0]], show: { rb: 1 }, rotate: 1 },
-  { steps: CMP.length, cam: [[-0.25, 0.62, 1.9], [-0.25, 0.2, 0]], show: { cr: 1, rb: 1 }, print: 1 },
+  { steps: 1, cam: [[0.77, 0.45, 0.85], [0.32, 0.14, 0]], show: { rb: 1 }, rotate: 1 },
+  { steps: CMP.length, cam: [[-0.33, 0.6, 1.75], [-0.33, 0.2, 0]], show: { cr: 1, rb: 1 }, print: 1 },
   { steps: 1, dim: 1, cam: [[-0.25, 0.75, 2.4], [-0.2, 0.28, 0]], show: { cr: 1, rb: 1 }, print: 1 },
   { steps: 1, dim: 1, cam: [[-0.25, 0.75, 2.4], [-0.2, 0.28, 0]], show: { cr: 1, rb: 1 }, print: 1 },
   { steps: 1, cam: [[-0.2, 1.15, 3.0], [-0.2, 0.86, 0]], show: { cr: 1, rb: 1 }, print: 1 },
@@ -871,7 +871,7 @@ function applySlide(soft = false) {
       }
     }
     labelList = [...c.crLabels(), ...(robotReady ? c.rbLabels() : [])];
-    if (c.key === 'brain') cam = [[-0.3, 0.66, 2.0], [-0.3, 0.22, 0]];
+    if (c.key === 'brain') cam = [[-0.36, 0.64, 1.85], [-0.36, 0.22, 0]];
   }
   setLabels(labelList);
   if (!soft) flyTo(cam[0], cam[1]);
