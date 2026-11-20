@@ -8,6 +8,8 @@ const config: NextConfig = {
     return [
       { source: '/biobuzz-xr', destination: '/biobuzz-xr/index.html' },
       { source: '/biobuzz-xr/', destination: '/biobuzz-xr/index.html' },
+      // Eric's talk: 3D printing history and the CR-10 next to our robot.
+      { source: '/present', destination: '/present/printer-vs-robot.html' },
     ];
   },
   async headers() {

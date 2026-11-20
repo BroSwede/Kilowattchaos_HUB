@@ -1,0 +1,1115 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Printer vs Robot</title>
+<meta name="description" content="Kilowatt Chaos talk: the history of 3D printing, and how a Creality CR-10 is built from the same kinds of parts as our robot.">
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
+<style>
+:root{
+  --bg:#060c18; --bg2:#0a1426; --grid:rgba(90,170,255,.07); --grid2:rgba(90,170,255,.14);
+  --ink:#eaf1ff; --dim:#8ea3c4; --line:rgba(120,190,255,.28); --cyan:#5fd4ff;
+  --volt:#E8F542; --volt-d:rgba(232,245,66,.14); --hot:#ff6a3d; --panel:rgba(9,18,36,.78);
+  --mono:'JetBrains Mono',ui-monospace,monospace; --sans:'Space Grotesk',system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--ink);font-family:var(--sans)}
+body{
+  background:
+    radial-gradient(120% 90% at 50% 40%, #0c1a33 0%, var(--bg) 70%),
+    var(--bg);
+}
+.grid-bg{position:fixed;inset:0;pointer-events:none;
+  background-image:
+    linear-gradient(var(--grid2) 1px,transparent 1px),linear-gradient(90deg,var(--grid2) 1px,transparent 1px),
+    linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:120px 120px,120px 120px,24px 24px,24px 24px;
+  mask-image:radial-gradient(130% 100% at 50% 45%,#000 40%,transparent 100%);
+}
+#stage{position:fixed;inset:0;transition:opacity .6s, filter .6s}
+#stage canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+#stage canvas#cr{pointer-events:none}
+#stage.dim{opacity:.22;filter:blur(2px)}
+svg#leaders{position:fixed;inset:0;width:100%;height:100%;pointer-events:none}
+#labels{position:fixed;inset:0;pointer-events:none}
+.lbl{position:absolute;transform:translate(-50%,-50%);font-family:var(--mono);font-size:13px;letter-spacing:.04em;
+  padding:6px 10px;border:1px solid var(--line);background:rgba(6,14,28,.86);border-radius:6px;white-space:nowrap;
+  color:var(--ink);opacity:0;transition:opacity .35s}
+.lbl.on{opacity:1}
+.lbl b{color:var(--volt);font-weight:700}
+.lbl.hot b{color:var(--hot)}
+.lbl small{display:block;color:var(--dim);font-size:11px;margin-top:2px}
+
+/* chrome */
+.top{position:fixed;left:0;right:0;top:0;display:flex;align-items:center;justify-content:space-between;
+  padding:14px 22px;font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);z-index:5}
+.brand{display:flex;align-items:center;gap:10px}
+.bolt{width:26px;height:26px;border-radius:50%;background:var(--volt);display:grid;place-items:center;color:#111;box-shadow:0 0 18px rgba(232,245,66,.45)}
+.brand b{color:var(--ink)}
+.prog{display:flex;gap:5px}
+.prog i{width:26px;height:4px;border-radius:2px;background:rgba(140,170,220,.22);cursor:pointer;pointer-events:auto}
+.prog i.on{background:var(--volt)}
+.prog i.done{background:rgba(232,245,66,.45)}
+.ctrl{position:fixed;right:18px;bottom:16px;display:flex;gap:8px;z-index:6}
+.ctrl button{font:600 13px var(--mono);color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:999px;
+  padding:9px 16px;cursor:pointer;backdrop-filter:blur(6px)}
+.ctrl button:hover{border-color:var(--volt);color:var(--volt)}
+.ctrl button.next{background:var(--volt);color:#0b0f05;border-color:var(--volt)}
+.loadpill{position:fixed;left:18px;bottom:18px;font:500 11px var(--mono);color:var(--dim);letter-spacing:.06em;z-index:6;
+  background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:7px 12px;display:flex;gap:8px;align-items:center}
+.loadpill .bar{width:90px;height:4px;background:rgba(140,170,220,.2);border-radius:2px;overflow:hidden}
+.loadpill .bar span{display:block;height:100%;width:0;background:var(--volt)}
+.loadpill.done{opacity:0;transition:opacity 1s 1s;pointer-events:none}
+
+/* slide text */
+.slide{position:fixed;z-index:4;opacity:0;pointer-events:none;transition:opacity .45s, transform .45s;transform:translateY(10px)}
+.slide.on{opacity:1;pointer-events:auto;transform:none}
+.kicker{font:600 12px var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--volt);margin:0 0 10px}
+h1,h2{margin:0;font-weight:700;letter-spacing:-.02em;line-height:1.02}
+h1{font-size:clamp(40px,7vw,96px)}
+h2{font-size:clamp(28px,3.8vw,52px)}
+.lead{font-size:clamp(16px,1.6vw,22px);color:#c6d4ee;line-height:1.4;max-width:34em;margin:14px 0 0}
+.hl{color:var(--volt)}
+.corner{left:max(22px,4vw);top:76px;max-width:min(560px,90vw)}
+.center{left:50%;top:50%;transform:translate(-50%,-50%);text-align:center;width:min(1000px,92vw)}
+.center.on{transform:translate(-50%,-50%)}
+.title-s{top:80px;transform:translateX(-50%)}
+.title-s.on{transform:translateX(-50%)}
+.title-tag{display:inline-flex;gap:10px;margin-top:26px;font:500 13px var(--mono);color:var(--dim);letter-spacing:.08em}
+.title-tag span{border:1px solid var(--line);border-radius:999px;padding:6px 12px;background:var(--panel)}
+
+/* timeline */
+.tl{left:50%;top:50%;transform:translate(-50%,-50%);width:min(1180px,94vw)}
+.tl.on{transform:translate(-50%,-50%)}
+.tl-row{display:grid;grid-template-columns:repeat(var(--n),1fr);gap:14px;margin-top:34px;position:relative}
+.tl-row:before{content:"";position:absolute;left:0;right:0;top:9px;height:1px;background:var(--line)}
+.ev{position:relative;padding-top:30px;opacity:.12;transition:opacity .5s, transform .5s;transform:translateY(8px)}
+.ev.on{opacity:1;transform:none}
+.ev:before{content:"";position:absolute;left:0;top:3px;width:13px;height:13px;border-radius:50%;background:var(--bg);border:2px solid var(--cyan)}
+.ev.on:before{background:var(--volt);border-color:var(--volt);box-shadow:0 0 14px var(--volt)}
+.ev .yr{font:700 clamp(22px,2.4vw,34px) var(--mono);color:var(--volt)}
+.ev h3{margin:6px 0 6px;font-size:clamp(15px,1.4vw,19px)}
+.ev p{margin:0;color:#b5c4de;font-size:clamp(13px,1.15vw,15px);line-height:1.4}
+.ev .ic{height:64px;margin:4px 0 8px}
+.ev .ic svg{height:64px;width:auto;stroke:var(--cyan);fill:none;stroke-width:1.6}
+
+/* compare */
+.cmp-head{left:50%;top:70px;transform:translateX(-50%);text-align:center;width:min(900px,92vw)}
+.cmp-head.on{transform:translateX(-50%)}
+.chips{display:flex;gap:8px;justify-content:center;margin-top:14px;flex-wrap:wrap}
+.chip{font:600 13px var(--mono);letter-spacing:.06em;text-transform:uppercase;padding:8px 14px;border-radius:999px;border:1px solid var(--line);
+  background:var(--panel);color:var(--dim);cursor:pointer}
+.chip.on{background:var(--volt);color:#0b0f05;border-color:var(--volt)}
+.cmp-card{left:50%;bottom:70px;transform:translateX(-50%);width:min(1060px,94vw);display:grid;grid-template-columns:1fr auto 1fr;gap:18px;align-items:stretch}
+.cmp-card.on{transform:translateX(-50%)}
+.side{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 18px;backdrop-filter:blur(8px)}
+.side .who{font:600 11px var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--dim)}
+.side .what{font-size:clamp(17px,1.7vw,24px);font-weight:600;margin:4px 0 4px}
+.side p{margin:0;color:#b9c8e2;font-size:clamp(13px,1.15vw,16px);line-height:1.4}
+.eq{display:grid;place-items:center;font:700 26px var(--mono);color:var(--volt);text-shadow:0 0 16px rgba(232,245,66,.5)}
+
+/* sensor lab */
+.lab{left:50%;top:54%;transform:translate(-50%,-50%);width:min(1100px,94vw)}
+.lab.on{transform:translate(-50%,-50%)}
+.lab-g{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:22px}
+.lab .side{padding:18px 20px}
+.meter{display:flex;gap:18px;align-items:center;margin:14px 0 10px}
+.thermo{width:26px;height:140px;border-radius:13px;border:1px solid var(--line);position:relative;overflow:hidden;background:#091224}
+.thermo span{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(0deg,#ff6a3d,#ffc23d);height:10%}
+.thermo .tg{position:absolute;left:-4px;right:-4px;height:2px;background:var(--volt)}
+.big{font:700 clamp(30px,3.4vw,48px) var(--mono)}
+.big small{font-size:.45em;color:var(--dim);margin-left:4px}
+.pillstate{display:inline-block;font:700 12px var(--mono);letter-spacing:.12em;padding:5px 10px;border-radius:999px;border:1px solid var(--line);color:var(--dim)}
+.pillstate.on{background:var(--hot);border-color:var(--hot);color:#160700}
+input[type=range]{width:100%;accent-color:var(--volt);height:28px}
+.rl{display:flex;justify-content:space-between;font:500 12px var(--mono);color:var(--dim);margin-top:6px}
+.track{position:relative;height:56px;border:1px dashed var(--line);border-radius:10px;margin:14px 0 10px;background:repeating-linear-gradient(90deg,transparent 0 31px,rgba(95,212,255,.18) 31px 32px)}
+.track .bot{position:absolute;top:8px;width:40px;height:40px;border-radius:8px;background:var(--volt);color:#111;display:grid;place-items:center;font:700 11px var(--mono);transition:left .25s}
+.stats{display:flex;gap:22px;flex-wrap:wrap}
+.stats div{font:500 12px var(--mono);color:var(--dim)}
+.stats b{display:block;font-size:24px;color:var(--ink)}
+
+/* code */
+.code-g{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:22px;text-align:left}
+pre{margin:10px 0 0;font:500 clamp(12px,1.25vw,16px)/1.6 var(--mono);color:#d8e6ff;white-space:pre-wrap}
+pre .c{color:#6f86ad}
+pre .k{color:var(--volt)}
+pre .n{color:#ffb35c}
+
+.hint{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);font:500 11px var(--mono);color:var(--dim);letter-spacing:.08em;z-index:4;opacity:.8}
+
+body.film,body.film #stage{background:#000}
+body.film .grid-bg,body.film .top,body.film .ctrl,body.film .hint,body.film .slide,body.film .loadpill{display:none!important}
+body.film #camwrap{position:fixed;inset:0}
+#dip{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:20}
+body.film .lbl{transition:none;opacity:1;font-size:21px;font-weight:700;letter-spacing:.14em;padding:8px 14px;border-color:rgba(232,245,66,.5);background:rgba(0,0,0,.75)}
+@media (max-width:760px){
+  .top{padding:10px 14px}
+  .prog i{width:12px}
+  .brand .hide-s{display:none}
+  .corner{top:58px;left:16px;right:16px}
+  .tl-row{grid-template-columns:1fr 1fr;gap:10px 12px}
+  .tl-row:before{display:none}
+  .ev .ic{display:none}
+  .cmp-head{top:54px}
+  .cmp-card{grid-template-columns:1fr;gap:8px;bottom:64px}
+  .eq{display:none}
+  .lab-g,.code-g{grid-template-columns:1fr}
+  .lab{top:52%}
+  .lbl{font-size:10px;padding:4px 6px}
+  .lbl small{display:none}
+  .hint{display:none}
+  .loadpill{bottom:64px}
+}
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+<div id="stage"><canvas id="c"></canvas><canvas id="cr"></canvas></div>
+<svg id="leaders"></svg>
+<div id="labels"></div>
+
+<header class="top">
+  <div class="brand"><span class="bolt"><svg width="14" height="14" viewBox="0 0 24 24" fill="#111"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg></span><b>Kilowatt Chaos</b><span class="hide-s">· FTC 37690</span></div>
+  <div class="prog" id="prog"></div>
+</header>
+
+<!-- 0 title -->
+<section class="slide center title-s" data-s="0">
+  <p class="kicker">From 1981 to our build table</p>
+  <h1>A 3D printer<br>is a <span class="hl">robot.</span></h1>
+  <p class="lead" style="margin-inline:auto">The history of 3D printing, and why my first printer is built from the same parts as your robot.</p>
+  <div class="title-tag"><span>CREALITY CR-10</span><span>vs</span><span>goBILDA STARTERBOT</span></div>
+</section>
+
+<!-- 1 history: inventors -->
+<section class="slide tl" data-s="1">
+  <p class="kicker">History · part 1</p>
+  <h2>The inventors <span class="hl">(1980s)</span></h2>
+  <div class="tl-row" style="--n:4">
+    <div class="ev"><div class="ic"><svg viewBox="0 0 80 64"><path d="M10 54h60M18 54V40h44v14M26 40V28h28v12M34 28V16h12v12"/></svg></div><div class="yr">1981</div><h3>Hideo Kodama, Japan</h3><p>Writes about building a part one thin layer at a time, using light to harden liquid plastic.</p></div>
+    <div class="ev"><div class="ic"><svg viewBox="0 0 80 64"><path d="M14 52h52l-6-14H20zM40 6v26M30 22l10 10 10-10"/><circle cx="40" cy="6" r="3"/></svg></div><div class="yr">1983</div><h3>Chuck Hull prints the first part</h3><p>His machine uses a UV laser on a vat of liquid resin. He calls it stereolithography (SLA).</p></div>
+    <div class="ev"><div class="ic"><svg viewBox="0 0 80 64"><path d="M16 10h48v44H16zM16 22h48M26 32h28M26 40h20"/></svg></div><div class="yr">1986</div><h3>3D Systems and the .STL file</h3><p>Hull starts a company. Its STL file format is the same kind of file we still send to our printer.</p></div>
+    <div class="ev"><div class="ic"><svg viewBox="0 0 80 64"><path d="M30 6h20v18H30zM40 24v14M36 38h8l-4 6zM12 56h56M22 56c0-6 4-10 18-10s18 4 18 10"/></svg></div><div class="yr">1988</div><h3>Scott Crump and a glue gun</h3><p>Making a toy frog for his daughter, he pipes hot plastic layer by layer. That's FDM, how our printers work.</p></div>
+  </div>
+</section>
+
+<!-- 2 history: everyone -->
+<section class="slide tl" data-s="2">
+  <p class="kicker">History · part 2</p>
+  <h2>Printers for <span class="hl">everyone</span></h2>
+  <div class="tl-row" style="--n:5">
+    <div class="ev"><div class="ic"><svg viewBox="0 0 80 64"><circle cx="26" cy="32" r="14"/><circle cx="54" cy="32" r="14"/><path d="M26 18v28M54 18v28"/></svg></div><div class="yr">2005</div><h3>RepRap</h3><p>Adrian Bowyer in England designs a free printer that can print many of its own parts.</p></div>
+    <div class="ev"><div class="ic"><svg viewBox="0 0 80 64"><path d="M12 32h56M24 20l-12 12 12 12M56 20l12 12-12 12"/></svg></div><div class="yr">2009</div><h3>The patent runs out</h3><p>Anyone can now build FDM printers. Small companies like MakerBot start selling kits.</p></div>
+    <div class="ev"><div class="ic"><svg viewBox="0 0 80 64"><path d="M14 56h52M18 56V10h44v46M18 14h44M26 36h28"/><path d="M36 30h8v6h-8z"/></svg></div><div class="yr">2016–17</div><h3>Creality CR-10</h3><p>A huge 300 x 300 mm bed for about $400. <span class="hl">My first printer.</span></p></div>
+    <div class="ev"><div class="ic"><svg viewBox="0 0 80 64"><path d="M14 8h52v48H14zM22 16h36v32H22zM34 40h12"/></svg></div><div class="yr">2020s</div><h3>Fast and smart</h3><p>Printers like our Bambu P1P print several times faster and watch themselves with sensors.</p></div>
+    <div class="ev"><div class="ic"><svg viewBox="0 0 80 64"><path d="M10 40h60v14H10zM20 40V28h40v12"/><path d="M30 47h20" stroke-width="3"/></svg></div><div class="yr">Today</div><h3>Kilowatt Chaos</h3><p>We print our own number signs, guards and robot parts. <span class="hl">37690</span> on every one.</p></div>
+  </div>
+</section>
+
+<!-- 3 meet CR-10 -->
+<section class="slide corner" data-s="3">
+  <p class="kicker">Meet my first printer</p>
+  <h2>Creality <span class="hl">CR-10</span></h2>
+  <p class="lead">It melts a plastic string called filament and draws the part one thin layer at a time, bottom to top.</p>
+</section>
+
+<!-- 4 axes -->
+<section class="slide corner" data-s="4">
+  <p class="kicker">How it moves</p>
+  <h2 id="axisTitle">Three directions: <span class="hl">X, Y, Z</span></h2>
+  <p class="lead" id="axisLead">Every spot in the print is just three numbers.</p>
+</section>
+
+<!-- 5 meet robot -->
+<section class="slide corner" data-s="5">
+  <p class="kicker">Now meet your robot</p>
+  <h2>goBILDA <span class="hl">StarterBot</span></h2>
+  <p class="lead">Every one of its 418 real parts, straight from goBILDA's CAD. Drag to spin it.</p>
+</section>
+
+<!-- 6 compare -->
+<section class="slide cmp-head" data-s="6">
+  <p class="kicker">Same parts, different jobs</p>
+  <h2 id="cmpTitle">Printer <span class="hl">=</span> Robot</h2>
+  <div class="chips" id="chips"></div>
+</section>
+<section class="slide cmp-card" data-s="6" id="cmpCard">
+  <div class="side"><div class="who">CR-10 printer</div><div class="what" id="cmpA"></div><p id="cmpAp"></p></div>
+  <div class="eq">=</div>
+  <div class="side"><div class="who">Our robot</div><div class="what" id="cmpB"></div><p id="cmpBp"></p></div>
+</section>
+
+<!-- 7 sensors lab -->
+<section class="slide lab" data-s="7">
+  <p class="kicker">The big difference</p>
+  <h2>The printer asks <span class="hl">"Am I hot?"</span> The robot asks <span class="hl">"Where am I?"</span></h2>
+  <div class="lab-g">
+    <div class="side">
+      <div class="who">CR-10 · thermistor</div>
+      <div class="meter">
+        <div class="thermo"><span id="tFill"></span><div class="tg" id="tTarget"></div></div>
+        <div><div class="big" id="tNow">25<small>°C</small></div><span class="pillstate" id="heat">HEATER OFF</span>
+        <p style="margin:10px 0 0;color:#b9c8e2;font-size:15px;line-height:1.4">Too cold: heater on. Hot enough: heater off. It checks many times a second.</p></div>
+      </div>
+      <input type="range" id="tSet" min="0" max="250" value="200" aria-label="Target nozzle temperature">
+      <div class="rl"><span>Target: <b id="tSetV" style="color:var(--volt)">200 °C</b></span><span>PLA prints at about 200 °C</span></div>
+    </div>
+    <div class="side">
+      <div class="who">Robot · motor encoder</div>
+      <div class="track"><div class="bot" id="bot">37690</div></div>
+      <div class="stats"><div><b id="eTicks">0</b>encoder ticks</div><div><b id="eDist">0.00 m</b>distance driven</div></div>
+      <input type="range" id="eTurns" min="0" max="10" step="0.1" value="0" aria-label="Wheel turns">
+      <div class="rl"><span>Wheel turns: <b id="eTurnsV" style="color:var(--volt)">0.0</b></span><span>538 ticks = 1 turn = 33 cm</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 8 code -->
+<section class="slide lab" data-s="8">
+  <p class="kicker">Both run on code</p>
+  <h2>Telling the machine <span class="hl">what to do</span></h2>
+  <div class="code-g">
+    <div class="side"><div class="who">Printer · G-code (from the slicer)</div>
+<pre><span class="k">M104</span> S<span class="n">200</span>   <span class="c">; heat nozzle to 200 °C</span>
+<span class="k">M109</span> S<span class="n">200</span>   <span class="c">; wait until it is hot</span>
+<span class="k">G28</span>          <span class="c">; go home (hit the switches)</span>
+<span class="k">G1</span> X<span class="n">50</span> Y<span class="n">20</span> <span class="c">; move nozzle to x=50, y=20</span>
+<span class="k">G1</span> X<span class="n">80</span> E<span class="n">1.2</span> <span class="c">; draw a line, push plastic</span></pre></div>
+    <div class="side"><div class="who">Robot · Java (that you write)</div>
+<pre><span class="c">// drive until the encoder says 1 metre</span>
+<span class="k">int</span> target = <span class="n">1646</span>;  <span class="c">// ticks</span>
+frontLeft.setTargetPosition(target);
+frontLeft.setMode(RUN_TO_POSITION);
+frontLeft.setPower(<span class="n">0.5</span>);
+<span class="c">// the hub checks the sensor & corrects</span></pre></div>
+  </div>
+  <p class="lead" style="margin-top:18px">A printer follows a list a computer wrote. Your robot decides <span class="hl">during</span> the match.</p>
+</section>
+
+<!-- 9 close -->
+<section class="slide center title-s" data-s="9">
+  <p class="kicker">So remember</p>
+  <h1 style="font-size:clamp(34px,5.4vw,76px)">A 3D printer is a robot<br>that <span class="hl">stays put.</span></h1>
+  <p class="lead" style="margin-inline:auto">Your robot is a printer that drives around. Motors, wheels, power, a brain and sensors. Questions?</p>
+</section>
+
+<div class="hint" id="hint">← → or click to step · drag to spin</div>
+<div class="loadpill" id="load"><span id="loadTxt">Loading robot 0%</span><div class="bar"><span id="loadBar"></span></div></div>
+<nav class="ctrl"><button id="prev" type="button">‹ Back</button><button id="full" type="button" title="Full screen (F)">⛶</button><button class="next" id="next" type="button">Next ›</button></nav>
+
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+const params = new URLSearchParams(location.search);
+const NO_ROBOT = params.has('norobot');
+
+// ---------------------------------------------------------------- renderer + scene
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+renderer.setClearColor(0x000000, 0);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.0;
+const scene = new THREE.Scene();
+const pm = new THREE.PMREMGenerator(renderer);
+scene.environment = pm.fromScene(new RoomEnvironment(), 0.04).texture;
+scene.environmentIntensity = 0.6;
+const key = new THREE.DirectionalLight(0xffffff, 2.2); key.position.set(1.5, 2.8, 2.0);
+const rim = new THREE.DirectionalLight(0x7fc8ff, 1.4); rim.position.set(-2, 1.2, -1.8);
+scene.add(key, rim, new THREE.AmbientLight(0x6080b0, 0.3));
+
+const camera = new THREE.PerspectiveCamera(36, 1, 0.01, 50);
+camera.position.set(-0.2, 0.8, 2.3);
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true; controls.dampingFactor = 0.08;
+controls.target.set(-0.2, 0.28, 0);
+controls.minDistance = 0.3; controls.maxDistance = 6;
+
+// blueprint floor
+const floor = new THREE.Group(); scene.add(floor);
+const g1 = new THREE.GridHelper(6, 120, 0x2a6aa8, 0x163256); g1.material.transparent = true; g1.material.opacity = 0.45; floor.add(g1);
+const g2 = new THREE.GridHelper(6, 12, 0x3f8fd8, 0x3f8fd8); g2.material.transparent = true; g2.material.opacity = 0.35; g2.position.y = 0.0005; floor.add(g2);
+
+// ---------------------------------------------------------------- materials
+const M = {
+  alu: new THREE.MeshStandardMaterial({ color: 0xc4cad3, metalness: 0.85, roughness: 0.32 }),
+  aluDark: new THREE.MeshStandardMaterial({ color: 0x8b929c, metalness: 0.8, roughness: 0.4 }),
+  black: new THREE.MeshStandardMaterial({ color: 0x1b1e24, metalness: 0.2, roughness: 0.6 }),
+  stepper: new THREE.MeshStandardMaterial({ color: 0x23262c, metalness: 0.5, roughness: 0.45 }),
+  steel: new THREE.MeshStandardMaterial({ color: 0xdfe3ea, metalness: 0.95, roughness: 0.22 }),
+  brass: new THREE.MeshStandardMaterial({ color: 0xd1a54a, metalness: 0.9, roughness: 0.3 }),
+  wheel: new THREE.MeshStandardMaterial({ color: 0x0f1013, metalness: 0.1, roughness: 0.5 }),
+  belt: new THREE.MeshStandardMaterial({ color: 0x15161a, metalness: 0, roughness: 0.8 }),
+  glass: new THREE.MeshPhysicalMaterial({ color: 0xbfe6ff, metalness: 0, roughness: 0.05, transmission: 0.6, transparent: true, opacity: 0.35 }),
+  bed: new THREE.MeshStandardMaterial({ color: 0x9aa1aa, metalness: 0.8, roughness: 0.35 }),
+  pcb: new THREE.MeshStandardMaterial({ color: 0x0f5132, metalness: 0.2, roughness: 0.5 }),
+  chip: new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.3, roughness: 0.4 }),
+  psu: new THREE.MeshStandardMaterial({ color: 0xb6bcc4, metalness: 0.75, roughness: 0.35 }),
+  box: new THREE.MeshStandardMaterial({ color: 0x17191e, metalness: 0.3, roughness: 0.55, transparent: true, opacity: 1 }),
+  fil: new THREE.MeshStandardMaterial({ color: 0xE8F542, metalness: 0.05, roughness: 0.45, emissive: 0x3a4010 }),
+  heater: new THREE.MeshStandardMaterial({ color: 0xc9ccd0, metalness: 0.8, roughness: 0.3 }),
+  red: new THREE.MeshStandardMaterial({ color: 0xc8361e, metalness: 0.1, roughness: 0.5 }),
+  white: new THREE.MeshStandardMaterial({ color: 0xe9ecef, metalness: 0, roughness: 0.4 }),
+  copper: new THREE.MeshStandardMaterial({ color: 0xc87533, metalness: 0.9, roughness: 0.35 }),
+};
+const HI = new THREE.MeshStandardMaterial({ color: 0xE8F542, emissive: 0xE8F542, emissiveIntensity: 0.55, metalness: 0.1, roughness: 0.4 });
+const HIP = new THREE.MeshStandardMaterial({ color: 0xE8F542, emissive: 0xE8F542, emissiveIntensity: 0.55, metalness: 0.1, roughness: 0.4 });
+const HOT = new THREE.MeshStandardMaterial({ color: 0xff6a3d, emissive: 0xff5a20, emissiveIntensity: 0.8, metalness: 0.1, roughness: 0.4 });
+const GHOST = new THREE.MeshBasicMaterial({ color: 0x3a6fb0, transparent: true, opacity: 0.06, depthWrite: false });
+const EDGE = new THREE.LineBasicMaterial({ color: 0x5fd4ff, transparent: true, opacity: 0.28 });
+const EDGE_GHOST = new THREE.LineBasicMaterial({ color: 0x5fd4ff, transparent: true, opacity: 0.5 });
+
+// ---------------------------------------------------------------- CR-10, modelled to real size (metres)
+const crMeshes = [];
+function add(parent, geo, mat, x, y, z, cat = 'frame', edges = true) {
+  const m = new THREE.Mesh(geo, mat);
+  m.position.set(x, y, z);
+  m.userData.cat = cat; m.userData.mat = mat;
+  if (edges) {
+    const e = new THREE.LineSegments(new THREE.EdgesGeometry(geo, 30), EDGE);
+    m.add(e); m.userData.edge = e;
+  }
+  parent.add(m); crMeshes.push(m);
+  return m;
+}
+const B = (w, h, d) => new THREE.BoxGeometry(w, h, d);
+const C = (r, h, s = 24) => new THREE.CylinderGeometry(r, r, h, s);
+
+// aluminium extrusion with a slot look: core box + darker slot strips
+function extrusion(parent, len, a, b, axis, x, y, z) {
+  const dims = axis === 'x' ? [len, a, b] : axis === 'y' ? [a, len, b] : [a, b, len];
+  const m = add(parent, B(...dims), M.alu, x, y, z, 'frame');
+  // slot lines on the long faces
+  const sl = axis === 'x' ? [len, a * 0.22, 0.001] : axis === 'y' ? [0.001, len, b * 0.22] : [0.001, a * 0.22, len];
+  for (const s of [-1, 1]) {
+    const o = axis === 'x' ? [0, 0, s * (b / 2 + 0.0004)] : axis === 'y' ? [s * (a / 2 + 0.0004), 0, 0] : [s * (a / 2 + 0.0004), 0, 0];
+    const k = new THREE.Mesh(B(...sl), M.black); k.position.set(...o); m.add(k);
+  }
+  return m;
+}
+function stepper(parent, x, y, z, rotY = 0, rotX = 0, cat = 'motor', name = '') {
+  const g = new THREE.Group(); g.position.set(x, y, z); g.rotation.set(rotX, rotY, 0); parent.add(g);
+  add(g, B(0.042, 0.042, 0.04), M.stepper, 0, 0, 0, cat);
+  add(g, B(0.0425, 0.0425, 0.006), M.aluDark, 0, 0, 0.021, cat, false);
+  add(g, B(0.0425, 0.0425, 0.006), M.aluDark, 0, 0, -0.021, cat, false);
+  const sh = add(g, C(0.0025, 0.022, 12), M.steel, 0, 0, 0.034, cat, false); sh.rotation.x = Math.PI / 2;
+  const lbl = add(g, B(0.03, 0.02, 0.0005), M.white, 0, 0.0213, 0, cat, false); lbl.rotation.x = -Math.PI / 2;
+  g.userData.name = name;
+  return g;
+}
+function vwheel(parent, x, y, z, axis = 'z') {
+  const w = add(parent, C(0.012, 0.011, 20), M.wheel, x, y, z, 'wheel');
+  if (axis === 'z') w.rotation.x = Math.PI / 2; else if (axis === 'x') w.rotation.z = Math.PI / 2;
+  return w;
+}
+// GT2-style pulley: 20 teeth, a flange each side, set screw so you can see it turn
+function pulleyGeo() {
+  const g = new THREE.CylinderGeometry(0.0062, 0.0062, 0.008, 80, 1);
+  const pos = g.attributes.position;
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i), z = pos.getZ(i), rr = Math.hypot(x, z);
+    if (rr < 0.006) continue;
+    const a = Math.atan2(z, x), tooth = Math.cos(a * 20) > 0.2 ? 1 : 0.86;
+    pos.setX(i, Math.cos(a) * 0.0062 * tooth); pos.setZ(i, Math.sin(a) * 0.0062 * tooth);
+  }
+  g.computeVertexNormals();
+  return g;
+}
+function pulley(parent, x, y, z, axis = 'y') {
+  const p = new THREE.Group(); p.position.set(x, y, z); parent.add(p);
+  if (axis === 'z') p.rotation.x = Math.PI / 2; else if (axis === 'x') p.rotation.z = Math.PI / 2;
+  const spin = new THREE.Group(); p.add(spin); p.userData.spin = spin;
+  add(spin, pulleyGeo(), M.aluDark, 0, 0, 0, 'pulley', false);
+  add(spin, C(0.0085, 0.0012, 32), M.alu, 0, 0.0046, 0, 'pulley', false);
+  add(spin, C(0.0085, 0.0012, 32), M.alu, 0, -0.0046, 0, 'pulley', false);
+  add(spin, C(0.0055, 0.006, 24), M.aluDark, 0, -0.008, 0, 'pulley', false);
+  add(spin, B(0.0022, 0.0022, 0.004), M.black, 0, -0.008, 0.0045, 'pulley', false);
+  return p;
+}
+// belt strand with moving teeth (texture slides as the belt moves)
+const beltTex = (() => {
+  const cv = document.createElement('canvas'); cv.width = 8; cv.height = 64; const x = cv.getContext('2d');
+  x.fillStyle = '#111317'; x.fillRect(0, 0, 8, 64); x.fillStyle = '#3a3e46'; x.fillRect(0, 0, 8, 26);
+  const t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.magFilter = THREE.NearestFilter; return t;
+})();
+const beltMat = new THREE.MeshStandardMaterial({ color: 0xffffff, map: beltTex, roughness: 0.8 });
+
+const cr = new THREE.Group(); scene.add(cr);
+const CRX = -0.5; cr.position.x = CRX;
+
+// base frame: 2040 rails
+extrusion(cr, 0.50, 0.04, 0.02, 'x', 0, 0.02, 0.24);
+extrusion(cr, 0.50, 0.04, 0.02, 'x', 0, 0.02, -0.24);
+extrusion(cr, 0.46, 0.02, 0.04, 'z', -0.24, 0.02, 0);
+extrusion(cr, 0.46, 0.02, 0.04, 'z', 0.24, 0.02, 0);
+extrusion(cr, 0.50, 0.04, 0.04, 'z', 0, 0.06, 0); // Y rail 4040
+for (const [fx, fz] of [[-0.24, 0.24], [0.24, 0.24], [-0.24, -0.24], [0.24, -0.24]]) add(cr, C(0.012, 0.006), M.black, fx, -0.001, fz, 'frame', false);
+
+// Y motor + belt at the back of the rail
+const yMotor = stepper(cr, 0, 0.06, -0.262, 0, 0, 'motor', 'Y');
+yMotor.rotation.y = Math.PI / 2;
+const yPul = pulley(cr, 0.036, 0.06, -0.262, 'x');
+beltTex.repeat.set(1, 0.5 / 0.002);
+const yBeltTop = add(cr, B(0.006, 0.0015, 0.5), beltMat, 0.036, 0.0665, -0.01, 'pulley', false);
+const yBeltBot = add(cr, B(0.006, 0.0015, 0.5), beltMat, 0.036, 0.0535, -0.01, 'pulley', false);
+const yIdler = pulley(cr, 0.036, 0.06, 0.24, 'x');
+// Y endstop
+add(cr, B(0.012, 0.02, 0.006), M.red, -0.04, 0.09, -0.2, 'sensor');
+
+// bed (moves in Y = scene z)
+const bedG = new THREE.Group(); cr.add(bedG);
+add(bedG, B(0.24, 0.006, 0.24), M.aluDark, 0, 0.087, 0, 'frame');
+for (const sx of [-0.03, 0.03]) for (const sz of [-0.09, 0.09]) vwheel(bedG, sx, 0.075, sz, 'x');
+for (const sx of [-0.13, 0.13]) for (const sz of [-0.13, 0.13]) add(bedG, C(0.006, 0.014, 16), M.steel, sx, 0.097, sz, 'frame', false);
+const bedPlate = add(bedG, B(0.31, 0.004, 0.31), M.bed, 0, 0.106, 0, 'frame');
+const heaterPad = add(bedG, B(0.29, 0.0015, 0.29), M.red, 0, 0.1035, 0, 'power', false);
+add(bedG, B(0.30, 0.004, 0.30), M.glass, 0, 0.110, 0, 'frame');
+for (const sx of [-0.15, 0.15]) for (const sz of [-0.15, 0.15]) add(bedG, B(0.02, 0.008, 0.012), M.black, sx, 0.111, sz, 'frame', false);
+const bedTherm = add(bedG, B(0.012, 0.002, 0.012), M.white, 0, 0.1025, 0.0, 'sensor', false);
+const BED_TOP = 0.112;
+const printG = new THREE.Group(); printG.position.y = BED_TOP; bedG.add(printG);
+
+// uprights + top bar
+extrusion(cr, 0.60, 0.02, 0.04, 'y', -0.27, 0.34, 0);
+extrusion(cr, 0.60, 0.02, 0.04, 'y', 0.27, 0.34, 0);
+extrusion(cr, 0.56, 0.02, 0.02, 'x', 0, 0.65, 0);
+for (const sx of [-0.27, 0.27]) add(cr, B(0.05, 0.05, 0.004), M.aluDark, sx, 0.05, 0.022, 'frame', false);
+// Z motor + lead screw on the left
+const zMotor = stepper(cr, -0.25, 0.06, 0.05, 0, -Math.PI / 2, 'motor', 'Z');
+const lead = add(cr, C(0.004, 0.56, 12), M.brass, -0.25, 0.36, 0.05, 'wheel', false);
+add(cr, B(0.012, 0.02, 0.006), M.red, -0.255, 0.1, -0.026, 'sensor'); // Z endstop
+
+// extruder on the top left
+const eMotor = stepper(cr, -0.2, 0.69, 0.0, 0, 0, 'motor', 'E');
+add(cr, B(0.044, 0.012, 0.045), M.red, -0.2, 0.669, 0.002, 'motor', false);
+
+// gantry (moves in Z = scene y)
+const gan = new THREE.Group(); cr.add(gan);
+extrusion(gan, 0.58, 0.04, 0.02, 'x', 0, 0, 0.03);
+for (const s of [-1, 1]) {
+  add(gan, B(0.065, 0.085, 0.005), M.aluDark, s * 0.27, 0, 0.045, 'frame');
+  for (const dy of [-0.03, 0.03]) vwheel(gan, s * 0.27 + s * 0.0, dy, 0.05, 'z');
+  vwheel(gan, s * 0.27 - s * 0.022, 0, 0.05, 'z');
+}
+const xMotor = stepper(gan, -0.27, 0.0, 0.075, 0, 0, 'motor', 'X');
+const zNut = add(gan, B(0.02, 0.012, 0.02), M.brass, -0.25, -0.03, 0.05, 'wheel', false);
+add(gan, B(0.53, 0.0015, 0.006), M.belt, 0, 0.022, 0.036, 'pulley', false);
+add(gan, B(0.53, 0.0015, 0.006), M.belt, 0, -0.022, 0.036, 'pulley', false);
+const xIdler = pulley(gan, 0.26, 0, 0.036, 'z');
+add(gan, B(0.012, 0.02, 0.006), M.red, 0.22, 0.035, 0.03, 'sensor'); // X endstop
+
+// carriage + hotend (moves in X)
+const car = new THREE.Group(); gan.add(car);
+add(car, B(0.07, 0.07, 0.005), M.aluDark, 0, 0, 0.045, 'frame');
+for (const [dx, dy] of [[-0.024, 0.03], [0.024, 0.03], [0, -0.03]]) vwheel(car, dx, dy, 0.05, 'z');
+add(car, B(0.045, 0.045, 0.035), M.black, 0, -0.012, 0.072, 'frame'); // shroud
+const fan = add(car, C(0.018, 0.006, 24), M.stepper, 0, -0.012, 0.092, 'frame', false); fan.rotation.x = Math.PI / 2;
+const heatsink = add(car, C(0.011, 0.026, 16), M.steel, 0, -0.03, 0.068, 'frame', false);
+const block = add(car, B(0.02, 0.011, 0.016), M.heater, 0, -0.049, 0.068, 'power');
+const nozzle = add(car, new THREE.ConeGeometry(0.004, 0.008, 16), M.brass, 0, -0.058, 0.068, 'frame', false); nozzle.rotation.x = Math.PI;
+const hotTherm = add(car, C(0.0018, 0.012, 10), M.white, 0.012, -0.049, 0.068, 'sensor', false); hotTherm.rotation.z = Math.PI / 2;
+const NOZ_Y = -0.062, NOZ_Z = 0.068;
+// bowden tube
+const tubeMat = new THREE.MeshStandardMaterial({ color: 0xf2f4f7, roughness: 0.3, transparent: true, opacity: 0.75 });
+let tube = null;
+function updateTube() {
+  const a = new THREE.Vector3(-0.2, 0.69, 0.03);
+  const bWorld = new THREE.Vector3(car.position.x, gan.position.y - 0.012, NOZ_Z);
+  const mid = new THREE.Vector3((a.x + bWorld.x) / 2, Math.max(a.y, bWorld.y) + 0.12, 0.05);
+  const curve = new THREE.CatmullRomCurve3([a, mid, bWorld.clone().add(new THREE.Vector3(0, 0.03, 0)), bWorld]);
+  const geo = new THREE.TubeGeometry(curve, 40, 0.002, 6);
+  if (!tube) { tube = new THREE.Mesh(geo, tubeMat); tube.userData.cat = 'frame'; tube.userData.mat = tubeMat; cr.add(tube); crMeshes.push(tube); }
+  else { tube.geometry.dispose(); tube.geometry = geo; }
+}
+
+// control box (power supply + mainboard + screen) and spool
+const boxG = new THREE.Group(); boxG.position.set(-0.52, 0, 0.04); cr.add(boxG);
+const shell = add(boxG, B(0.24, 0.12, 0.30), M.box, 0, 0.06, 0, 'box');
+const screenTex = (() => {
+  const cv = document.createElement('canvas'); cv.width = 256; cv.height = 128; const x = cv.getContext('2d');
+  x.fillStyle = '#1a3d8f'; x.fillRect(0, 0, 256, 128); x.fillStyle = '#d9e8ff'; x.font = 'bold 20px monospace';
+  x.fillText('CR-10  Ready', 14, 30); x.fillText('Nozzle 200/200', 14, 62); x.fillText('Bed     60/60', 14, 92); x.fillText('SD  42%', 14, 120);
+  const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; return t;
+})();
+const screen = add(boxG, B(0.09, 0.045, 0.002), new THREE.MeshBasicMaterial({ map: screenTex }), -0.03, 0.065, 0.151, 'brain', false);
+const knob = add(boxG, C(0.01, 0.012, 20), M.aluDark, 0.07, 0.065, 0.156, 'brain', false); knob.rotation.x = Math.PI / 2;
+const psu = add(boxG, B(0.2, 0.05, 0.11), M.psu, 0, 0.03, -0.08, 'power');
+for (let i = 0; i < 8; i++) add(psu, B(0.004, 0.051, 0.08), M.black, -0.08 + i * 0.022, 0, 0, 'power', false);
+const board = add(boxG, B(0.1, 0.003, 0.08), M.pcb, -0.03, 0.03, 0.06, 'brain');
+add(board, B(0.018, 0.004, 0.018), M.chip, 0, 0.003, 0, 'brain', false);
+for (let i = 0; i < 4; i++) add(board, B(0.012, 0.006, 0.014), M.red, -0.038 + i * 0.016, 0.004, -0.028, 'brain', false); // motor drivers
+add(board, B(0.014, 0.008, 0.01), M.white, 0.035, 0.005, 0.028, 'brain', false);
+const boxFan = add(boxG, C(0.03, 0.01, 24), M.stepper, 0.07, 0.07, 0.06, 'frame', false);
+// spool on top
+const spool = new THREE.Group(); spool.position.set(0, 0.2, 0); boxG.add(spool);
+add(boxG, B(0.012, 0.08, 0.012), M.black, -0.06, 0.16, 0, 'frame', false);
+add(boxG, B(0.012, 0.08, 0.012), M.black, 0.06, 0.16, 0, 'frame', false);
+const s1 = add(spool, C(0.1, 0.006, 40), M.black, 0, 0, 0.0, 'frame', false); s1.rotation.z = Math.PI / 2; s1.position.x = -0.03;
+const s2 = add(spool, C(0.1, 0.006, 40), M.black, 0, 0, 0.0, 'frame', false); s2.rotation.z = Math.PI / 2; s2.position.x = 0.03;
+const s3 = add(spool, C(0.08, 0.054, 40), M.fil, 0, 0, 0, 'frame', false); s3.rotation.z = Math.PI / 2;
+// power cable from box to printer
+{
+  const curve = new THREE.CatmullRomCurve3([new THREE.Vector3(-0.42, 0.03, 0.0), new THREE.Vector3(-0.35, 0.005, 0.02), new THREE.Vector3(-0.27, 0.04, 0.03)]);
+  add(cr, new THREE.TubeGeometry(curve, 20, 0.004, 8), M.black, 0, 0, 0, 'power', false);
+}
+
+// ---------------------------------------------------------------- print animation (nozzle draws circles layer by layer)
+const layerMat = new THREE.MeshStandardMaterial({ color: 0xE8F542, emissive: 0x6a7010, emissiveIntensity: 0.5, roughness: 0.45 });
+const LAYER = 0.0035, LAYERS = 22;
+const radius = (n) => 0.032 + 0.012 * Math.sin((n / LAYERS) * Math.PI * 1.05) ;
+const layers = [];
+let pt = 0, layerN = 0;
+const PZ0 = 0.06; // bed z when print centre is under the nozzle line
+function placeAxes(x, z, layer) {
+  car.position.x = x;
+  bedG.position.z = z;
+  gan.position.y = BED_TOP + (layer + 1) * LAYER - NOZ_Y;
+  printG.position.z = 0;
+}
+function stepPrint(dt) {
+  pt += dt * 2.2;
+  if (pt >= Math.PI * 2) {
+    pt -= Math.PI * 2;
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(radius(layerN), LAYER * 0.55, 6, 48), layerMat);
+    ring.rotation.x = Math.PI / 2; ring.position.y = (layerN + 0.5) * LAYER; ring.scale.z = 0.9;
+    printG.add(ring); layers.push(ring); layerN++;
+    if (layerN >= LAYERS) { for (const r of layers) { printG.remove(r); r.geometry.dispose(); } layers.length = 0; layerN = 0; }
+  }
+  const r = radius(layerN);
+  // nozzle at x = r cos t, bed shifts so that the print point r sin t sits under the fixed nozzle line
+  placeAxes(r * Math.cos(pt), NOZ_Z - PZ0 + PZ0 - r * Math.sin(pt) - (NOZ_Z - NOZ_Z), layerN);
+  bedG.position.z = NOZ_Z - r * Math.sin(pt);
+}
+placeAxes(0, NOZ_Z, 0);
+updateTube();
+
+// axis arrows (slide 4)
+const axisG = new THREE.Group(); cr.add(axisG); axisG.visible = false;
+function arrow(dir, color) {
+  const a = new THREE.ArrowHelper(dir, new THREE.Vector3(), 0.2, color, 0.05, 0.032);
+  const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.004, 0.15, 8), new THREE.MeshBasicMaterial({ color })); shaft.position.y = 0.075; a.add(shaft);
+  a.line.material.linewidth = 2; axisG.add(a); return a;
+}
+const axX = arrow(new THREE.Vector3(1, 0, 0), 0xE8F542), axY = arrow(new THREE.Vector3(0, 0, 1), 0x5fd4ff), axZ = arrow(new THREE.Vector3(0, 1, 0), 0xff6a3d);
+
+// The robot (28 million triangles) gets its own canvas and is only redrawn when the camera or its colours change,
+// so the printer can animate every frame without redrawing the robot.
+const canvasR = document.getElementById('cr');
+const rendererR = new THREE.WebGLRenderer({ canvas: canvasR, antialias: true, alpha: true, powerPreference: 'high-performance' });
+rendererR.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+rendererR.setClearColor(0x000000, 0);
+rendererR.toneMapping = THREE.ACESFilmicToneMapping;
+const sceneR = new THREE.Scene();
+{ const pr = new THREE.PMREMGenerator(rendererR); sceneR.environment = pr.fromScene(new RoomEnvironment(), 0.04).texture; sceneR.environmentIntensity = 0.6; }
+{ const k2 = key.clone(), r2 = rim.clone(); sceneR.add(k2, r2, new THREE.AmbientLight(0x6080b0, 0.3)); }
+let robotDirty = true;
+const lastCam = new THREE.Matrix4(); let lastAspect = 0;
+// ---------------------------------------------------------------- robot: full goBILDA StarterBot (418 parts, unsimplified) + REV Control Hub
+const rb = new THREE.Group(); sceneR.add(rb);
+const RBX = 0.32; rb.position.x = RBX;
+const rbParts = []; // {mesh, name, orig}
+let robotReady = false, robotBox = null;
+let hubG = null;
+const CAT_BY_NAME = {
+  motor: ['Drive Motor', 'Intake Motor', 'Launcher Motor', 'Speed Servo', 'Hopper Servo'],
+  wheel: ['Mecanum Wheel', '48mm Gecko Wheel', '72mm Gecko Wheel', 'Flywheel', '20-Tooth Gear', '100-Tooth Gear', 'Intake Roller'],
+  power: ['12V Battery', 'Battery Mount'],
+  brain: [],
+  sensor: ['Drive Motor'],
+};
+const rbCenters = {};
+const loadEl = document.getElementById('load'), loadTxt = document.getElementById('loadTxt'), loadBar = document.getElementById('loadBar');
+function setLoad(f, txt) { loadBar.style.width = `${Math.round(f * 100)}%`; loadTxt.textContent = txt; }
+
+async function loadRobot() {
+  if (NO_ROBOT) { loadEl.classList.add('done'); return; }
+  try {
+    const partsData = await (await fetch('/hub/data/parts.json')).json();
+    const urls = [0, 1, 2, 3].map((i) => `/hub/model/starterbot-full.glb.gz.part${i}.bin`);
+    const TOTAL = 107308093;
+    let got = 0;
+    const stream = new ReadableStream({
+      async start(ctrl) {
+        for (const u of urls) {
+          const res = await fetch(u);
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const rd = res.body.getReader();
+          for (;;) { const { done, value } = await rd.read(); if (done) break; got += value.length; setLoad(got / TOTAL, `Loading robot ${Math.round((got / TOTAL) * 100)}%`); ctrl.enqueue(value); }
+        }
+        ctrl.close();
+      },
+    });
+    const buf = await new Response(stream.pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();
+    setLoad(1, 'Building robot…');
+    await new Promise((r) => setTimeout(r, 30));
+    const gltf = await new GLTFLoader().parseAsync(buf, '');
+    const root = gltf.scene;
+    root.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(root);
+    const c = box.getCenter(new THREE.Vector3());
+    root.position.set(-c.x, -box.min.y, -c.z);
+    rb.add(root);
+    rb.updateMatrixWorld(true);
+    const acc = {};
+    for (const node of root.children) {
+      const info = partsData.parts[node.name];
+      const name = info ? info[2] : 'Hardware';
+      node.traverse((o) => { if (o.isMesh) { o.userData.orig = o.material; rbParts.push({ mesh: o, name }); } });
+      for (const [cat, names] of Object.entries(CAT_BY_NAME)) {
+        if (!names.includes(name)) continue;
+        const bb = new THREE.Box3().setFromObject(node);
+        (acc[cat] ||= new THREE.Box3()).union(bb);
+        acc[`n:${name}`] ||= new THREE.Box3(); acc[`n:${name}`].union(bb);
+      }
+    }
+    for (const [k, b] of Object.entries(acc)) rbCenters[k] = b;
+    robotBox = new THREE.Box3().setFromObject(rb);
+    await loadHub();
+    robotReady = true; robotDirty = true;
+    setLoad(1, 'Robot ready'); loadEl.classList.add('done');
+    applySlide(true);
+  } catch (err) {
+    console.warn('robot load failed', err);
+    loadTxt.textContent = 'Robot model could not load';
+  }
+}
+async function loadHub() {
+  try {
+    const g = await new GLTFLoader().loadAsync('/hub/dive/models/control-hub.glb');
+    const root = g.scene; const bb = new THREE.Box3().setFromObject(root); const s = bb.getSize(new THREE.Vector3());
+    const k = 0.143 / Math.max(s.x, s.y, s.z); root.scale.setScalar(k);
+    const bb2 = new THREE.Box3().setFromObject(root); const cc = bb2.getCenter(new THREE.Vector3());
+    root.position.sub(cc);
+    // lay it flat (thinnest side up)
+    const s2 = bb2.getSize(new THREE.Vector3());
+    if (s2.z < s2.x && s2.z < s2.y) root.rotation.x = -Math.PI / 2; else if (s2.x < s2.y && s2.x < s2.z) root.rotation.z = Math.PI / 2;
+    hubG = new THREE.Group(); hubG.add(root); hubG.visible = false;
+    root.traverse((o) => { if (o.isMesh) o.userData.orig = o.material; });
+    scene.add(hubG);
+  } catch (e) { console.warn('hub load failed', e); }
+}
+
+// ---------------------------------------------------------------- highlight
+function highlightCR(cats, hot = []) {
+  for (const m of crMeshes) {
+    const cat = m.userData.cat;
+    const on = !cats || cats.includes(cat) || (cat === 'box' && false);
+    let mat = m.userData.mat;
+    if (cats) mat = hot.includes(cat) ? HOT : cats.includes(cat) ? HIP : GHOST;
+    if (cats && cat === 'box') mat = GHOST; // see inside the control box when focusing
+    m.material = mat;
+    if (m.userData.edge) m.userData.edge.material = cats && !on ? EDGE_GHOST : EDGE;
+  }
+  layerMat.opacity = 1;
+}
+function highlightRB(cat) {
+  const names = Array.isArray(cat) ? cat : cat ? CAT_BY_NAME[cat] : null;
+  robotDirty = true;
+  for (const p of rbParts) p.mesh.material = !names ? p.mesh.userData.orig : names.includes(p.name) ? (cat === 'sensor' ? HI : HI) : GHOST;
+}
+
+// ---------------------------------------------------------------- labels
+const labelsEl = document.getElementById('labels'), svg = document.getElementById('leaders');
+let labels = [];
+function setLabels(list) {
+  labelsEl.innerHTML = ''; svg.innerHTML = '';
+  labels = list.map((l) => {
+    const el = document.createElement('div'); el.className = `lbl${l.hot ? ' hot' : ''}`; el.innerHTML = l.html; labelsEl.appendChild(el);
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line'); line.setAttribute('stroke', l.hot ? '#ff6a3d' : '#E8F542'); line.setAttribute('stroke-width', '1.2'); line.setAttribute('opacity', '0.85');
+    const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle'); dot.setAttribute('r', '3.5'); dot.setAttribute('fill', l.hot ? '#ff6a3d' : '#E8F542');
+    svg.append(line, dot);
+    requestAnimationFrame(() => el.classList.add('on'));
+    return { ...l, el, line, dot };
+  });
+}
+const v = new THREE.Vector3();
+function updateLabels() {
+  const w = innerWidth, h = innerHeight;
+  for (const l of labels) {
+    const p = typeof l.at === 'function' ? l.at() : l.at;
+    if (!p) { l.el.style.display = 'none'; continue; }
+    v.copy(p).project(camera);
+    const x = (v.x * 0.5 + 0.5) * w, y = (-v.y * 0.5 + 0.5) * h;
+    const s = w < 760 ? 0.55 : 1;
+    const lx = x + l.dx * s, ly = y + l.dy * s;
+    l.el.style.display = ''; l.el.style.left = `${lx}px`; l.el.style.top = `${ly}px`;
+    l.line.setAttribute('x1', x); l.line.setAttribute('y1', y); l.line.setAttribute('x2', lx); l.line.setAttribute('y2', ly);
+    l.dot.setAttribute('cx', x); l.dot.setAttribute('cy', y);
+  }
+}
+const wp = (obj, off = [0, 0, 0]) => () => obj.localToWorld(new THREE.Vector3(...off));
+const rbAt = (key, fy = 0.5) => () => { const b = rbCenters[key]; if (!b) return null; const c = b.getCenter(new THREE.Vector3()); c.y = b.min.y + (b.max.y - b.min.y) * fy; return c; };
+const hubAt = () => (hubG && hubG.visible ? hubG.getWorldPosition(new THREE.Vector3()) : null);
+
+// ---------------------------------------------------------------- compare data
+const CMP = [
+  { key: 'motor', chip: 'Motors', title: 'Motors <span class="hl">make it move</span>',
+    a: '4 stepper motors', ap: 'X, Y, Z and the extruder. A stepper moves in tiny exact clicks, 200 per turn.',
+    b: '6 DC motors + 3 servos', bp: 'Four drive the wheels, one runs the intake, one spins the launcher. Servos move to an angle.',
+    crCats: ['motor'], crLabels: () => [
+      { at: wp(xMotor), html: '<b>X motor</b><small>left / right</small>', dx: -90, dy: -60 },
+      { at: wp(yMotor), html: '<b>Y motor</b><small>bed in / out</small>', dx: -40, dy: 70 },
+      { at: wp(zMotor), html: '<b>Z motor</b><small>up / down</small>', dx: -110, dy: 30 },
+      { at: wp(eMotor), html: '<b>Extruder</b><small>pushes filament</small>', dx: -60, dy: -50 },
+    ], rbLabels: () => [
+      { at: rbAt('n:Drive Motor'), html: '<b>4 drive motors</b><small>one per wheel</small>', dx: 110, dy: 70 },
+      { at: rbAt('n:Launcher Motor'), html: '<b>Launcher motor</b>', dx: 110, dy: -50 },
+      { at: rbAt('n:Intake Motor'), html: '<b>Intake motor</b>', dx: 120, dy: 0 },
+    ] },
+  { key: 'wheel', chip: 'Wheels & belts', title: 'Spinning wheels <span class="hl">and belts</span>',
+    a: 'V-wheels, belts, a lead screw', ap: '13 little wheels roll along the metal rails. Rubber belts and a screw turn spinning into sliding.',
+    b: 'Mecanum wheels and gears', bp: 'Rollers on the yellow wheels let it drive sideways. Gears and gecko wheels grab and launch balls.',
+    crCats: ['wheel'], crLabels: () => [
+      { at: wp(car, [0, -0.03, 0.05]), html: '<b>V-wheels</b><small>roll on the rails</small>', dx: 90, dy: -70 },
+      { at: wp(gan, [0.1, 0.022, 0.036]), html: '<b>Belt</b><small>pulls the nozzle</small>', dx: 40, dy: -80 },
+      { at: wp(lead, [0, 0.12, 0]), html: '<b>Lead screw</b><small>lifts the gantry</small>', dx: -110, dy: -10 },
+    ], rbLabels: () => [
+      { at: rbAt('n:Mecanum Wheel', 0.4), html: '<b>Mecanum wheels</b><small>drive any direction</small>', dx: 110, dy: 70 },
+      { at: rbAt('n:Flywheel'), html: '<b>Flywheel</b><small>launches balls</small>', dx: 100, dy: -70 },
+      { at: rbAt('n:72mm Gecko Wheel'), html: '<b>Intake wheels</b>', dx: 120, dy: 10 },
+    ] },
+  { key: 'power', chip: 'Power', title: 'A place for <span class="hl">power</span>',
+    a: '12 V power supply', ap: 'Plugs into the wall and turns it into 12 volts. Most of it goes into heat for the nozzle and bed.',
+    b: '12 V battery', bp: 'The same 12 volts, but carried on the robot so it can drive. Charge it before every match!',
+    crCats: ['power'], crHot: ['power'], crLabels: () => [
+      { at: wp(psu), html: '<b>Power supply</b><small>wall to 12 V</small>', dx: -70, dy: 90, hot: true },
+      { at: wp(block), html: '<b>Heater</b><small>nozzle</small>', dx: 80, dy: 40, hot: true },
+      { at: wp(heaterPad, [0.12, 0, 0.12]), html: '<b>Heated bed</b>', dx: 80, dy: 50, hot: true },
+    ], rbLabels: () => [
+      { at: rbAt('n:12V Battery'), html: '<b>12 V battery</b><small>NiMH pack</small>', dx: 110, dy: -60 },
+    ] },
+  { key: 'brain', chip: 'Brain', title: 'The <span class="hl">brain</span>',
+    a: 'Mainboard', ap: 'A small chip like an Arduino runs Marlin firmware. It reads G-code from an SD card and drives the motors.',
+    b: 'REV Control Hub', bp: 'An Android computer that runs the Java code you write. It talks to the driver controller over Wi-Fi.',
+    crCats: ['brain'], crLabels: () => [
+      { at: wp(board), html: '<b>Mainboard</b><small>motor drivers on board</small>', dx: 60, dy: -120 },
+      { at: wp(screen), html: '<b>Screen + knob</b>', dx: -40, dy: -70 },
+    ], rbLabels: () => [
+      { at: hubAt, html: '<b>REV Control Hub</b><small>on our robot (not in the CAD)</small>', dx: 110, dy: -50 },
+    ] },
+  { key: 'sensor', chip: 'Sensors', title: 'Sensors: <span class="hl">hot</span> vs <span class="hl">where</span>',
+    a: 'Thermistors (temperature)', ap: 'One in the nozzle, one under the bed. Three click switches only find "home", then it just counts steps.',
+    b: 'Encoders + IMU (position)', bp: 'Every drive motor counts its own turns. The IMU inside the Control Hub knows which way the robot faces.',
+    crCats: ['sensor'], crHot: ['sensor'], crLabels: () => [
+      { at: wp(hotTherm), html: '<b>Nozzle thermistor</b><small>how hot?</small>', dx: 90, dy: 50, hot: true },
+      { at: wp(bedTherm), html: '<b>Bed thermistor</b>', dx: 60, dy: 70, hot: true },
+      { at: wp(car.parent.children.find((m) => m.userData.cat === 'sensor') || gan, [0, 0, 0]), html: '<b>Limit switches</b><small>find home</small>', dx: -30, dy: -70 },
+    ], rbLabels: () => [
+      { at: rbAt('n:Drive Motor', 0.5), html: '<b>Encoders</b><small>count wheel turns</small>', dx: 110, dy: 70 },
+      { at: hubAt, html: '<b>IMU</b><small>which way am I facing?</small>', dx: 110, dy: -50 },
+    ] },
+];
+
+// ---------------------------------------------------------------- slides
+const SLIDES = [
+  { steps: 1, cam: [[-0.2, 1.15, 3.0], [-0.2, 0.86, 0]], show: { cr: 1, rb: 1 }, print: 1 },
+  { steps: 4, dim: 1, cam: [[-0.25, 0.75, 2.4], [-0.2, 0.28, 0]], show: { cr: 1, rb: 1 }, print: 1 },
+  { steps: 5, dim: 1, cam: [[-0.25, 0.75, 2.4], [-0.2, 0.28, 0]], show: { cr: 1, rb: 1 }, print: 1 },
+  { steps: 1, cam: [[-0.45, 0.72, 1.75], [-0.9, 0.3, 0]], show: { cr: 1 }, print: 1 },
+  { steps: 4, cam: [[-0.3, 0.72, 1.6], [-0.75, 0.3, 0]], show: { cr: 1 }, print: 1 },
+  { steps: 1, cam: [[0.77, 0.45, 0.85], [0.32, 0.14, 0]], show: { rb: 1 }, rotate: 1 },
+  { steps: CMP.length, cam: [[-0.33, 0.6, 1.75], [-0.33, 0.2, 0]], show: { cr: 1, rb: 1 }, print: 1 },
+  { steps: 1, dim: 1, cam: [[-0.25, 0.75, 2.4], [-0.2, 0.28, 0]], show: { cr: 1, rb: 1 }, print: 1 },
+  { steps: 1, dim: 1, cam: [[-0.25, 0.75, 2.4], [-0.2, 0.28, 0]], show: { cr: 1, rb: 1 }, print: 1 },
+  { steps: 1, cam: [[-0.2, 1.15, 3.0], [-0.2, 0.86, 0]], show: { cr: 1, rb: 1 }, print: 1 },
+];
+let si = 0, st = 0;
+const startHash = location.hash.match(/^#(\d+)(?:\.(\d+))?/);
+if (startHash) { si = Math.min(SLIDES.length - 1, +startHash[1]); st = Math.min(SLIDES[si].steps - 1, +(startHash[2] || 0)); }
+
+const prog = document.getElementById('prog');
+prog.innerHTML = SLIDES.map((_, i) => `<i data-i="${i}" title="Slide ${i + 1}"></i>`).join('');
+prog.addEventListener('click', (e) => { const i = e.target.dataset.i; if (i != null) go(+i, 0); });
+const chips = document.getElementById('chips');
+chips.innerHTML = CMP.map((c, i) => `<button class="chip" type="button" data-k="${i}">${c.chip}</button>`).join('');
+chips.addEventListener('click', (e) => { const k = e.target.dataset.k; if (k != null) go(6, +k); });
+
+let camAnim = null;
+function flyTo(pos, tgt, ms = 1100) {
+  camAnim = { p0: camera.position.clone(), t0: controls.target.clone(), p1: new THREE.Vector3(...pos), t1: new THREE.Vector3(...tgt), s: performance.now(), ms };
+}
+let shownCR = true, shownRB = true;
+let axisMode = -1;
+function applySlide(soft = false) {
+  const S = SLIDES[si];
+  document.querySelectorAll('.slide').forEach((el) => el.classList.toggle('on', +el.dataset.s === si));
+  [...prog.children].forEach((el, i) => { el.className = i === si ? 'on' : i < si ? 'done' : ''; });
+  document.getElementById('stage').classList.toggle('dim', !!S.dim);
+  shownCR = !!S.show.cr; shownRB = !!S.show.rb;
+  cr.visible = shownCR; rb.visible = shownRB; robotDirty = true;
+  if (hubG) hubG.visible = false;
+  axisG.visible = false; axisMode = -1;
+  highlightCR(null); highlightRB(null);
+  let labelList = [];
+  let cam = S.cam;
+  // timeline reveal
+  document.querySelectorAll(`.slide[data-s="${si}"] .ev`).forEach((el, i) => el.classList.toggle('on', i <= st));
+  if (si === 3) {
+    labelList = [
+      { at: wp(bedPlate, [0.14, 0, 0.14]), html: '<b>Bed</b><small>300 x 300 mm, heated</small>', dx: 90, dy: 60 },
+      { at: wp(car, [0, -0.05, 0.07]), html: '<b>Hot end</b><small>melts plastic at 200 °C</small>', dx: 120, dy: -30 },
+      { at: wp(gan, [0.18, 0, 0.03]), html: '<b>Gantry</b>', dx: 90, dy: -50 },
+      { at: wp(spool), html: '<b>Filament</b><small>plastic string</small>', dx: -80, dy: -60 },
+      { at: wp(shell), html: '<b>Control box</b><small>power + brain</small>', dx: -90, dy: 60 },
+    ];
+  }
+  if (si === 4) {
+    axisG.visible = true; axisMode = st;
+    const T = [
+      ['Three directions: <span class="hl">X, Y, Z</span>', 'Every spot in the print is just three numbers.'],
+      ['<span class="hl">X</span> = left and right', 'The hot end slides along the gantry, pulled by a belt.'],
+      ['<span class="hl">Y</span> = forward and back', 'On a CR-10 the whole bed moves, not the nozzle.'],
+      ['<span class="hl">Z</span> = up, one layer at a time', 'After each layer the gantry climbs a fraction of a millimetre.'],
+    ][st];
+    document.getElementById('axisTitle').innerHTML = T[0]; document.getElementById('axisLead').textContent = T[1];
+    labelList = [
+      { at: () => axX.localToWorld(new THREE.Vector3(0, 0.18, 0)), html: '<b>X</b>', dx: 20, dy: -20 },
+      { at: () => axY.localToWorld(new THREE.Vector3(0, 0.18, 0)), html: '<b>Y</b>', dx: 20, dy: 20 },
+      { at: () => axZ.localToWorld(new THREE.Vector3(0, 0.18, 0)), html: '<b>Z</b>', dx: 20, dy: -10, hot: true },
+    ].filter((_, i) => st === 0 || i === st - 1);
+    if (st > 0) highlightCR([['frame', 'motor', 'wheel'], ['frame', 'motor', 'wheel'], ['frame', 'motor', 'wheel']][st - 1]);
+    if (st > 0) highlightCR(null);
+  }
+  if (si === 5) {
+    labelList = [
+      { at: rbAt('n:Mecanum Wheel', 0.4), html: '<b>Drivetrain</b><small>4 motors, mecanum wheels</small>', dx: -140, dy: 60 },
+      { at: rbAt('n:Flywheel'), html: '<b>Launcher</b>', dx: 80, dy: -70 },
+      { at: rbAt('n:72mm Gecko Wheel'), html: '<b>Intake</b>', dx: 110, dy: 30 },
+      { at: rbAt('n:12V Battery'), html: '<b>Battery</b>', dx: -120, dy: -50 },
+    ];
+    if (!robotReady) labelList = [];
+  }
+  if (si === 6) {
+    const c = CMP[st];
+    [...chips.children].forEach((el, i) => el.classList.toggle('on', i === st));
+    document.getElementById('cmpTitle').innerHTML = c.title;
+    document.getElementById('cmpA').textContent = c.a; document.getElementById('cmpAp').textContent = c.ap;
+    document.getElementById('cmpB').textContent = c.b; document.getElementById('cmpBp').textContent = c.bp;
+    highlightCR(c.crCats, c.crHot || []);
+    if (robotReady) {
+      if (c.key !== 'brain') highlightRB(c.key); else highlightRB('__none');
+      if (c.key === 'sensor') highlightRB('sensor');
+      if ((c.key === 'brain' || c.key === 'sensor') && hubG && robotBox) {
+        hubG.visible = true;
+        hubG.position.set(RBX + 0.0, robotBox.max.y + 0.09, 0.0);
+      }
+    }
+    labelList = [...c.crLabels(), ...(robotReady ? c.rbLabels() : [])];
+    if (c.key === 'brain') cam = [[-0.36, 0.64, 1.85], [-0.36, 0.22, 0]];
+  }
+  setLabels(labelList);
+  if (!soft) flyTo(cam[0], cam[1]);
+  history.replaceState(null, '', `#${si}${st ? '.' + st : ''}`);
+}
+function go(i, s = 0) { si = Math.max(0, Math.min(SLIDES.length - 1, i)); st = s; applySlide(); }
+function next() { if (st < SLIDES[si].steps - 1) { st++; applySlide(si !== 6 && si !== 4 ? true : false); } else if (si < SLIDES.length - 1) go(si + 1, 0); }
+function prev() { if (st > 0) { st--; applySlide(si !== 6 && si !== 4); } else if (si > 0) go(si - 1, SLIDES[si - 1].steps - 1); }
+document.getElementById('next').onclick = next;
+document.getElementById('prev').onclick = prev;
+document.getElementById('full').onclick = () => (document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen?.());
+addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT') return;
+  if (['ArrowRight', 'PageDown', ' ', 'Enter'].includes(e.key)) { e.preventDefault(); next(); }
+  else if (['ArrowLeft', 'PageUp', 'Backspace'].includes(e.key)) { e.preventDefault(); prev(); }
+  else if (e.key === 'f' || e.key === 'F') document.getElementById('full').click();
+  else if (e.key === 'Home') go(0); else if (e.key === 'End') go(SLIDES.length - 1);
+});
+// click empty space to advance (not after a drag)
+let down = null;
+canvas.addEventListener('pointerdown', (e) => { down = [e.clientX, e.clientY, performance.now()]; });
+canvas.addEventListener('pointerup', (e) => { if (down && Math.hypot(e.clientX - down[0], e.clientY - down[1]) < 5 && performance.now() - down[2] < 350) next(); down = null; });
+
+// ---------------------------------------------------------------- sensor lab widgets
+const tSet = document.getElementById('tSet'), tNow = document.getElementById('tNow'), tFill = document.getElementById('tFill'), tTarget = document.getElementById('tTarget'), heat = document.getElementById('heat');
+let temp = 25, heaterOn = false;
+function labTick(dt) {
+  const target = +tSet.value;
+  document.getElementById('tSetV').textContent = `${target} °C`;
+  if (temp < target - 1) heaterOn = true; else if (temp > target + 1) heaterOn = false;
+  temp += (heaterOn ? 38 : 0) * dt - (temp - 22) * 0.06 * dt;
+  tNow.innerHTML = `${Math.round(temp)}<small>°C</small>`;
+  tFill.style.height = `${Math.max(2, (temp / 260) * 100)}%`;
+  tTarget.style.bottom = `${(target / 260) * 100}%`;
+  heat.textContent = heaterOn ? 'HEATER ON' : 'HEATER OFF'; heat.classList.toggle('on', heaterOn);
+}
+const eTurns = document.getElementById('eTurns');
+function encUpdate() {
+  const t = +eTurns.value; // 537.7 ticks per output turn on a 19.2:1 Yellow Jacket; 104 mm mecanum wheel
+  document.getElementById('eTurnsV').textContent = t.toFixed(1);
+  document.getElementById('eTicks').textContent = Math.round(t * 537.7).toLocaleString();
+  document.getElementById('eDist').textContent = `${(t * Math.PI * 0.104).toFixed(2)} m`;
+  document.getElementById('bot').style.left = `calc(${(t / 10) * 100}% - ${(t / 10) * 40}px)`;
+}
+eTurns.addEventListener('input', encUpdate); encUpdate();
+
+// ---------------------------------------------------------------- loop
+function resize() {
+  const w = innerWidth, h = innerHeight;
+  renderer.setSize(w, h, false); rendererR.setSize(w, h, false); robotDirty = true; camera.aspect = w / h;
+  camera.fov = w / h < 0.9 ? 58 : 36; // phones: wider lens so both machines fit
+  camera.updateProjectionMatrix();
+}
+addEventListener('resize', resize); resize();
+let last = performance.now(), userMoved = false;
+controls.addEventListener('start', () => { userMoved = true; camAnim = null; });
+const ease = (k) => (k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2);
+let axT = 0;
+function loop(now) {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  const S = SLIDES[si];
+  if (camAnim) {
+    const k = ease(Math.min(1, (now - camAnim.s) / camAnim.ms));
+    camera.position.lerpVectors(camAnim.p0, camAnim.p1, k); controls.target.lerpVectors(camAnim.t0, camAnim.t1, k);
+    if (k >= 1) camAnim = null;
+  }
+  if (si === 4 && axisMode > 0) {
+    // demo one axis at a time
+    axT += dt;
+    const s = Math.sin(axT * 1.6);
+    if (axisMode === 1) { car.position.x = s * 0.1; }
+    if (axisMode === 2) { bedG.position.z = NOZ_Z + s * 0.08; }
+    if (axisMode === 3) { gan.position.y = BED_TOP - NOZ_Y + 0.05 + (s * 0.5 + 0.5) * 0.15; }
+  } else if (S.print && shownCR) stepPrint(dt);
+  if (si === 4) {
+    // put the arrows on the moving parts
+    axX.position.copy(car.position).add(gan.position).add(new THREE.Vector3(0.05, -0.07, NOZ_Z));
+    axY.position.set(0.17, BED_TOP + 0.01, bedG.position.z + 0.02);
+    axZ.position.set(0.3, gan.position.y + 0.03, 0.03);
+    axX.visible = axisMode === 0 || axisMode === 1; axY.visible = axisMode === 0 || axisMode === 2; axZ.visible = axisMode === 0 || axisMode === 3;
+  }
+  if (shownCR) updateTube();
+  if (si === 7) labTick(dt);
+  if (hubG && hubG.visible) hubG.rotation.y += dt * 0.5;
+  spool.rotation.x -= dt * 0.4;
+  controls.autoRotate = !!S.rotate && !userMoved; controls.autoRotateSpeed = 0.35;
+  controls.update();
+  renderer.render(scene, camera);
+  camera.updateMatrixWorld();
+  if (robotDirty || !lastCam.equals(camera.matrixWorld) || lastAspect !== camera.aspect) {
+    rendererR.render(sceneR, camera); lastCam.copy(camera.matrixWorld); lastAspect = camera.aspect; robotDirty = false;
+  }
+  updateLabels();
+  requestAnimationFrame(loop);
+}
+const FILM = params.has('film');
+if (!FILM) {
+  applySlide();
+  camera.position.set(...SLIDES[si].cam[0]); controls.target.set(...SLIDES[si].cam[1]); camAnim = null;
+  requestAnimationFrame(loop);
+}
+loadRobot();
+window.__deck = { go, scene, camera, cr, rb };
+
+// ---------------------------------------------------------------- film mode (?film): a black, nearly text-free
+// animation rendered frame by frame (window.__film.frame(t)) and recorded to video for slides.
+if (FILM) {
+  document.body.classList.add('film');
+  floor.visible = false;
+  const PR = 1.35; // render above 1080p so the digital push-ins stay sharp
+  renderer.setPixelRatio(PR); rendererR.setPixelRatio(PR); resize();
+  const wrap = document.createElement('div'); wrap.id = 'camwrap';
+  document.body.insertBefore(wrap, document.getElementById('stage'));
+  wrap.append(document.getElementById('stage'), svg, labelsEl);
+  const dip = document.createElement('div'); dip.id = 'dip'; document.body.appendChild(dip);
+  const V = THREE.Vector3;
+  const lerp = (a, b, k) => a + (b - a) * k;
+  const crW = (x, y, z) => new V(CRX + x, y, z);
+  const at = (o, off = [0, 0, 0]) => () => o.localToWorld(new V(...off));
+  const WIDE = [new V(-0.24, 0.6, 1.95), new V(-0.24, 0.26, 0)];
+  const beltTex2 = beltTex.clone(); beltTex2.needsUpdate = true;
+  yBeltBot.userData.mat = yBeltBot.material = new THREE.MeshStandardMaterial({ color: 0xffffff, map: beltTex2, roughness: 0.8 });
+  const RB_MOTORS = ['Drive Motor', 'Intake Motor', 'Launcher Motor', 'Speed Servo', 'Hopper Servo'];
+  const shots = [
+    // 1. sweep around the printer while it prints
+    { dur: 5, robot: false, cam: (k) => {
+      const e = ease(k), a = lerp(1.0, -0.45, e), rad = lerp(1.3, 0.9, e), tgt = crW(-0.12, lerp(0.34, 0.24, e), 0);
+      return [tgt.clone().add(new V(Math.sin(a) * rad, lerp(0.42, 0.12, e), Math.cos(a) * rad)), tgt]; } },
+    // 2. close-up: the motor turns a pulley, the pulley pulls the belt, the belt moves the bed
+    { dur: 6.5, robot: false, cam: (k) => {
+      const e = ease(k), tgt = crW(0.03, 0.06, -0.258), dir = new V(lerp(0.55, 0.85, e), lerp(0.55, 0.3, e), lerp(-0.75, -0.25, e)).normalize();
+      return [tgt.clone().addScaledVector(dir, lerp(0.46, 0.15, e)), tgt]; },
+      labels: [[at(yMotor), 'MOTOR', -190, -120], [at(yPul), 'PULLEY', 170, -130], [at(yBeltTop, [0, 0, -0.17]), 'BELT', -150, 110]] },
+    // 3. pull back to reveal the robot
+    { dur: 4, zoom: [1.45, 1.0], origin: [0.3, 0.6] },
+    { key: 'motor', dur: 5.5, zoom: [1.0, 1.08], origin: [0.5, 0.6], crCats: ['motor'], rbNames: RB_MOTORS,
+      cr: [[at(xMotor), 'MOTOR', -90, -70], [at(yMotor), 'MOTOR', -40, 80], [at(zMotor), 'MOTOR', -110, 30], [at(eMotor), 'MOTOR', -90, -50]],
+      rb: [[rbAt('n:Drive Motor'), 'MOTOR', 100, 80], [rbAt('n:Launcher Motor'), 'MOTOR', 100, -60]] },
+    { key: 'pulley', dur: 6, zoom: [1.12, 1.02], origin: [0.55, 0.62], crCats: ['motor', 'pulley'], rbNames: ['Drive Motor', 'Mecanum Wheel'],
+      cr: [[at(yPul), 'PULLEY', 60, 80], [at(xIdler), 'PULLEY', 80, -60], [at(gan, [-0.05, 0.022, 0.036]), 'BELT', -20, -90]],
+      rb: [[rbAt('n:Mecanum Wheel', 0.4), 'WHEEL', 100, 80], [rbAt('n:Drive Motor'), 'MOTOR', 90, -70]] },
+    { key: 'power', dur: 5, zoom: [1.0, 1.08], origin: [0.35, 0.6], crCats: ['power'], hot: ['power'], rbNames: CAT_BY_NAME.power,
+      cr: [[at(psu), 'POWER', -80, 90]], rb: [[rbAt('n:12V Battery'), 'POWER', 100, -70]] },
+    { key: 'brain', dur: 5, zoom: [1.08, 1.0], origin: [0.6, 0.55], crCats: ['brain'], rbNames: [], hub: true,
+      cr: [[at(board), 'BRAIN', -60, -110]], rb: [[hubAt, 'BRAIN', 100, -50]] },
+    { key: 'sensor', dur: 6, zoom: [1.0, 1.1], origin: [0.5, 0.6], crCats: ['sensor'], hot: ['sensor'], rbNames: ['Drive Motor'], hub: true,
+      cr: [[at(hotTherm), 'TEMPERATURE SENSOR', 120, 50, 1], [at(bedTherm), 'TEMPERATURE SENSOR', 90, 80, 1]],
+      rb: [[rbAt('n:Drive Motor', 0.5), 'POSITION SENSOR', 110, 80], [hubAt, 'POSITION SENSOR', 100, -50]] },
+    { dur: 4, zoom: [1.0, 1.15], origin: [0.5, 0.55] },
+  ];
+  let t0 = 0; for (const sh of shots) { sh.t0 = t0; t0 += sh.dur; }
+  const TOTAL = t0;
+  let cur = -1;
+  const lastR = new THREE.Matrix4();
+  function enter(i) {
+    cur = i; const sh = shots[i];
+    const showRb = sh.robot !== false;
+    if (rb.visible !== showRb) { rb.visible = showRb; robotDirty = true; }
+    highlightCR(sh.crCats || null, sh.hot || []);
+    if (robotReady) highlightRB(sh.rbNames === undefined ? null : sh.rbNames);
+    if (hubG && robotBox) { hubG.visible = !!sh.hub; hubG.position.set(RBX, robotBox.max.y + 0.09, 0); }
+    const list = sh.labels ? sh.labels : [...(sh.cr || []), ...(showRb && robotReady ? sh.rb || [] : [])];
+    setLabels(list.map(([a, w, dx, dy, hot]) => ({ at: a, html: `<b>${w}</b>`, dx, dy, hot: !!hot })));
+  }
+  let simT = 0;
+  window.__film = {
+    TOTAL, shots: shots.map((s) => ({ key: s.key || null, t0: s.t0, dur: s.dur })),
+    ready: () => robotReady || NO_ROBOT,
+    frame(t) {
+      const dt = Math.max(0, t - simT); simT = t;
+      let i = shots.findIndex((s) => t >= s.t0 && t < s.t0 + s.dur); if (i < 0) i = shots.length - 1;
+      if (i !== cur) enter(i);
+      const sh = shots[i], k = Math.min(1, (t - sh.t0) / sh.dur);
+      // camera: a real 3D move on printer shots, a fixed wide view plus a digital push on side-by-side shots
+      const [pos, tgt] = sh.cam ? sh.cam(k) : WIDE;
+      camera.position.copy(pos); camera.lookAt(tgt); camera.updateMatrixWorld();
+      if (rb.visible && !lastR.equals(camera.matrixWorld)) robotDirty = true;
+      const z = sh.zoom ? lerp(sh.zoom[0], sh.zoom[1], ease(k)) : 1;
+      const o = sh.origin || [0.5, 0.5];
+      wrap.style.transformOrigin = `${o[0] * 100}% ${o[1] * 100}%`; wrap.style.transform = `scale(${z})`;
+      // labels pop in, fade out
+      const tin = Math.min(1, Math.max(0, (t - sh.t0 - (sh.cam ? 1.2 : 0.2)) / 0.35));
+      const tout = Math.min(1, Math.max(0, (sh.t0 + sh.dur - t) / 0.3));
+      const a = Math.min(tin, tout), sc = 0.7 + 0.3 * (1 - Math.pow(1 - tin, 3));
+      for (const l of labels) { l.el.style.opacity = a; l.el.style.transform = `translate(-50%,-50%) scale(${sc})`; l.line.setAttribute('opacity', a * 0.85); l.dot.setAttribute('opacity', a); }
+      // quick dip to black on every cut
+      let d = 0; for (const s2 of shots) if (s2.t0 > 0) d = Math.max(d, 1 - Math.abs(t - s2.t0) / 0.14);
+      dip.style.opacity = Math.max(0, d);
+      HIP.emissiveIntensity = 0.45 + 0.3 * Math.sin(t * 5);
+      for (let n = 0; n < 4; n++) stepPrint(dt / 4);
+      // the motor turns the pulley, the pulley pulls the belt, the belt moves the bed
+      yPul.userData.spin.rotation.y = -bedG.position.z / 0.0062;
+      yIdler.userData.spin.rotation.y = -bedG.position.z / 0.0062;
+      xIdler.userData.spin.rotation.y = car.position.x / 0.0062;
+      beltTex.offset.y = -bedG.position.z / 0.002; beltTex2.offset.y = bedG.position.z / 0.002;
+      updateTube();
+      spool.rotation.x -= dt * 0.4;
+      if (hubG && hubG.visible) hubG.rotation.y += dt * 0.6;
+      renderer.render(scene, camera);
+      if (robotDirty) { rendererR.render(sceneR, camera); lastR.copy(camera.matrixWorld); robotDirty = false; }
+      updateLabels();
+    },
+  };
+}
+
+</script>
+</body>
+</html>
