@@ -75,7 +75,7 @@ export const INSPECT = [
   'Power wires are thick enough and the right colours: red for plus, black for minus [R609, R610]',
   'Hubs, wires and lights can be seen by the inspector [R606]',
   'At least 2 number signs on sides at least 90° apart, the right size and alliance colour [R401–R403]',
-  'Control Hub named with our team number plus -RC, and Driver Hub plus -DS (like 12345-RC) [R705]',
+  'Control Hub named 37690-RC and Driver Hub named 37690-DS [R705]',
   'Robot stops right away when the Driver Hub says stop',
 ];
 // Quick check before every match.
