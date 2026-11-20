@@ -143,6 +143,9 @@ pre .n{color:#ffb35c}
 
 .hint{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);font:500 11px var(--mono);color:var(--dim);letter-spacing:.08em;z-index:4;opacity:.8}
 
+body.film,body.film #stage{background:#000}
+body.film .grid-bg,body.film .top,body.film .ctrl,body.film .hint,body.film .slide,body.film .loadpill{display:none!important}
+body.film .lbl{transition:none;opacity:1;font-size:21px;font-weight:700;letter-spacing:.14em;padding:8px 14px;border-color:rgba(232,245,66,.5);background:rgba(0,0,0,.75)}
 @media (max-width:760px){
   .top{padding:10px 14px}
   .prog i{width:12px}
@@ -967,11 +970,69 @@ function loop(now) {
   updateLabels();
   requestAnimationFrame(loop);
 }
-applySlide();
-camera.position.set(...SLIDES[si].cam[0]); controls.target.set(...SLIDES[si].cam[1]); camAnim = null;
-requestAnimationFrame(loop);
+const FILM = params.has('film');
+if (!FILM) {
+  applySlide();
+  camera.position.set(...SLIDES[si].cam[0]); controls.target.set(...SLIDES[si].cam[1]); camAnim = null;
+  requestAnimationFrame(loop);
+}
 loadRobot();
 window.__deck = { go, scene, camera, cr, rb };
+
+// ---------------------------------------------------------------- film mode (?film): a black, nearly text-free
+// animation rendered frame by frame (window.__film.frame(t)) and recorded to video for slides.
+if (FILM) {
+  document.body.classList.add('film');
+  floor.visible = false;
+  const FILMCAM = [[-0.24, 0.6, 1.95], [-0.24, 0.26, 0]];
+  camera.position.set(...FILMCAM[0]); controls.target.set(...FILMCAM[1]); controls.update();
+  const word = (w) => `<b>${w}</b>`;
+  const segs = [
+    { key: null, dur: 4 },
+    { key: 'motor', dur: 6, cr: [[wp(xMotor), 'MOTOR', -90, -70], [wp(yMotor), 'MOTOR', -40, 80], [wp(zMotor), 'MOTOR', -110, 30], [wp(eMotor), 'MOTOR', -90, -50]],
+      rb: [[rbAt('n:Drive Motor'), 'MOTOR', 100, 80], [rbAt('n:Launcher Motor'), 'MOTOR', 100, -60]] },
+    { key: 'wheel', dur: 6, cr: [[wp(car, [0, -0.03, 0.05]), 'WHEELS', 100, -70], [wp(gan, [0.1, 0.022, 0.036]), 'BELT', 50, -90], [wp(bedG, [0.03, 0.075, 0.09]), 'WHEELS', 80, 70]],
+      rb: [[rbAt('n:Mecanum Wheel', 0.4), 'WHEELS', 100, 80], [rbAt('n:Flywheel'), 'WHEEL', 100, -70]] },
+    { key: 'power', dur: 6, hot: ['power'], cr: [[wp(psu), 'POWER', -80, 90]], rb: [[rbAt('n:12V Battery'), 'POWER', 100, -70]] },
+    { key: 'brain', dur: 6, cr: [[wp(board), 'BRAIN', -60, -110]], rb: [[hubAt, 'BRAIN', 100, -50]] },
+    { key: 'sensor', dur: 6, hot: ['sensor'], cr: [[wp(hotTherm), 'TEMPERATURE SENSOR', 120, 50], [wp(bedTherm), 'TEMPERATURE SENSOR', 90, 80]],
+      rb: [[rbAt('n:Drive Motor', 0.5), 'POSITION SENSOR', 110, 80], [hubAt, 'POSITION SENSOR', 100, -50]] },
+    { key: null, dur: 4 },
+  ];
+  let t0 = 0; for (const sg of segs) { sg.t0 = t0; t0 += sg.dur; }
+  const TOTAL = t0;
+  let cur = -1;
+  function enter(i) {
+    cur = i; const sg = segs[i];
+    highlightCR(sg.key ? [sg.key === 'sensor' ? 'sensor' : sg.key] : null, sg.hot || []);
+    if (sg.key === 'brain') highlightRB('__none'); else highlightRB(sg.key);
+    if (hubG && robotBox) { hubG.visible = sg.key === 'brain' || sg.key === 'sensor'; hubG.position.set(RBX, robotBox.max.y + 0.09, 0); }
+    const list = sg.key ? [...sg.cr, ...sg.rb].map(([at, w, dx, dy]) => ({ at, html: word(w), dx, dy, hot: (sg.hot || []).length && sg.cr.some((c) => c[1] === w) && sg.key === 'sensor' })) : [];
+    setLabels(list);
+  }
+  let simT = 0;
+  window.__film = {
+    TOTAL, segs: segs.map((s) => ({ key: s.key, t0: s.t0, dur: s.dur })),
+    ready: () => robotReady || NO_ROBOT,
+    frame(t) {
+      const dt = Math.max(0, t - simT); simT = t;
+      let i = segs.findIndex((s) => t >= s.t0 && t < s.t0 + s.dur); if (i < 0) i = segs.length - 1;
+      if (i !== cur) enter(i);
+      const sg = segs[i];
+      const a = Math.min(1, (t - sg.t0) / 0.5, (sg.t0 + sg.dur - t) / 0.4);
+      for (const l of labels) { l.el.style.opacity = a; l.line.setAttribute('opacity', a * 0.85); l.dot.setAttribute('opacity', a); }
+      // a few small steps keep the print path smooth
+      for (let k = 0; k < 4; k++) stepPrint(dt / 4);
+      updateTube();
+      spool.rotation.x -= dt * 0.4;
+      if (hubG && hubG.visible) hubG.rotation.y += dt * 0.5;
+      renderer.render(scene, camera);
+      if (robotDirty) { rendererR.render(sceneR, camera); robotDirty = false; }
+      updateLabels();
+      return robotDirty;
+    },
+  };
+}
 </script>
 </body>
 </html>
