@@ -145,6 +145,8 @@ pre .n{color:#ffb35c}
 
 body.film,body.film #stage{background:#000}
 body.film .grid-bg,body.film .top,body.film .ctrl,body.film .hint,body.film .slide,body.film .loadpill{display:none!important}
+body.film #camwrap{position:fixed;inset:0}
+#dip{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:20}
 body.film .lbl{transition:none;opacity:1;font-size:21px;font-weight:700;letter-spacing:.14em;padding:8px 14px;border-color:rgba(232,245,66,.5);background:rgba(0,0,0,.75)}
 @media (max-width:760px){
   .top{padding:10px 14px}
@@ -360,6 +362,7 @@ const M = {
   copper: new THREE.MeshStandardMaterial({ color: 0xc87533, metalness: 0.9, roughness: 0.35 }),
 };
 const HI = new THREE.MeshStandardMaterial({ color: 0xE8F542, emissive: 0xE8F542, emissiveIntensity: 0.55, metalness: 0.1, roughness: 0.4 });
+const HIP = new THREE.MeshStandardMaterial({ color: 0xE8F542, emissive: 0xE8F542, emissiveIntensity: 0.55, metalness: 0.1, roughness: 0.4 });
 const HOT = new THREE.MeshStandardMaterial({ color: 0xff6a3d, emissive: 0xff5a20, emissiveIntensity: 0.8, metalness: 0.1, roughness: 0.4 });
 const GHOST = new THREE.MeshBasicMaterial({ color: 0x3a6fb0, transparent: true, opacity: 0.06, depthWrite: false });
 const EDGE = new THREE.LineBasicMaterial({ color: 0x5fd4ff, transparent: true, opacity: 0.28 });
@@ -408,11 +411,37 @@ function vwheel(parent, x, y, z, axis = 'z') {
   if (axis === 'z') w.rotation.x = Math.PI / 2; else if (axis === 'x') w.rotation.z = Math.PI / 2;
   return w;
 }
+// GT2-style pulley: 20 teeth, a flange each side, set screw so you can see it turn
+function pulleyGeo() {
+  const g = new THREE.CylinderGeometry(0.0062, 0.0062, 0.008, 80, 1);
+  const pos = g.attributes.position;
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i), z = pos.getZ(i), rr = Math.hypot(x, z);
+    if (rr < 0.006) continue;
+    const a = Math.atan2(z, x), tooth = Math.cos(a * 20) > 0.2 ? 1 : 0.86;
+    pos.setX(i, Math.cos(a) * 0.0062 * tooth); pos.setZ(i, Math.sin(a) * 0.0062 * tooth);
+  }
+  g.computeVertexNormals();
+  return g;
+}
 function pulley(parent, x, y, z, axis = 'y') {
-  const p = add(parent, C(0.0065, 0.012, 16), M.aluDark, x, y, z, 'wheel', false);
+  const p = new THREE.Group(); p.position.set(x, y, z); parent.add(p);
   if (axis === 'z') p.rotation.x = Math.PI / 2; else if (axis === 'x') p.rotation.z = Math.PI / 2;
+  const spin = new THREE.Group(); p.add(spin); p.userData.spin = spin;
+  add(spin, pulleyGeo(), M.aluDark, 0, 0, 0, 'pulley', false);
+  add(spin, C(0.0085, 0.0012, 32), M.alu, 0, 0.0046, 0, 'pulley', false);
+  add(spin, C(0.0085, 0.0012, 32), M.alu, 0, -0.0046, 0, 'pulley', false);
+  add(spin, C(0.0055, 0.006, 24), M.aluDark, 0, -0.008, 0, 'pulley', false);
+  add(spin, B(0.0022, 0.0022, 0.004), M.black, 0, -0.008, 0.0045, 'pulley', false);
   return p;
 }
+// belt strand with moving teeth (texture slides as the belt moves)
+const beltTex = (() => {
+  const cv = document.createElement('canvas'); cv.width = 8; cv.height = 64; const x = cv.getContext('2d');
+  x.fillStyle = '#111317'; x.fillRect(0, 0, 8, 64); x.fillStyle = '#3a3e46'; x.fillRect(0, 0, 8, 26);
+  const t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.magFilter = THREE.NearestFilter; return t;
+})();
+const beltMat = new THREE.MeshStandardMaterial({ color: 0xffffff, map: beltTex, roughness: 0.8 });
 
 const cr = new THREE.Group(); scene.add(cr);
 const CRX = -0.5; cr.position.x = CRX;
@@ -428,10 +457,11 @@ for (const [fx, fz] of [[-0.24, 0.24], [0.24, 0.24], [-0.24, -0.24], [0.24, -0.2
 // Y motor + belt at the back of the rail
 const yMotor = stepper(cr, 0, 0.06, -0.262, 0, 0, 'motor', 'Y');
 yMotor.rotation.y = Math.PI / 2;
-pulley(cr, 0.03, 0.06, -0.262, 'x');
-add(cr, B(0.006, 0.0015, 0.5), M.belt, 0.03, 0.074, -0.01, 'wheel', false);
-add(cr, B(0.006, 0.0015, 0.5), M.belt, 0.03, 0.046, -0.01, 'wheel', false);
-pulley(cr, 0.03, 0.06, 0.24, 'x');
+const yPul = pulley(cr, 0.036, 0.06, -0.262, 'x');
+beltTex.repeat.set(1, 0.5 / 0.002);
+const yBeltTop = add(cr, B(0.006, 0.0015, 0.5), beltMat, 0.036, 0.0665, -0.01, 'pulley', false);
+const yBeltBot = add(cr, B(0.006, 0.0015, 0.5), beltMat, 0.036, 0.0535, -0.01, 'pulley', false);
+const yIdler = pulley(cr, 0.036, 0.06, 0.24, 'x');
 // Y endstop
 add(cr, B(0.012, 0.02, 0.006), M.red, -0.04, 0.09, -0.2, 'sensor');
 
@@ -472,9 +502,9 @@ for (const s of [-1, 1]) {
 }
 const xMotor = stepper(gan, -0.27, 0.0, 0.075, 0, 0, 'motor', 'X');
 const zNut = add(gan, B(0.02, 0.012, 0.02), M.brass, -0.25, -0.03, 0.05, 'wheel', false);
-add(gan, B(0.53, 0.0015, 0.006), M.belt, 0, 0.022, 0.036, 'wheel', false);
-add(gan, B(0.53, 0.0015, 0.006), M.belt, 0, -0.022, 0.036, 'wheel', false);
-pulley(gan, 0.26, 0, 0.036, 'z');
+add(gan, B(0.53, 0.0015, 0.006), M.belt, 0, 0.022, 0.036, 'pulley', false);
+add(gan, B(0.53, 0.0015, 0.006), M.belt, 0, -0.022, 0.036, 'pulley', false);
+const xIdler = pulley(gan, 0.26, 0, 0.036, 'z');
 add(gan, B(0.012, 0.02, 0.006), M.red, 0.22, 0.035, 0.03, 'sensor'); // X endstop
 
 // carriage + hotend (moves in X)
@@ -674,7 +704,7 @@ function highlightCR(cats, hot = []) {
     const cat = m.userData.cat;
     const on = !cats || cats.includes(cat) || (cat === 'box' && false);
     let mat = m.userData.mat;
-    if (cats) mat = hot.includes(cat) ? HOT : cats.includes(cat) ? HI : GHOST;
+    if (cats) mat = hot.includes(cat) ? HOT : cats.includes(cat) ? HIP : GHOST;
     if (cats && cat === 'box') mat = GHOST; // see inside the control box when focusing
     m.material = mat;
     if (m.userData.edge) m.userData.edge.material = cats && !on ? EDGE_GHOST : EDGE;
@@ -682,7 +712,7 @@ function highlightCR(cats, hot = []) {
   layerMat.opacity = 1;
 }
 function highlightRB(cat) {
-  const names = cat ? CAT_BY_NAME[cat] : null;
+  const names = Array.isArray(cat) ? cat : cat ? CAT_BY_NAME[cat] : null;
   robotDirty = true;
   for (const p of rbParts) p.mesh.material = !names ? p.mesh.userData.orig : names.includes(p.name) ? (cat === 'sensor' ? HI : HI) : GHOST;
 }
@@ -984,55 +1014,102 @@ window.__deck = { go, scene, camera, cr, rb };
 if (FILM) {
   document.body.classList.add('film');
   floor.visible = false;
-  const FILMCAM = [[-0.24, 0.6, 1.95], [-0.24, 0.26, 0]];
-  camera.position.set(...FILMCAM[0]); controls.target.set(...FILMCAM[1]); controls.update();
-  const word = (w) => `<b>${w}</b>`;
-  const segs = [
-    { key: null, dur: 4 },
-    { key: 'motor', dur: 6, cr: [[wp(xMotor), 'MOTOR', -90, -70], [wp(yMotor), 'MOTOR', -40, 80], [wp(zMotor), 'MOTOR', -110, 30], [wp(eMotor), 'MOTOR', -90, -50]],
+  const PR = 1.35; // render above 1080p so the digital push-ins stay sharp
+  renderer.setPixelRatio(PR); rendererR.setPixelRatio(PR); resize();
+  const wrap = document.createElement('div'); wrap.id = 'camwrap';
+  document.body.insertBefore(wrap, document.getElementById('stage'));
+  wrap.append(document.getElementById('stage'), svg, labelsEl);
+  const dip = document.createElement('div'); dip.id = 'dip'; document.body.appendChild(dip);
+  const V = THREE.Vector3;
+  const lerp = (a, b, k) => a + (b - a) * k;
+  const crW = (x, y, z) => new V(CRX + x, y, z);
+  const at = (o, off = [0, 0, 0]) => () => o.localToWorld(new V(...off));
+  const WIDE = [new V(-0.24, 0.6, 1.95), new V(-0.24, 0.26, 0)];
+  const beltTex2 = beltTex.clone(); beltTex2.needsUpdate = true;
+  yBeltBot.userData.mat = yBeltBot.material = new THREE.MeshStandardMaterial({ color: 0xffffff, map: beltTex2, roughness: 0.8 });
+  const RB_MOTORS = ['Drive Motor', 'Intake Motor', 'Launcher Motor', 'Speed Servo', 'Hopper Servo'];
+  const shots = [
+    // 1. sweep around the printer while it prints
+    { dur: 5, robot: false, cam: (k) => {
+      const e = ease(k), a = lerp(1.0, -0.45, e), rad = lerp(1.3, 0.9, e), tgt = crW(-0.12, lerp(0.34, 0.24, e), 0);
+      return [tgt.clone().add(new V(Math.sin(a) * rad, lerp(0.42, 0.12, e), Math.cos(a) * rad)), tgt]; } },
+    // 2. close-up: the motor turns a pulley, the pulley pulls the belt, the belt moves the bed
+    { dur: 6.5, robot: false, cam: (k) => {
+      const e = ease(k), tgt = crW(0.03, 0.06, -0.258), dir = new V(lerp(0.55, 0.85, e), lerp(0.55, 0.3, e), lerp(-0.75, -0.25, e)).normalize();
+      return [tgt.clone().addScaledVector(dir, lerp(0.46, 0.15, e)), tgt]; },
+      labels: [[at(yMotor), 'MOTOR', -190, -120], [at(yPul), 'PULLEY', 170, -130], [at(yBeltTop, [0, 0, -0.17]), 'BELT', -150, 110]] },
+    // 3. pull back to reveal the robot
+    { dur: 4, zoom: [1.45, 1.0], origin: [0.3, 0.6] },
+    { key: 'motor', dur: 5.5, zoom: [1.0, 1.08], origin: [0.5, 0.6], crCats: ['motor'], rbNames: RB_MOTORS,
+      cr: [[at(xMotor), 'MOTOR', -90, -70], [at(yMotor), 'MOTOR', -40, 80], [at(zMotor), 'MOTOR', -110, 30], [at(eMotor), 'MOTOR', -90, -50]],
       rb: [[rbAt('n:Drive Motor'), 'MOTOR', 100, 80], [rbAt('n:Launcher Motor'), 'MOTOR', 100, -60]] },
-    { key: 'wheel', dur: 6, cr: [[wp(car, [0, -0.03, 0.05]), 'WHEELS', 100, -70], [wp(gan, [0.1, 0.022, 0.036]), 'BELT', 50, -90], [wp(bedG, [0.03, 0.075, 0.09]), 'WHEELS', 80, 70]],
-      rb: [[rbAt('n:Mecanum Wheel', 0.4), 'WHEELS', 100, 80], [rbAt('n:Flywheel'), 'WHEEL', 100, -70]] },
-    { key: 'power', dur: 6, hot: ['power'], cr: [[wp(psu), 'POWER', -80, 90]], rb: [[rbAt('n:12V Battery'), 'POWER', 100, -70]] },
-    { key: 'brain', dur: 6, cr: [[wp(board), 'BRAIN', -60, -110]], rb: [[hubAt, 'BRAIN', 100, -50]] },
-    { key: 'sensor', dur: 6, hot: ['sensor'], cr: [[wp(hotTherm), 'TEMPERATURE SENSOR', 120, 50], [wp(bedTherm), 'TEMPERATURE SENSOR', 90, 80]],
+    { key: 'pulley', dur: 6, zoom: [1.12, 1.02], origin: [0.55, 0.62], crCats: ['motor', 'pulley'], rbNames: ['Drive Motor', 'Mecanum Wheel'],
+      cr: [[at(yPul), 'PULLEY', 60, 80], [at(xIdler), 'PULLEY', 80, -60], [at(gan, [-0.05, 0.022, 0.036]), 'BELT', -20, -90]],
+      rb: [[rbAt('n:Mecanum Wheel', 0.4), 'WHEEL', 100, 80], [rbAt('n:Drive Motor'), 'MOTOR', 90, -70]] },
+    { key: 'power', dur: 5, zoom: [1.0, 1.08], origin: [0.35, 0.6], crCats: ['power'], hot: ['power'], rbNames: CAT_BY_NAME.power,
+      cr: [[at(psu), 'POWER', -80, 90]], rb: [[rbAt('n:12V Battery'), 'POWER', 100, -70]] },
+    { key: 'brain', dur: 5, zoom: [1.08, 1.0], origin: [0.6, 0.55], crCats: ['brain'], rbNames: [], hub: true,
+      cr: [[at(board), 'BRAIN', -60, -110]], rb: [[hubAt, 'BRAIN', 100, -50]] },
+    { key: 'sensor', dur: 6, zoom: [1.0, 1.1], origin: [0.5, 0.6], crCats: ['sensor'], hot: ['sensor'], rbNames: ['Drive Motor'], hub: true,
+      cr: [[at(hotTherm), 'TEMPERATURE SENSOR', 120, 50, 1], [at(bedTherm), 'TEMPERATURE SENSOR', 90, 80, 1]],
       rb: [[rbAt('n:Drive Motor', 0.5), 'POSITION SENSOR', 110, 80], [hubAt, 'POSITION SENSOR', 100, -50]] },
-    { key: null, dur: 4 },
+    { dur: 4, zoom: [1.0, 1.15], origin: [0.5, 0.55] },
   ];
-  let t0 = 0; for (const sg of segs) { sg.t0 = t0; t0 += sg.dur; }
+  let t0 = 0; for (const sh of shots) { sh.t0 = t0; t0 += sh.dur; }
   const TOTAL = t0;
   let cur = -1;
+  const lastR = new THREE.Matrix4();
   function enter(i) {
-    cur = i; const sg = segs[i];
-    highlightCR(sg.key ? [sg.key === 'sensor' ? 'sensor' : sg.key] : null, sg.hot || []);
-    if (sg.key === 'brain') highlightRB('__none'); else highlightRB(sg.key);
-    if (hubG && robotBox) { hubG.visible = sg.key === 'brain' || sg.key === 'sensor'; hubG.position.set(RBX, robotBox.max.y + 0.09, 0); }
-    const list = sg.key ? [...sg.cr, ...sg.rb].map(([at, w, dx, dy]) => ({ at, html: word(w), dx, dy, hot: (sg.hot || []).length && sg.cr.some((c) => c[1] === w) && sg.key === 'sensor' })) : [];
-    setLabels(list);
+    cur = i; const sh = shots[i];
+    const showRb = sh.robot !== false;
+    if (rb.visible !== showRb) { rb.visible = showRb; robotDirty = true; }
+    highlightCR(sh.crCats || null, sh.hot || []);
+    if (robotReady) highlightRB(sh.rbNames === undefined ? null : sh.rbNames);
+    if (hubG && robotBox) { hubG.visible = !!sh.hub; hubG.position.set(RBX, robotBox.max.y + 0.09, 0); }
+    const list = sh.labels ? sh.labels : [...(sh.cr || []), ...(showRb && robotReady ? sh.rb || [] : [])];
+    setLabels(list.map(([a, w, dx, dy, hot]) => ({ at: a, html: `<b>${w}</b>`, dx, dy, hot: !!hot })));
   }
   let simT = 0;
   window.__film = {
-    TOTAL, segs: segs.map((s) => ({ key: s.key, t0: s.t0, dur: s.dur })),
+    TOTAL, shots: shots.map((s) => ({ key: s.key || null, t0: s.t0, dur: s.dur })),
     ready: () => robotReady || NO_ROBOT,
     frame(t) {
       const dt = Math.max(0, t - simT); simT = t;
-      let i = segs.findIndex((s) => t >= s.t0 && t < s.t0 + s.dur); if (i < 0) i = segs.length - 1;
+      let i = shots.findIndex((s) => t >= s.t0 && t < s.t0 + s.dur); if (i < 0) i = shots.length - 1;
       if (i !== cur) enter(i);
-      const sg = segs[i];
-      const a = Math.min(1, (t - sg.t0) / 0.5, (sg.t0 + sg.dur - t) / 0.4);
-      for (const l of labels) { l.el.style.opacity = a; l.line.setAttribute('opacity', a * 0.85); l.dot.setAttribute('opacity', a); }
-      // a few small steps keep the print path smooth
-      for (let k = 0; k < 4; k++) stepPrint(dt / 4);
+      const sh = shots[i], k = Math.min(1, (t - sh.t0) / sh.dur);
+      // camera: a real 3D move on printer shots, a fixed wide view plus a digital push on side-by-side shots
+      const [pos, tgt] = sh.cam ? sh.cam(k) : WIDE;
+      camera.position.copy(pos); camera.lookAt(tgt); camera.updateMatrixWorld();
+      if (rb.visible && !lastR.equals(camera.matrixWorld)) robotDirty = true;
+      const z = sh.zoom ? lerp(sh.zoom[0], sh.zoom[1], ease(k)) : 1;
+      const o = sh.origin || [0.5, 0.5];
+      wrap.style.transformOrigin = `${o[0] * 100}% ${o[1] * 100}%`; wrap.style.transform = `scale(${z})`;
+      // labels pop in, fade out
+      const tin = Math.min(1, Math.max(0, (t - sh.t0 - (sh.cam ? 1.2 : 0.2)) / 0.35));
+      const tout = Math.min(1, Math.max(0, (sh.t0 + sh.dur - t) / 0.3));
+      const a = Math.min(tin, tout), sc = 0.7 + 0.3 * (1 - Math.pow(1 - tin, 3));
+      for (const l of labels) { l.el.style.opacity = a; l.el.style.transform = `translate(-50%,-50%) scale(${sc})`; l.line.setAttribute('opacity', a * 0.85); l.dot.setAttribute('opacity', a); }
+      // quick dip to black on every cut
+      let d = 0; for (const s2 of shots) if (s2.t0 > 0) d = Math.max(d, 1 - Math.abs(t - s2.t0) / 0.14);
+      dip.style.opacity = Math.max(0, d);
+      HIP.emissiveIntensity = 0.45 + 0.3 * Math.sin(t * 5);
+      for (let n = 0; n < 4; n++) stepPrint(dt / 4);
+      // the motor turns the pulley, the pulley pulls the belt, the belt moves the bed
+      yPul.userData.spin.rotation.y = -bedG.position.z / 0.0062;
+      yIdler.userData.spin.rotation.y = -bedG.position.z / 0.0062;
+      xIdler.userData.spin.rotation.y = car.position.x / 0.0062;
+      beltTex.offset.y = -bedG.position.z / 0.002; beltTex2.offset.y = bedG.position.z / 0.002;
       updateTube();
       spool.rotation.x -= dt * 0.4;
-      if (hubG && hubG.visible) hubG.rotation.y += dt * 0.5;
+      if (hubG && hubG.visible) hubG.rotation.y += dt * 0.6;
       renderer.render(scene, camera);
-      if (robotDirty) { rendererR.render(sceneR, camera); robotDirty = false; }
+      if (robotDirty) { rendererR.render(sceneR, camera); lastR.copy(camera.matrixWorld); robotDirty = false; }
       updateLabels();
-      return robotDirty;
     },
   };
 }
+
 </script>
 </body>
 </html>
