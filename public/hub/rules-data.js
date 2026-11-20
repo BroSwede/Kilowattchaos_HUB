@@ -42,13 +42,14 @@ export const GAME_BASICS = [
   ['Rankings', 'Winning matches earns ranking points. At a tournament, the top teams pick alliance partners for the playoffs.'],
   ['Awards', 'Judges also give awards for the engineering portfolio, the interview, outreach and team spirit. The Inspire Award is the top one and looks at everything a team does, not just the robot.'],
 ];
-// Robot rules that matter most to a new team. Numbers are FTC's usual limits; the manual for this season wins.
+// Robot rules that matter most to a new team, from the 2026-27 Competition Manual (rule numbers in brackets).
 export const ROBOT_RULES = [
-  ['Size', 'At the start of a match the robot must fit in an 18 × 18 × 18 inch box (about 46 cm). It can unfold after the match starts.'],
-  ['Brain and power', 'One REV Control Hub (it can add one Expansion Hub) and one official 12 V robot battery with a 20 A fuse. A main power switch that a referee can reach.'],
-  ['Motors and servos', 'Only legal FTC motors and servos, and only up to the season\'s limit (usually 8 DC motors and 10 servos).'],
-  ['Safe build', 'No sharp edges or pinch points that could hurt someone, no loose parts flying off, and wires tied down so they can\'t snag.'],
-  ['Inspection', 'Before a team can play, inspectors check the robot against these rules. Practice with the official checklist.'],
+  ['Size', 'At the start of a match the robot must fit in an 18 × 18 × 18 inch box (about 46 cm) and sit still. After the start it can grow to 18 × 24 inches and 29 inches tall, but it must be built so it can\'t grow past that, and it can\'t drop parts on purpose. [R102, R105]'],
+  ['Brain and power', 'One REV Control Hub controls the robot. Power comes from exactly one legal 12 V NiMH battery with a 20 A fuse, through one legal main power switch. [R601, R603, R701]'],
+  ['Motors and servos', 'Only motors on the legal list (our goBILDA Yellow Jackets are on it). At most 8 motors and 8 servos in total, and you can\'t open up or change them. [R501, R503, R504]'],
+  ['Number signs', 'At least 2 signs, on sides at least 90° apart. Each is at least 6.5 × 2.5 inches, solid red or blue, with white team numbers about 2.25 inches tall in one row. [R401–R403]'],
+  ['Safe build', 'No sharp edges or pinch points, nothing that damages the field or makes a mess, and the robot can be lifted off the field with the power off. [R201–R203]'],
+  ['Inspection', 'Before a team can play, inspectors check the robot against these rules. After big changes, ask for re-inspection. [I301, I303]'],
 ];
 // Safety in the shop and at events.
 export const SAFETY = [
@@ -58,17 +59,24 @@ export const SAFETY = [
   'Carry the robot with two people and the switch off.',
 ];
 
-// Practice robot inspection, also used by Logbook > Competitions. The official checklist is in the manual.
+// Robot inspection practice, based on the 2026-27 Competition Manual robot rules. Also used by Logbook > Competitions.
 export const INSPECT = [
-  'Robot fits inside the 18 × 18 × 18 inch starting size, with everything folded in',
-  'Battery is held down tight, and the main power switch is easy for a referee to reach',
-  'The 20 A fuse is the right one and the battery wires are not damaged',
-  'No sharp edges, pinch points or loose parts',
-  'All wires are tied down and away from wheels, gears and the launcher',
-  'Only legal motors and servos, within the season limits',
-  'Team number signs are on the robot, in the right alliance colour',
-  'Control Hub and Driver Hub software are up to date, and the robot is named correctly',
-  'Robot stops right away when the Driver Station says stop',
+  'Bring the whole robot, every part you might swap on, and the Driver Hub and gamepads [I301]',
+  'Folded up, the robot fits in an 18 × 18 × 18 inch box and nothing moves [R102]',
+  'Unfolded all the way, it stays inside 18 × 24 inches and 29 inches tall, and nothing can fall off [R105]',
+  'No sharp edges, pinch points or parts that could damage the field [R201, R202]',
+  'The robot can be lifted off the field and game pieces taken out with the power off [R203]',
+  'Every motor is on the legal list, and there are 8 or fewer [R501, R503]',
+  'Every servo is legal, and there are 8 or fewer [R502, R503]',
+  'No motor or servo has been opened up or changed [R504]',
+  'Exactly one legal 12 V NiMH battery, held down tight, with a 20 A fuse [R601, R604]',
+  'One legal main power switch, easy to reach and away from moving parts [R603]',
+  'No bare wire touching the metal frame (the frame is never part of a circuit) [R605]',
+  'Power wires are thick enough and the right colours: red for plus, black for minus [R609, R610]',
+  'Hubs, wires and lights can be seen by the inspector [R606]',
+  'At least 2 number signs on sides at least 90° apart, the right size and alliance colour [R401–R403]',
+  'Control Hub named with our team number plus -RC, and Driver Hub plus -DS (like 12345-RC) [R705]',
+  'Robot stops right away when the Driver Hub says stop',
 ];
 // Quick check before every match.
 export const PRE_MATCH = [
