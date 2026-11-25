@@ -708,3 +708,10 @@ details.acc .body b { color: var(--text); font-weight: 500; }
 .zv a.it:hover .t { text-decoration: underline; text-underline-offset: 3px; }
 .xr-part .end { color: var(--muted); }
 @media (max-width: 900px) { .xr-hero { grid-template-columns: minmax(0, 1fr); } }
+
+/* Learn, Handbook: the reference pages sit under one row of section buttons. */
+.hb { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.hb-nav { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 2px; }
+.hb-nav .chip { height: 40px; padding: 0 16px 0 12px; background: var(--card); color: var(--text); cursor: pointer; }
+.hb-nav .chip[aria-pressed="true"] { background: var(--solid); color: var(--on-solid); box-shadow: none; }
+@media (max-width: 720px) { .hb-nav { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin: 0 -4px; padding: 0 4px; } .hb-nav::-webkit-scrollbar { display: none; } .hb-nav .chip { flex: none; } }

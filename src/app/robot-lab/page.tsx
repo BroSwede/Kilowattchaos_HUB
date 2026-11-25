@@ -8,8 +8,8 @@ export const metadata = {
 const CSS = ['shell.css', 'zones.css', 'dive.css', 'lab.css'];
 
 // Public, no sign-in: the robot explainers on their own page to share with the team and families.
-// It reads the same topic list as the hub (public/hub/dive/index.js), so new dives show up here automatically,
-// grouped into the same three paths: Start here, Make it score, Go deeper.
+// It reads the same topic list as the hub (public/hub/dive/index.js), so new dives show up here automatically.
+// The trails (public/hub/dive/trails.js) come first: the same course as Learn, Trails in the hub, with progress kept on the device.
 const BODY = `<div class="page"><div class="frame lab-frame">
   <div class="topbar">
     <div class="tab">
@@ -21,7 +21,7 @@ const BODY = `<div class="page"><div class="frame lab-frame">
     <header class="lab-hero">
       <div class="eyebrow">Kilowatt Chaos · FTC team</div>
       <h2 class="hello">Open up our robot</h2>
-      <p class="lead">Our goBILDA StarterBot in 3D. Click any part to see what it does and open its explainer. Then work through the explainers in order. Checklists and a rules review are at the bottom.</p>
+      <p class="lead">Our goBILDA StarterBot in 3D. Click any part to see what it does and open its explainer. Then take the trails: five routes through the robot, each mission ending with a job on the real one. Checklists and a rules review are at the bottom.</p>
     </header>
     <section class="lab-robot" aria-labelledby="labRobotH">
       <div class="lab-sec-head"><h3 class="card-title" id="labRobotH">Click a part to learn about it</h3><span class="cap">The real robot, every one of its 418 parts</span></div>
@@ -41,6 +41,11 @@ const BODY = `<div class="page"><div class="frame lab-frame">
       <div class="lab-chips" id="partChips"></div>
       <p class="cap">It's a big download (about 143 MB), so use Wi-Fi on a phone. Drag to turn, scroll or pinch to zoom.</p>
     </section>
+    <section class="lab-sec" aria-labelledby="labTrailsH">
+      <div class="lab-sec-head"><h3 class="card-title" id="labTrailsH">Trails</h3><span class="cap">Guess, play, check, then one job on the real robot</span></div>
+      <div id="labTrails"></div>
+    </section>
+    <div class="lab-sec-head lab-all"><h3 class="card-title">Every explainer</h3><span class="cap">Open any of them, in any order</span></div>
     <div class="lab-levels" id="labLevels"></div>
     <section class="lab-rules" aria-labelledby="labRulesH">
       <div class="lab-sec-head"><h3 class="card-title" id="labRulesH">Review and checklists</h3><span class="cap">Come back here before an event. The official manual always wins.</span></div>
