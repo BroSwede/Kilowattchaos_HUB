@@ -99,7 +99,7 @@ const ZONES = [
   { id: 'home', name: 'Home', icon: 'home', subs: ['Dashboard', 'Shop TV', 'Customize'], q: "What's happening, and what's next?" },
   { id: 'robot', name: 'Robot', icon: 'bot', subs: ['3D Explorer', 'Versions', 'Subsystems', 'Specs and parts', 'AR and VR'], q: 'What does our robot look like now, and how did it get here?' },
   { id: 'build', name: 'Build', icon: 'wrench', subs: ['Ideas', 'Mechanism Lab', 'Print Shop', 'Parts and inventory'], q: 'How do we make it better, and can I get that part printed?' },
-  { id: 'learn', name: 'Learn', icon: 'book', subs: ['Paths', 'How it works', 'FIRST and BIOBUZZ', 'Setup and FAQ', 'Build tips', 'AI agents', 'Glossary'], q: 'How do I do this, and what do the rules say?' },
+  { id: 'learn', name: 'Learn', icon: 'book', subs: ['Trails', 'Skills', 'Explore', 'Handbook'], q: 'How does our robot work, and what do I learn next?' },
   { id: 'code', name: 'Code', icon: 'code', subs: ['BioBuzz XR', 'Our code', 'Snippets', 'Challenges'], q: 'Where do I write code, and does it work?' },
   { id: 'crew', name: 'Crew', icon: 'users', subs: ['Chat', 'Inspiration', 'People', 'Feedback'], q: "What's the team talking about?" },
   { id: 'logbook', name: 'Logbook', icon: 'logbook', subs: ['Calendar', 'Sessions', 'Progress', 'Competitions', 'Portfolio'], q: 'What did we do, and when is the next thing?' },
@@ -156,7 +156,7 @@ const SUB_ICONS = {
   Dashboard: 'home', 'Shop TV': 'play', Customize: 'sliders',
   '3D Explorer': 'bot', Versions: 'commit', Subsystems: 'layers', 'Specs and parts': 'note', 'AR and VR': 'max',
   Ideas: 'bulb', 'Mechanism Lab': 'wrench', 'Print Shop': 'printer', 'Parts and inventory': 'layers',
-  Paths: 'arrow', 'How it works': 'sliders', 'FIRST and BIOBUZZ': 'trophy', 'Setup and FAQ': 'help', 'Build tips': 'wrench', 'AI agents': 'sparkle', Glossary: 'book',
+  Trails: 'flag', Skills: 'check', Explore: 'sliders', Handbook: 'book',
   'BioBuzz XR': 'gamepad', 'Our code': 'code', Snippets: 'note', Challenges: 'flag',
   Chat: 'chat', Inspiration: 'sparkle', People: 'users', Feedback: 'help',
   Calendar: 'calendar', Sessions: 'clock', Progress: 'zap', Competitions: 'trophy', Portfolio: 'image',
@@ -197,8 +197,17 @@ function scrollHubTop() {
   const top = $('#hub').getBoundingClientRect().top;
   if (top < -40) $('#hub').scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
 }
+// Learn used to have seven pages. Old buttons, links and bookmarks land on the page that holds that content now.
+const LEARN_OLD = { Paths: ['Skills'], 'How it works': ['Explore'], 'FIRST and BIOBUZZ': ['Handbook', 'first'], 'Setup and FAQ': ['Handbook', 'setup'], 'Build tips': ['Handbook', 'tips'], 'AI agents': ['Handbook', 'agents'], Glossary: ['Handbook', 'glossary'] };
+function learnSub(sub) {
+  const hit = LEARN_OLD[sub];
+  if (!hit) return sub;
+  if (hit[1]) zstate.handbook = hit[1];
+  return hit[0];
+}
 function setZone(id, sub = 0, opts = {}) {
   const z = ZONES.find((q) => q.id === id) || ZONES[0];
+  if (z.id === 'learn' && typeof sub === 'string') sub = learnSub(sub);
   const changed = z.id !== zone;
   zone = z.id;
   closePop();
@@ -260,7 +269,8 @@ function fromHash() {
   const m = /^#([a-z]+)(?:\/([a-z0-9-]+))?/.exec(location.hash || '');
   const z = m && ZONES.find((q) => q.id === m[1]);
   if (!z) return false;
-  const i = m[2] ? z.subs.findIndex((s) => slug(s) === m[2]) : 0;
+  let i = m[2] ? z.subs.findIndex((s) => slug(s) === m[2]) : 0;
+  if (i < 0 && z.id === 'learn') { const old = Object.keys(LEARN_OLD).find((s) => slug(s) === m[2]); if (old) i = z.subs.indexOf(learnSub(old)); }
   setZone(z.id, Math.max(0, i), { noHash: true });
   return true;
 }
@@ -1040,7 +1050,7 @@ document.addEventListener('click', (e) => {
   goHomeCard(g.dataset.hgo === 'plan' ? '.w-plan' : '.w-tasks');
 });
 $('#moreBtn').addEventListener('click', (e) => showPop(e.currentTarget, `<h5>More zones</h5>
-  ${item('book', 'Learn', 'Paths, rules, setup and FAQ', 'data-zone="learn"')}
+  ${item('book', 'Learn', 'Trails, skills, explainers and the handbook', 'data-zone="learn"')}
   ${item('code', 'Code', 'BioBuzz XR and team code', 'data-zone="code"')}
   ${item('logbook', 'Logbook', 'Calendar, sessions, competitions', 'data-zone="logbook"')}
   ${item('search', 'Search everything', 'Pages, parts, people', 'id="moreSearch"')}`, true));
@@ -1222,6 +1232,13 @@ $('#sysRow').after(diveRow);
 // Deep dives can also be opened from anywhere else in the Hub (Learn uses these).
 // The detail is a topic key, or 'key:chapter' to open at one chapter.
 document.addEventListener('hub:dive', (e) => { const [key, at] = String(e.detail).split(':'); if (DIVES.some((d) => d.key === key)) startDive(key, null, at); });
+// A trail mission is one chapter run in four beats (dive/mission.js). The detail is { id: 'key:chapter', beat, people }.
+document.addEventListener('hub:mission', (e) => {
+  const d = e.detail || {}, [key, at] = String(d.id || '').split(':');
+  if (!DIVES.some((x) => x.key === key)) return;
+  if (viewer) viewer.stopAutoRotate();
+  openDive(key, { startAt: at, mission: { beat: d.beat, people: d.people || [] } });
+});
 document.addEventListener('click', (e) => {
   const b = e.target.closest('[data-opendive]');
   if (b) document.dispatchEvent(new CustomEvent('hub:dive', { detail: b.dataset.chapter ? `${b.dataset.opendive}:${b.dataset.chapter}` : b.dataset.opendive }));

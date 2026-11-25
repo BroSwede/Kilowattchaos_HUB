@@ -2,6 +2,8 @@
 // how it was manufactured and what it does for the rest of the robot.
 // This file is the pop-up shell (chapters, sliders, knobs, readouts). Each topic models its own 3D.
 import { createStage, loadParts, THREE, clamp } from './kit.js';
+import { findStop } from './trails.js';
+import { runMission } from './mission.js';
 
 // Three ordered paths, so nobody has to pick from thirteen things: start, score, deeper.
 export const LEVELS = [['build', 'How it’s made and how it works', 'The parts of our robot: what is inside, how they are made and what they do'], ['elec', 'Sensors and electronics', 'The brain, the sensors, the power, and fixing problems'], ['math', 'Code and math', 'How the code runs the robot, and the math behind it']];
@@ -97,7 +99,8 @@ export const isDiveOpen = () => !!open;
 /**
  * Open a deep dive.
  * @param {string} key      'battery' | 'motor' | 'frame' | 'hubs' | 'wheels' | 'sensors' | 'math' | 'launcher' | 'intake' | 'gears' | 'power' | 'code' | 'fix'
- * @param {object} [opts]   { part: {name, sku, sys}, real: () => Object3D|null, startAt: chapter id }
+ * @param {object} [opts]   { part: {name, sku, sys}, real: () => Object3D|null, startAt: chapter id,
+ *                            mission: { beat, people } to run that chapter as a trail mission (see trails.js) }
  */
 export async function openDive(key, opts = {}) {
   const T = TOPICS[key];
@@ -143,7 +146,7 @@ export async function openDive(key, opts = {}) {
   document.body.append(back, el);
   document.dispatchEvent(new Event('dive:open'));
   document.body.classList.add('no-scroll');
-  const prevFocus = document.activeElement;
+  const prevFocus = opts.focusBack || document.activeElement;
   requestAnimationFrame(() => { back.classList.add('is-on'); el.classList.add('is-open'); });
   const $ = (s) => el.querySelector(s);
 
@@ -188,10 +191,21 @@ export async function openDive(key, opts = {}) {
   $('#ddTitle').textContent = topic.title;
   chapters = topic.chapters;
 
-  $('#ddTabs').innerHTML = chapters.map((c, i) => `<button type="button" role="tab" aria-selected="false" data-i="${i}"><span class="n">${i + 1}</span>${esc(c.tab)}</button>`).join('');
-  $('#ddTabs').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) go(Number(b.dataset.i)); });
-  $('#ddPrev').addEventListener('click', () => go(at - 1));
-  $('#ddNext').addEventListener('click', () => (at === chapters.length - 1 ? close() : go(at + 1)));
+  // A chapter opened from a trail runs as a mission: mission.js takes over the tabs, the text and the footer.
+  const M = opts.mission ? findStop(`${key}:${opts.startAt}`) : null;
+  if (!M) {
+    $('#ddTabs').innerHTML = chapters.map((c, i) => `<button type="button" role="tab" aria-selected="false" data-i="${i}"><span class="n">${i + 1}</span>${esc(c.tab)}</button>`).join('');
+    $('#ddTabs').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) go(Number(b.dataset.i)); });
+    $('#ddPrev').addEventListener('click', () => go(at - 1));
+    $('#ddNext').addEventListener('click', () => (at === chapters.length - 1 ? close() : go(at + 1)));
+  }
+  const chapterHtml = (ch, kicker, extra = '') => `
+      <div class="dd-kicker">${kicker}</div>
+      <h3>${esc(ch.title)}</h3>${extra}
+      ${ch.big ? `<p class="dd-big"><span>Big idea</span>${ch.big}</p>` : ''}
+      <p class="dd-lead">${ch.lead}</p>
+      ${ch.real ? `<p class="dd-real"><span>On our robot</span>${ch.real}</p>` : ''}
+      ${(ch.more || []).length ? `<div class="dd-mores"><div class="dd-mh">Dig deeper</div>${ch.more.slice(0, 2).map(([q, a]) => `<details class="dd-more"><summary>${esc(q)}${ICON('plus', 'i sm')}</summary><div class="a">${a}</div></details>`).join('')}</div>` : ''}`;
 
   // ---- Controls ----
   const fmtOf = (c) => c.fmt || ((v) => `${v}${c.unit || ''}`);
@@ -322,13 +336,7 @@ export async function openDive(key, opts = {}) {
       <div class="dd-note" id="ddNote" hidden></div>`;
     dock.classList.remove('is-used');
     $('#ddOuts').innerHTML = (ch.readouts || []).slice(0, 2).map(([id, lab, sub]) => `<div class="dd-out"><div class="lab">${esc(lab)}</div><div class="val num" data-out="${id}"><span>–</span></div><div class="sub">${esc(sub || '')}</div></div>`).join('');
-    $('#ddBody').innerHTML = `
-      <div class="dd-kicker">Chapter ${i + 1} of ${chapters.length}</div>
-      <h3>${esc(ch.title)}</h3>
-      ${ch.big ? `<p class="dd-big"><span>Big idea</span>${ch.big}</p>` : ''}
-      <p class="dd-lead">${ch.lead}</p>
-      ${ch.real ? `<p class="dd-real"><span>On our robot</span>${ch.real}</p>` : ''}
-      ${(ch.more || []).length ? `<div class="dd-mores"><div class="dd-mh">Dig deeper</div>${ch.more.slice(0, 2).map(([q, a]) => `<details class="dd-more"><summary>${esc(q)}${ICON('plus', 'i sm')}</summary><div class="a">${a}</div></details>`).join('')}</div>` : ''}`;
+    $('#ddBody').innerHTML = chapterHtml(ch, `Chapter ${i + 1} of ${chapters.length}`);
     $('#ddBody').scrollTop = 0;
     $('#ddStep').textContent = `${i + 1} / ${chapters.length}`;
     $('#ddPrev').disabled = i === 0;
@@ -361,5 +369,12 @@ export async function openDive(key, opts = {}) {
   $('#ddDock').addEventListener('pointerdown', () => { $('#ddDock').classList.add('is-used'); for (const h of el.querySelectorAll('.dd-label.is-hand')) h.classList.add('is-used'); });
   const first = Math.max(0, chapters.findIndex((c) => c.id === opts.startAt));
   go(first);
+  if (M) {
+    runMission({
+      el, $, hit: M, close, people: opts.mission.people || [], beat: opts.mission.beat,
+      playHtml: (pin) => chapterHtml(chapters[first], 'Play · find out if you were right', pin),
+      reopen: (id) => { const [k, ch] = id.split(':'); openDive(k, { ...opts, startAt: ch, focusBack: prevFocus, mission: { ...opts.mission, beat: undefined } }); },
+    });
+  }
   window.__dive = { go, S, stage, close, set: (id, v) => ui.set(id, v, true) };
 }

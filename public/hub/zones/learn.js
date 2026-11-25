@@ -1,38 +1,45 @@
-// Learn zone: Paths, FIRST and BIOBUZZ, Setup and FAQ, Build tips, AI agents, Glossary.
+// Learn zone, in four pages:
+//   Trails    the course: five trails of missions that run through the 3D explainers and end at the real robot
+//   Skills    hands-on paths that end in a badge (safety, CAD, code, wiring, driving, printing, portfolio)
+//   Explore   every 3D explainer, to open in any order
+//   Handbook  FIRST and BIOBUZZ, Setup and FAQ, Build tips, AI agents and the Glossary
 // FIRST facts, lessons and links are real content. Progress, badges and glossary suggestions are saved team data.
 import { $, $$, esc, clamp, icon, tag, strip, av, avStack, bar, seg, wireSeg, acc, copyText, codeBlock, drawer, closeDrawer, gl, GLOSSARY } from './common.js';
 import { api, session, isMentor, me } from '../api.js';
-import { CORE, LINKS, COMP_FAQ } from '../rules-data.js';
+import { CORE, LINKS, COMP_FAQ, SAFETY } from '../rules-data.js';
 import { DIVES, LEVELS } from '../dive/index.js';
+import { progress as trailProgress, adopt as adoptTrails, MISSION_COUNT } from '../dive/trails.js';
+import { trailMap } from '../dive/trailmap.js';
 
 const TYPE_IC = { Read: 'book', Do: 'wrench', Quiz: 'check', Sim: 'sliders', Explore: 'focus', Challenge: 'trophy' };
 const soft = 'background:var(--raised);color:var(--text)';
 
-// ================================================================= Paths
-// Steps: [title, type, minutes, go: [zone, sub tab] or null, lesson: [intro, steps[], tip] or null]
+// ================================================================= Skills
+// Hands-on paths that end in a badge. The 3D explainers have their own course now (Trails), so the old
+// "How it's made" path lives there as the bonus trail.
+// Steps: [title, type, minutes, go: [zone, sub tab] or ['dive', 'topic:chapter'] or null, lesson: [intro, steps[], tip] or null]
 const PATHS = [
-  { id: 'made', t: "How it's made", ic: 'sparkle', badge: 'Robot insider', d: 'Open up the real parts on our robot in 3D: what is inside, how a factory makes them and what they do for the rest of the robot. Turn the knobs and drag the sliders to see it work.', steps: [
-    ['Open up the battery: cells, volts, amps and watts', 'Explore', 10, ['dive', 'battery']], ['Open up a drive motor: magnets, coils and gears', 'Explore', 10, ['dive', 'motor']], ['Follow the frame from rock to a drilled channel', 'Explore', 10, ['dive', 'frame']], ['Click a part on the 3D robot and find its deep dive', 'Explore', 5, ['robot', '3D Explorer']]] },
   { id: 'safety', t: 'Shop safety', ic: 'alert', badge: 'Shop safety', d: 'Glasses, tools, batteries and what to do when something goes wrong. Everyone finishes this before using a tool.', steps: [
-    ['Safety glasses on, every time', 'Read', 3], ['Which tools need a mentor next to you', 'Read', 5], ['Batteries: charging, carrying and storing', 'Read', 4], ['Walk the shop with a mentor', 'Do', 10], ['Safety quiz', 'Quiz', 5]] },
+    ['Safety glasses on, every time', 'Read', 3, ['dive', 'fix:safe'], ['These are the four safety rules our team works by. They are short on purpose, so everyone can say them from memory.', SAFETY, 'Not sure if something is safe? Stop and ask a mentor. Nobody gets in trouble for asking.']],
+    ['Which tools need a mentor next to you', 'Read', 5], ['Batteries: charging, carrying and storing', 'Read', 4, ['dive', 'hubs:power']], ['Walk the shop with a mentor', 'Do', 10], ['Safety quiz', 'Quiz', 5]] },
   { id: 'onshape', t: 'Onshape Basics', ic: 'layers', badge: 'Onshape Basics', d: 'Sketch, extrude and put parts together in the browser CAD the team uses. Works on Chromebooks.', steps: [
     ['Join the team Onshape classroom', 'Do', 5], ['Sketch a bracket', 'Do', 20], ['Extrude it, round the corners, add holes', 'Do', 15], ['Mate two parts together', 'Do', 20], ['Share it with Coach', 'Do', 5]] },
   { id: 'cad', t: 'CAD for FTC', ic: 'bot', badge: 'CAD for FTC', d: 'Design with real goBILDA parts, the same ones on our StarterBot, so what you draw is what you can build.', steps: [
     ['Onshape Lesson 1: bring in real goBILDA parts', 'Do', 25, null, ['goBILDA puts a CAD file (a STEP file) on every product page, so you never have to draw a motor or a channel yourself.', ['Find the 5203 Yellow Jacket motor on gobilda.com. It is the motor on our drivetrain.', 'Download its STEP file from the product page.', 'In your Onshape document, click <b>Import</b> and pick the file.', 'Put it in an assembly next to a U-channel and mate them together.', 'Take a screenshot and post it in #build.'], 'Stuck? Ask a teammate who has the CAD for FTC badge, or a mentor.']],
     ['Model a channel with the right hole pattern', 'Do', 20], ['Build a mini drivetrain assembly', 'Do', 40], ['Find our StarterBot parts in 3D', 'Explore', 10, ['robot', 'Specs and parts']], ['Design a part for the Print Shop', 'Do', 30, ['build', 'Print Shop']]] },
   { id: 'mech', t: 'Mechanisms 101', ic: 'wrench', badge: 'Mechanisms 101', d: 'Gears, wheels, intakes and launchers: how they work and how to test them.', steps: [
-    ['Gears, torque and speed', 'Read', 8], ['Try the intake compression sim', 'Sim', 10, ['build', 'Mechanism Lab']], ['How a flywheel launches a ball', 'Read', 6], ['Build a two-wheel test rig', 'Do', 30], ['Mechanisms quiz', 'Quiz', 5]] },
+    ['Gears, torque and speed', 'Read', 8, ['dive', 'gears:ratio']], ['Try the intake compression sim', 'Sim', 10, ['build', 'Mechanism Lab']], ['How a flywheel launches a ball', 'Read', 6, ['dive', 'launcher:speed']], ['Build a two-wheel test rig', 'Do', 30], ['Mechanisms quiz: the checks on the first two trails', 'Quiz', 5, ['learn', 'Trails']]] },
   { id: 'java', t: 'Java OpModes', ic: 'code', badge: 'Java OpModes', d: 'Write the programs the robot runs, in OnBot Java, from "Hello" to driving.', steps: [
     ['Set up OnBot Java on your device', 'Do', 10, ['learn', 'Setup and FAQ']], ['Your first OpMode: Hello Robot', 'Do', 15], ['Read the gamepad', 'Do', 15], ['Drive a motor with a stick', 'Do', 20],
     ['Telemetry: make the robot talk', 'Do', 10, ['code', 'Snippets'], ['Telemetry puts numbers on the Driver Station screen while your OpMode runs. It is the fastest way to find out what the robot thinks is happening.', ['Inside your loop, add <code>telemetry.addData("Left stick", gamepad1.left_stick_y);</code>', 'Add <code>telemetry.update();</code> at the end of the loop, or nothing shows.', 'Build it, run it and move the stick. The number should follow your thumb.', 'Add one more line that shows something you care about, like a motor power.'], 'Snippets has a ready-made version called "Telemetry you can read".']],
     ['Change our TeleOp, with a mentor', 'Do', 30, ['code', 'Our code']]] },
   { id: 'drive', t: 'Driving', ic: 'gamepad', badge: 'Driver', d: 'Field sense and smooth driving, practiced in BioBuzz XR before the real robot.', steps: [
-    ['Driver Academy, drill 1 in BioBuzz XR', 'Do', 10, ['code', 'BioBuzz XR']], ['Earn a medal in a Driver Academy drill', 'Challenge', 10, ['code', 'BioBuzz XR']], ['Driver Station: Init, Start, Stop', 'Read', 5], ['Practice with the real robot', 'Do', 30]] },
+    ['Driver Academy, drill 1 in BioBuzz XR', 'Do', 10, ['code', 'BioBuzz XR']], ['Earn a medal in a Driver Academy drill', 'Challenge', 10, ['code', 'BioBuzz XR']], ['Driver Station: Init, Start, Stop', 'Read', 5, ['dive', 'code:clock']], ['Practice with the real robot', 'Do', 30]] },
   { id: 'print', t: '3D printing', ic: 'printer', badge: 'First print', d: 'From an Onshape part to a printed one that fits, without wasting a spool.', steps: [
     ['What an STL and a slicer are', 'Read', 5], ['Why prints fail', 'Read', 6, ['learn', 'Build tips']], ['Request your first print', 'Do', 10, ['build', 'Print Shop']], ['Check that it fits, then log it', 'Do', 10]] },
   { id: 'wire', t: 'Wiring and power', ic: 'zap', badge: 'Wiring', d: 'The Control Hub, ports, batteries and wires that survive a match.', steps: [
     ['Inside the Control Hub', 'Read', 6, null, ["The Control Hub is the robot's brain: it runs your code and talks to every motor, servo and sensor.", ['Find the four motor ports (0 to 3) and the six servo ports (0 to 5).', 'Find where the sensors plug in.', 'Look at our robot: which port is each drive motor on? The names are in the hardware map in Code, Our code.', 'Ask a mentor to show you the battery and the power switch.'], 'Never plug or unplug a wire while the robot is powered on.']],
-    ['Motor and servo ports', 'Read', 6], ['Battery care and the main switch', 'Read', 5], ['Crimp and label a wire', 'Do', 20], ['Wiring check with a mentor', 'Do', 10]] },
+    ['Motor and servo ports', 'Read', 6, ['dive', 'hubs:ports']], ['Battery care and the main switch', 'Read', 5, ['dive', 'battery:robot']], ['Crimp and label a wire', 'Do', 20], ['Wiring check with a mentor', 'Do', 10]] },
   { id: 'port', t: 'Portfolio and outreach', ic: 'note', badge: 'Portfolio', d: 'Tell the story of how we designed the robot, and share it with people outside the team.', steps: [
     ['What judges look for', 'Read', 6],
     ['Write a good session note', 'Do', 10, ['logbook', 'Sessions'], ['A good note makes the portfolio almost write itself. Judges love seeing what you tried, what happened and what you changed.', ['Write what you tried in one line, with numbers: "Gecko wheels 4 mm closer: 7 of 10 balls."', 'Add one photo of the part or the test, not of people.', 'Write one "I like", one "I wonder" and one "What if".', 'List the next steps, with a name on each.'], '']],
@@ -66,19 +73,19 @@ export function saveProgress(patch) {
   return p;
 }
 
-function paths(view, ctx) {
-  let cur = ctx.state.path || 'safety';
+// Where a step's "Open" button goes: a page in the hub, or one chapter of a 3D explainer.
+const openGo = (go, ctx) => { if (go[0] === 'dive') document.dispatchEvent(new CustomEvent('hub:dive', { detail: go[1] })); else ctx.go(go[0], go[1]); };
+const goName = (go) => (go[0] === 'dive' ? 'the 3D explainer' : go[1]);
+// Three chapters that are a skill, not a trail stop: what to do when the robot will not work.
+const FIX = [['safe', 'Safe first', 'Power off before hands on'], ['find', 'What do I check?', 'Power, plugs, configuration, then code'], ['swap', 'Swap one thing', 'Is it the motor, the cable or the port?']];
+function skills(view, ctx) {
+  let cur = PATHS.some((p) => p.id === ctx.state.path) ? ctx.state.path : 'safety';
   let done = new Set(), allProg = [], awards = [], loaded = false, dead = false;
   const mentor = isMentor();
   view.innerHTML = `<div class="zv">
-    ${strip('Short paths that end in a badge. Each step is a few minutes of reading or doing, and many open the right place in the Hub. Your progress saves to your account, so it follows you to any device.', [tag(`${PATHS.length} paths`)])}
+    ${strip('Things you can do with your hands: use the shop safely, draw a part, write an OpMode, wire a motor. Each path is a few short steps and ends in a badge. How the robot works has its own course on Trails.', [tag(`${PATHS.length} paths`)])}
     <article class="card">
-      <div class="card-head"><span class="oc2 solid">${icon('sparkle', 'i sm')}</span><h3 class="card-title">How it's made: 3D deep dives</h3><span class="tag">New</span></div>
-      <p class="lead">Open up a real part from our robot, see what is inside and how it gets made, and play with the knobs and sliders.</p>
-      <div class="dive-row" style="margin-top:0">${[['battery', 'Battery', 'Cells, volts, amps and watts'], ['motor', 'Motor', 'Magnets, coils and planetary gears'], ['frame', 'Frame', 'From rock to a drilled channel']].map(([k, n, b]) => `<button class="dive-chip" type="button" data-opendive="${k}"><span class="oc">${icon('sparkle', 'i sm')}</span>${n}<small>${b}</small></button>`).join('')}</div>
-    </article>
-    <article class="card">
-      <div class="card-head"><h3 class="card-title">Your paths</h3><span class="tag" id="pathSum"></span></div>
+      <div class="card-head"><h3 class="card-title">Skill paths</h3><span class="tag" id="pathSum"></span></div>
       <div class="paths" id="pathGrid"></div>
     </article>
     <article class="card c8" id="pathDetail"></article>
@@ -87,6 +94,11 @@ function paths(view, ctx) {
       <div class="items" id="teamBadges"><div class="live-empty">Loading badges…</div></div>
       ${mentor ? `<div class="card-foot"><span class="cap">Mentors can hand out badges too</span><button class="btn soft pill sm" type="button" id="awardOpen">${icon('trophy', 'i sm')}Award a badge</button></div>
       <div id="awardForm" hidden></div>` : ''}
+    </article>
+    <article class="card">
+      <div class="card-head"><span class="oc2">${icon('wrench', 'i sm')}</span><h3 class="card-title">When the robot will not work</h3><span class="tag">3 short explainers</span></div>
+      <p class="lead">Troubleshooting is a skill too: stay safe, check the easy things in the same order, and change one thing at a time.</p>
+      <div class="dive-row" style="margin-top:0">${FIX.map(([ch, n, b]) => `<button class="dive-chip" type="button" data-opendive="fix" data-chapter="${ch}"><span class="oc">${icon('wrench', 'i sm')}</span>${n}<small>${b}</small></button>`).join('')}</div>
     </article>
   </div>`;
 
@@ -152,7 +164,9 @@ function paths(view, ctx) {
         const acts = st === 'done' ? `<span class="cap row" style="gap:4px">${icon('check', 'i sm')}Done</span>${i === n - 1 ? '<button class="btn ghost pill sm" type="button" data-undo="1">Undo</button>' : ''}`
           : st === 'now' ? `${les ? `<button class="btn soft pill sm" type="button" data-lesson="${i}">Open</button>` : go ? `<button class="btn soft pill sm" type="button" data-go="${i}">${icon('arrow', 'i sm')}Open</button>` : ''}<button class="btn primary pill sm" type="button" data-done="1"${loaded ? '' : ' disabled'}>Mark done</button>`
             : '<span class="cap">Locked</span>';
-        return `<li class="lstep ${st}"><span class="n">${st === 'done' ? icon('check', 'i sm') : i + 1}</span><div style="min-width:0"><div class="t">${t}</div><div class="cap row" style="gap:6px">${icon(TYPE_IC[type], 'i sm')}${type} · ${m} min${go ? ` · opens ${go[0] === 'dive' ? 'the 3D deep dive' : go[1]}` : ''}</div></div><div class="row">${acts}</div></li>`;
+        // A reading or quiz step with nothing behind it yet says so, and says what to do instead.
+        const bare = !go && !les && (type === 'Read' || type === 'Quiz');
+        return `<li class="lstep ${st}"><span class="n">${st === 'done' ? icon('check', 'i sm') : i + 1}</span><div style="min-width:0"><div class="t">${t}</div><div class="cap row" style="gap:6px">${icon(TYPE_IC[type], 'i sm')}${type} · ${m} min${go ? ` · opens ${goName(go)}` : bare ? ' · go through this one with a mentor' : ''}</div></div><div class="row">${acts}</div></li>`;
       }).join('')}</ol>`;
   };
   const all = (pop) => { grid(); detail(pop); badges(); };
@@ -239,7 +253,7 @@ function paths(view, ctx) {
       return;
     }
     const g = e.target.closest('[data-go]');
-    if (g) { const s = PATHS.find((x) => x.id === cur).steps[+g.dataset.go]; if (s[3][0] === 'dive') document.dispatchEvent(new CustomEvent('hub:dive', { detail: s[3][1] })); else ctx.go(s[3][0], s[3][1]); return; }
+    if (g) { openGo(PATHS.find((x) => x.id === cur).steps[+g.dataset.go][3], ctx); return; }
     const l = e.target.closest('[data-lesson]');
     if (l) {
       const p = PATHS.find((x) => x.id === cur), i = +l.dataset.lesson, [t, type, m, go, les] = p.steps[i];
@@ -248,10 +262,10 @@ function paths(view, ctx) {
         <p>${les[0]}</p>
         <ol class="bul">${les[1].map((x) => `<li>${x}</li>`).join('')}</ol>
         ${les[2] ? `<div class="callout" style="${soft}">${icon('bulb')}<div>${les[2]}</div></div>` : ''}
-        <div class="row wrap">${go ? `<button class="btn soft pill" type="button" data-lgo="1">${icon('arrow', 'i sm')}Open ${go[1]}</button>` : ''}<button class="btn primary pill" type="button" data-ldone="1">${icon('check', 'i sm')}Mark done</button></div>`, { label: t });
+        <div class="row wrap">${go ? `<button class="btn soft pill" type="button" data-lgo="1">${icon('arrow', 'i sm')}Open ${goName(go)}</button>` : ''}<button class="btn primary pill" type="button" data-ldone="1">${icon('check', 'i sm')}Mark done</button></div>`, { label: t });
       el.addEventListener('click', (ev) => {
         if (ev.target.closest('[data-ldone]')) { closeDrawer(); markDone(); }
-        if (ev.target.closest('[data-lgo]')) { closeDrawer(); ctx.go(go[0], go[1]); }
+        if (ev.target.closest('[data-lgo]')) { closeDrawer(); openGo(go, ctx); }
       });
     }
   });
@@ -802,10 +816,62 @@ function howItWorks(view) {
       <p>${esc(d.blurb)}.</p>${open(d)}
     </article>`;
   view.innerHTML = `<div class="zv">
-    ${strip('How our robot works, in 3D you can turn and play with. Each one has a few short chapters with one thing to try. New here? Do the four under Start here, in order.', [tag(`${DIVES.length} explainers`), tag('about 5 minutes each')])}
+    ${strip('Every 3D explainer, to open in any order. Each one has a few short chapters with one thing to try. Want a route through them, with questions and jobs at the real robot? That is what Trails is for.', [tag(`${DIVES.length} explainers`), tag('about 5 minutes each')], `<button class="btn soft pill sm" type="button" data-goto="learn|Trails">${icon('flag', 'i sm')}Go to Trails</button>`)}
     ${LEVELS.map(([lv, name, sub], n) => `<div class="hw-step${n ? '' : ' is-first'}"><b>${n + 1}</b><h3 class="card-title">${name}</h3><span class="cap">${sub}</span></div>
     ${DIVES.filter((d) => d.level === lv).map(n ? small : big).join('')}`).join('')}
   </div>`;
 }
 
-export const LEARN = { Paths: paths, 'How it works': howItWorks, 'FIRST and BIOBUZZ': first, 'Setup and FAQ': setup, 'Build tips': buildtips, 'AI agents': agents, Glossary: glossary };
+// ================================================================= Trails
+// The map itself is dive/trailmap.js (the public Robot Lab page draws the same one).
+// Trail progress is kept on the device. Each change is also copied into the student's own progress record,
+// next to their path steps, so it follows them to another device once the hub has real accounts.
+let trailTimer = 0;
+document.addEventListener('trails:change', () => {
+  clearTimeout(trailTimer);
+  trailTimer = setTimeout(() => { if (session.user) saveProgress({ trails: trailProgress() }).catch(() => {}); }, 900);
+});
+function trails(view) {
+  view.innerHTML = `<div class="zv">
+    ${strip('Five trails through our robot. Every stop is a mission: guess, play with it in 3D, answer two questions, then do one job on the real robot and write down what you found.', [tag(`${MISSION_COUNT} missions`), tag('about 8 minutes each, plus the robot job')])}
+    <div id="trailHost"></div>
+  </div>`;
+  // Who can be picked as "watched me do it": everyone on the team but you, by display name.
+  const people = () => session.roster.filter((r) => r.id !== session.user?.id).map((r) => r.name).filter(Boolean);
+  const off = trailMap($('#trailHost', view), {
+    mission: (id, beat) => document.dispatchEvent(new CustomEvent('hub:mission', { detail: { id, beat, people: people() } })),
+    chapter: (id) => document.dispatchEvent(new CustomEvent('hub:dive', { detail: id })),
+  });
+  myProgress().then((rec) => adoptTrails(rec?.data?.trails)).catch(() => {});
+  return off;
+}
+
+// ================================================================= Handbook
+// The reference pages, one at a time, under a row of section buttons.
+const BOOK = [['first', 'FIRST and BIOBUZZ', 'trophy', first], ['setup', 'Setup and FAQ', 'help', setup], ['tips', 'Build tips', 'wrench', buildtips], ['agents', 'AI agents', 'sparkle', agents], ['glossary', 'Glossary', 'book', glossary]];
+function handbook(view, ctx) {
+  let cur = BOOK.some((b) => b[0] === ctx.state.handbook) ? ctx.state.handbook : 'first', off = null;
+  view.innerHTML = `<div class="hb">
+    <div class="hb-nav" role="group" aria-label="Handbook sections">${BOOK.map(([id, n, ic]) => `<button class="chip" type="button" data-hb="${id}" aria-pressed="${id === cur}">${icon(ic, 'i sm')}${n}</button>`).join('')}</div>
+    <div class="hb-page"></div>
+  </div>`;
+  const show = () => {
+    if (typeof off === 'function') off();
+    // A fresh element each time, so the last section's click handlers go away with it.
+    const page = document.createElement('div');
+    page.className = 'hb-page';
+    $('.hb-page', view).replaceWith(page);
+    off = BOOK.find((b) => b[0] === cur)[3](page, ctx) || null;
+    $$('[data-hb]', view).forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.hb === cur)));
+  };
+  view.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-hb]');
+    if (!b || b.dataset.hb === cur) return;
+    cur = b.dataset.hb; ctx.state.handbook = cur;
+    show();
+  });
+  show();
+  return () => { if (typeof off === 'function') off(); };
+}
+
+export const LEARN = { Trails: trails, Skills: skills, Explore: howItWorks, Handbook: handbook };

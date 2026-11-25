@@ -1,6 +1,7 @@
 // Robot Lab: the public page at /robot-lab. Lists every deep dive the hub has (same registry), no sign-in.
 // Share a single dive with /robot-lab#motor, or one chapter with /robot-lab#hubs:servo.
 import { DIVES, LEVELS, openDive, chapterFor } from './dive/index.js';
+import { trailMap } from './dive/trailmap.js';
 import { MATCH, GAME_BASICS, ROBOT_RULES, SAFETY, CORE, LINKS, INSPECT, PRE_MATCH, PACK } from './rules-data.js';
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -21,6 +22,12 @@ document.addEventListener('click', (e) => {
   const ch = b.dataset.chapter || '';
   history.replaceState(null, '', `#${b.dataset.dive}${ch ? `:${ch}` : ''}`);
   start(b.dataset.dive, ch || undefined);
+});
+// The trails: the same map as Learn, Trails in the hub. Nobody is signed in here, so a robot job is
+// signed off with a tick ("someone watched") instead of a name.
+trailMap(document.getElementById('labTrails'), {
+  mission: (id, beat) => { const [k, ch] = id.split(':'); openDive(k, { startAt: ch, mission: { beat } }); },
+  chapter: (id) => { const [k, ch] = id.split(':'); history.replaceState(null, '', `#${id}`); start(k, ch); },
 });
 const fromHash = () => { const [k, ch] = decodeURIComponent(location.hash.slice(1)).split(':'); if (DIVES.some((d) => d.key === k)) start(k, ch || undefined); };
 window.addEventListener('hashchange', fromHash);
